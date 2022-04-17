@@ -19,6 +19,8 @@ using Microsoft.Win32;
 using System.Windows;
 using System.IO.Compression;
 using System.Threading;
+using System.Net.Http;
+using HtmlAgilityPack;
 
 namespace PlayniteSounds
 {
@@ -31,7 +33,8 @@ namespace PlayniteSounds
         private string prevmusicfilename = "";
         private MediaPlayer musicplayer; 
         private readonly MediaTimeline timeLine;
-        
+        private static readonly HttpClient httpClient = new HttpClient();
+
         public static string pluginFolder;
 
         public override Guid Id { get; } = Guid.Parse("9c960604-b8bc-4407-a4e4-e291c6097c7d");
@@ -40,6 +43,8 @@ namespace PlayniteSounds
         private bool closeaudiofilesnextplay = false;
         private bool gamerunning = false;
         private bool firstselectsound = true;
+
+        private const string KHInsiderBaseUrl = @"https://downloads.khinsider.com/";
 
         protected virtual bool IsFileLocked(FileInfo file)
         {
@@ -352,6 +357,15 @@ namespace PlayniteSounds
                 new MainMenuItem {
                     MenuSection = "@Playnite Sounds",
                     Icon = Path.Combine(pluginFolder, "icon.png"),
+                    Description = resources.GetString("LOC_PLAYNITESOUNDS_ActionsDownloadSelectMusicFile"),
+                    Action = (MainMenuItem) =>
+                    {
+                        DownloadMusicFilename();
+                    }
+                },
+                new MainMenuItem {
+                    MenuSection = "@Playnite Sounds",
+                    Icon = Path.Combine(pluginFolder, "icon.png"),
                     Description = resources.GetString("LOC_PLAYNITESOUNDS_ActionsOpenMusicFolder"),
                     Action = (MainMenuItem) =>
                     {
@@ -430,38 +444,199 @@ namespace PlayniteSounds
 
         public void SelectMusicFilename()
         {
-            if (PlayniteApi.MainView.SelectedGames.Count() == 1)
+
+            foreach (Game game in PlayniteApi.MainView.SelectedGames)
             {
-                foreach (Game game in PlayniteApi.MainView.SelectedGames)
+                string MusicFileName = GetMusicFileNameFromPlatform(game);
+                string NewMusicFileName = PlayniteApi.Dialogs.SelectFile("MP3 File|*.mp3");
+                File.Copy(NewMusicFileName, MusicFileName, true);
+            }
+
+            MusicNeedsReload = true;
+            CloseMusic();
+            ReplayMusic();
+        }
+
+        public void DownloadMusicFilename()
+        {
+            var albumSelect = PromptForAlbumSelect();
+            var songSelect = PromptForSongSelect();
+
+            foreach (Game game in PlayniteApi.MainView.SelectedGames)
+            {
+
+                var albumsToPartialUrls = GetAlbumsForGame(game.Name);
+                if (!albumsToPartialUrls.Any())
                 {
-                    string MusicFileName;
-                    Platform platform = game.Platforms.FirstOrDefault(o => o != null);
-                    if (Settings.Settings.MusicType == 2)
-                    {
-                        MusicFileName = GetMusicFilename(game.Name, platform == null ? "No Platform" : platform.Name);
-                    }
-                    else
-                    {
-                        if (Settings.Settings.MusicType == 1)
-                        {
-                            MusicFileName = GetMusicFilename("_music_", platform == null ? "No Platform" : platform.Name);
-                        }
-                        else
-                        {
-                            MusicFileName = GetMusicFilename("_music_", "");
-                        }
-                    }
-                    CloseMusic();
-                    string NewMusicFileName = PlayniteApi.Dialogs.SelectFile("MP3 File|*.mp3");
-                    File.Copy(NewMusicFileName, MusicFileName, true);
-                    MusicNeedsReload = true;
-                    ReplayMusic();
+                    logger.Warn($"Did not find any albums for game '{game.Name}'");
                 }
+
+                var albumToPartialUrl = albumSelect 
+                    ? PromptForAlbum(albumsToPartialUrls) 
+                    : albumsToPartialUrls.FirstOrDefault();
+
+                var songsToPartialUrls = GetSongsFromAlbum(albumToPartialUrl);
+                if (!songsToPartialUrls.Any())
+                {
+                    logger.Warn($"Did not find any songs for album '{albumToPartialUrl.Key}'");
+                }
+
+                var songToPartialUrl = songSelect
+                    ? PromptForSongUrl(songsToPartialUrls)
+                    : songsToPartialUrls.FirstOrDefault();
+
+                var platform = game.Platforms.FirstOrDefault(o => o != null);
+                var MusicFileName = GetMusicFilename(game.Name, platform == null ? "No Platform" : platform.Name);
+
+                DownloadSongFromUrlToPath(songToPartialUrl, MusicFileName);
+
             }
-            else
+
+            MusicNeedsReload = true;
+            CloseMusic();
+            ReplayMusic();
+        }
+
+        private bool PromptForAlbumSelect()
+        {
+            return true;
+        }
+
+        private bool PromptForSongSelect()
+        {
+            return true;
+        }
+
+        private static List<KeyValuePair<string, string>> GetAlbumsForGame(string gameName)
+        {
+            var web = new HtmlWeb();
+
+            var htmlDoc = web.Load($"{KHInsiderBaseUrl}search?{gameName}");
+            
+            var tableRows = htmlDoc.DocumentNode.Descendants("tr");
+            var albumsToPartialUrls = new List<KeyValuePair<string, string>>();
+            foreach (var row in tableRows)
             {
-                PlayniteApi.Dialogs.ShowMessage(resources.GetString("LOC_PLAYNITESOUNDS_MsgSelectSingleGame"), Constants.AppName);
+                var titleField = row.Descendants("td").Skip(1).FirstOrDefault();
+                if (titleField == null)
+                {
+                    logger.Info($"Found album entry of game '{gameName}' without title field");
+                    continue;
+                }
+
+                var htmlLink = titleField.Descendants("a").FirstOrDefault();
+                if (htmlLink == null)
+                {
+                    logger.Info($"Found entry for album entry of game '{gameName}' without title");
+                    continue;
+                }
+
+                var albumName = htmlLink.InnerHtml;
+                var albumPartialLink = htmlLink.GetAttributeValue("href", null);
+                if (albumPartialLink == null)
+                {
+                    logger.Info($"Found entry for album '{albumName}' of game '{gameName}' without link in title");
+                    continue;
+                }
+
+                albumsToPartialUrls.Add(new KeyValuePair<string, string>(albumName, albumPartialLink));
             }
+
+            return albumsToPartialUrls;
+        }
+
+        private static KeyValuePair<string, string> PromptForAlbum(IEnumerable<KeyValuePair<string, string>> albumsToPartialUrls)
+        {
+            return albumsToPartialUrls.FirstOrDefault();
+        }
+
+        private static List<KeyValuePair<string, string>> GetSongsFromAlbum(KeyValuePair<string, string> albumtoPartialUrl)
+        {
+            var songsToPartialUrls = new List<KeyValuePair<string, string>>();
+
+            var web = new HtmlWeb();
+
+            var htmlDoc = web.Load($"{KHInsiderBaseUrl}{albumtoPartialUrl.Value}");
+
+            // Validate Html
+            var headerRow = htmlDoc.GetElementbyId("songlist_header");
+            var headers = headerRow.Descendants("th").Select(n => n.InnerHtml);
+            if (headers.All(h => !h.Contains("MP3")))
+            {
+                logger.Warn($"No mp3 in album '{albumtoPartialUrl.Key}'");
+                return songsToPartialUrls;
+            }
+
+            var table = htmlDoc.GetElementbyId("songlist");
+
+            // Get table and skip header
+            var tableRows = table.Descendants("tr").Skip(1).ToList();
+            if (tableRows.Count < 2)
+            {
+                // Throw no songs in album
+                logger.Warn($"No songs in album '{albumtoPartialUrl.Key}'");
+                return songsToPartialUrls;
+            }
+
+            // Remove footer
+            tableRows.RemoveAt(tableRows.Count - 1);
+
+            foreach(var row in tableRows)
+            {
+                var songNameEntry = row.Descendants("a").Select(
+                    r => new KeyValuePair<string, string>(r.InnerHtml, r.GetAttributeValue("href", null)))
+                    .FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.Value));
+
+                songsToPartialUrls.Add(songNameEntry);
+            }
+
+            return songsToPartialUrls;
+        }
+
+        private static KeyValuePair<string, string> PromptForSongUrl(List<KeyValuePair<string, string>> songs)
+        {
+            return songs.FirstOrDefault();
+        }
+
+        private static void DownloadSongFromUrlToPath(KeyValuePair<string, string> songToPartialUrl, string path)
+        {
+            // Get Url to file from Song html page
+            var web = new HtmlWeb();
+            var htmlDoc = web.Load($"{KHInsiderBaseUrl}{songToPartialUrl.Value}");
+
+            var fileUrl = htmlDoc.GetElementbyId("audio").GetAttributeValue("href", null);
+            if (fileUrl == null)
+            {
+                logger.Warn($"Did not find file url for song '{songToPartialUrl.Key}'");
+            }
+
+            HttpResponseMessage httpMesage = httpClient.GetAsync(fileUrl).Result;
+            using (FileStream fs = File.Create(path))
+            {
+                httpMesage.Content.CopyToAsync(fs).Wait();
+            }
+        }
+
+        private string GetMusicFileNameFromPlatform(Game game)
+        {
+            string musicFileName;
+            Platform platform = game.Platforms.FirstOrDefault(o => o != null);
+
+            switch (Settings.Settings.MusicType)
+            {
+                case 1:
+                    musicFileName = GetMusicFilename("_music_", platform == null ? "No Platform" : platform.Name);
+                    break;
+                case 2:
+                    musicFileName = GetMusicFilename(game.Name, platform == null ? "No Platform" : platform.Name);
+                    break;
+                default:
+                    musicFileName = GetMusicFilename("_music_", "");
+                    break;
+
+            };
+
+            return musicFileName;
         }
 
         public void ShowMusicFilename()
