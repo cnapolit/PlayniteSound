@@ -20,7 +20,12 @@
     <sys:String x:Key="LOC_PLAYNITESOUNDS_ChkBackgroundNone">Play background music when no games are selected</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_StopMusic">Stop muziek wanneer</sys:String>
 
+    <sys:String x:Key="LOC_PLAYNITESOUNDS_FF_Path">FFmpeg Path</sys:String>
+    <sys:String x:Key="LOC_PLAYNITESOUNDS_Browse">Browse...</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_CmbItemNever">Nooit</sys:String>
+    <sys:String x:Key="LOC_PLAYNITESOUNDS_YtPlaylists">Youtube: Search for Playlists</sys:String>
+    <sys:String x:Key="LOC_PLAYNITESOUNDS_ManParDown">Manual: Display Results Side-By-Side</sys:String>
+    <sys:String x:Key="LOC_PLAYNITESOUNDS_AutoParDown">Auto: Select Results Side-By-Side</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_CmbItemDesktop">Bureaublad</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_CmbItemFullscreen">Volledig scherm</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_CmbItemDesktopFullscreen">Bureaublad + Volledig scherm</sys:String>
@@ -32,6 +37,8 @@
 
     <sys:String x:Key="LOC_PLAYNITESOUNDS_MissingTag">[PS] Ontbrekende achtergrondmuziek</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_ActionsDownloadMusicForGames">Download bestanden</sys:String>
+    <sys:String x:Key="LOC_PLAYNITESOUNDS_Youtube">Youtube</sys:String>
+    <sys:String x:Key="LOC_PLAYNITESOUNDS_YoutubeSearch">Youtube Search</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_DialogMessageDownloadingFiles">Bestanden worden gedownload...</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_DialogMessageAlbumSelect">Wilt u handmatig albums selecteren?</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_DialogMessageSongSelect">Wilt u handmatig nummers selecteren?</sys:String>
@@ -55,6 +62,7 @@
     <sys:String x:Key="LOC_PLAYNITESOUNDS_ActionsCopyDeleteMusicFile">Muziekbestand verwijderen</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_ActionsCopyPlayMusicFile">Muziek bestand afspelen</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_ActionsSubMenuSongs">Songs</sys:String>
+    <sys:String x:Key="LOC_PLAYNITESOUNDS_Actions_Download">Download</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_ActionsUpdateLegacy">Update Legacy Directory</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_ActionsPlatform">Platforms</sys:String>
     <sys:String x:Key="LOC_PLAYNITESOUNDS_ActionsDefault">Default</sys:String>
