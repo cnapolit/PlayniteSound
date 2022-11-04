@@ -1255,7 +1255,7 @@ namespace PlayniteSounds
             //because we closed the music above
             ReloadMusic = true;
 
-            PlayMusicFromFirst(SelectedGames);
+            if (ShouldPlayMusic()) PlayMusicFromFirst(SelectedGames);
         }
 
         private void SelectMusicForSelectedGames()
@@ -1837,10 +1837,14 @@ namespace PlayniteSounds
         {
             if (Settings.MusicType != MusicType.Default)
             {
-                var filterFiles = Directory.GetFiles(GetCurrentFilterDirectoryPath());
-                if (filterFiles.Any())
+                var filterDirectory = GetCurrentFilterDirectoryPath();
+                if (Directory.Exists(filterDirectory))
                 {
-                    return filterFiles;
+                    var filterFiles = Directory.GetFiles(filterDirectory);
+                    if (filterFiles.Any())
+                    {
+                        return filterFiles;
+                    }
                 }
             }
 
