@@ -5,21 +5,22 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System;
 using PlayniteSounds.Models;
+using PlayniteSounds.Files.Download.Downloaders;
 
-namespace PlayniteSounds.Downloaders
+namespace PlayniteSounds.Files.Download
 {
+
     internal class DownloadManager : IDownloadManager
     {
-        private static readonly TimeSpan MaxTime = new TimeSpan(0, 8, 0);
-        private static readonly HtmlWeb Web = new HtmlWeb();
-        private static readonly HttpClient HttpClient = new HttpClient();
-        
-        private static readonly List<string> SongTitleEnds = new List<string> { "Theme", "Title", "Menu" };
+        #region Infrastructure
 
-        private readonly PlayniteSoundsSettings _settings;
-
-        private readonly IDownloader _khDownloader;
-        private readonly IDownloader _ytDownloader;
+        private static readonly TimeSpan               MaxTime       = new TimeSpan(0, 8, 0);
+        private static readonly HtmlWeb                Web           = new HtmlWeb();
+        private static readonly HttpClient             HttpClient    = new HttpClient();
+        private static readonly List<string>           SongTitleEnds = new List<string> { "Theme", "Title", "Menu" };
+        private        readonly PlayniteSoundsSettings _settings;
+        private        readonly IDownloader            _khDownloader;
+        private        readonly IDownloader            _ytDownloader;
 
         public DownloadManager(PlayniteSoundsSettings settings)
         {
@@ -27,6 +28,12 @@ namespace PlayniteSounds.Downloaders
             _khDownloader = new KhDownloader(HttpClient, Web);
             _ytDownloader = new YtDownloader(HttpClient, _settings);
         }
+
+        #endregion
+
+        #region Implementation
+
+        #region GetAlbums
 
         public IEnumerable<Album> GetAlbumsForGame(string gameName, Source source, bool auto = false)
         {
@@ -36,18 +43,38 @@ namespace PlayniteSounds.Downloaders
             }
 
             if (source is Source.All)
-                    return (_settings.AutoParallelDownload && auto) || (_settings.ManualParallelDownload && !auto)
-                        ? _settings.Downloaders.SelectMany(d => GetAlbumFromSource(gameName, d, auto))
-                        : _settings.Downloaders.Select(d => GetAlbumFromSource(gameName, d, auto)).FirstOrDefault(dl => dl.Any());
+            {
+                IEnumerable<Album> retrieveAlbums(Source d) 
+                    => SourceToDownloader(source).GetAlbumsForGame(gameName, auto);
+
+                return ShouldSearchInParrallel(auto)
+                    ? _settings.Downloaders.SelectMany(retrieveAlbums)
+                    : _settings.Downloaders.Select(retrieveAlbums).FirstOrDefault(dl => dl.Any());
+            }
 
             return SourceToDownloader(source).GetAlbumsForGame(gameName, auto);
         }
 
+        private bool ShouldSearchInParrallel(bool auto)
+            => (_settings.AutoParallelDownload && auto) || (_settings.ManualParallelDownload && !auto);
+
+        #endregion
+
+        #region GetSongs
+
         public IEnumerable<Song> GetSongsFromAlbum(Album album)
             => SourceToDownloader(album.Source).GetSongsFromAlbum(album);
 
+        #endregion
+
+        #region DownloadSong
+
         public bool DownloadSong(Song song, string path)
             => SourceToDownloader(song.Source).DownloadSong(song, path);
+
+        #endregion
+
+        #region BestAlbumPick
 
         public Album BestAlbumPick(IEnumerable<Album> albums, string gameName, string regexGameName)
         {
@@ -75,6 +102,10 @@ namespace PlayniteSounds.Downloaders
             return closeMatch ?? albumsList.FirstOrDefault();
         }
 
+        #endregion
+
+        #region BestSongPick
+
         public Song BestSongPick(IEnumerable<Song> songs, string regexGameName)
         {
             var songsList = songs.Where(s => !s.Length.HasValue || s.Length.Value < MaxTime).ToList();
@@ -95,17 +126,21 @@ namespace PlayniteSounds.Downloaders
             return gameNameMatch ?? songsList.FirstOrDefault();
         }
 
+        #endregion
+
+        #region Helpers
         private IDownloader SourceToDownloader(Source source)
         {
             switch (source)
             {
                 case Source.KHInsider: return _khDownloader;
-                case Source.Youtube:   return _ytDownloader;
+                case Source.Youtube: return _ytDownloader;
                 default: throw new ArgumentException($"Unrecognized download source: {source}");
             }
         }
 
-        private IEnumerable<Album> GetAlbumFromSource(string gameName, Source source, bool auto)
-            => SourceToDownloader(source).GetAlbumsForGame(gameName, auto);
+        #endregion
+
+        #endregion
     }
 }

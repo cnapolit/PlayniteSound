@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using PlayniteSounds.Models;
 
-namespace PlayniteSounds.Downloaders
+namespace PlayniteSounds.Files.Download.Downloaders
 {
     internal interface IDownloader
     {

@@ -6,18 +6,20 @@ using System.Threading.Tasks;
 using Playnite.SDK;
 using PlayniteSounds.Models;
 using YoutubeExplode;
-using YoutubeExplode.Common;
 using YoutubeExplode.Converter;
 using YoutubeExplode.Search;
 
-namespace PlayniteSounds.Downloaders
+namespace PlayniteSounds.Files.Download.Downloaders
 {
     internal class YtDownloader : IDownloader
     {
-        private static readonly ILogger Logger = LogManager.GetLogger();
-        
-        private readonly YoutubeClient _youtubeClient;
-        private readonly PlayniteSoundsSettings _settings;
+        #region Infrastructure
+
+        private const           Source                 DlSource        = Source.Youtube;
+        private const           string                 BaseYtUrl       = "https://www.youtube.com";
+        private static readonly ILogger                Logger          = LogManager.GetLogger();
+        private        readonly YoutubeClient          _youtubeClient;
+        private        readonly PlayniteSoundsSettings _settings;
 
         public YtDownloader(HttpClient httpClient, PlayniteSoundsSettings settings)
         {
@@ -25,21 +27,28 @@ namespace PlayniteSounds.Downloaders
             _settings = settings;
         }
 
-        private const string BaseYtUrl = "https://www.youtube.com";
+        #endregion
+
+        #region Implementation
+
+        #region DownloadSource
+
+        public Source DownloadSource() => DlSource;
+
+        #endregion
+
+        #region BaseUrl
+
         public string BaseUrl() => BaseYtUrl;
 
-        private const Source DlSource = Source.Youtube;
-        public Source DownloadSource() => DlSource;
+        #endregion
+
+        #region GetAlbums
 
         public IEnumerable<Album> GetAlbumsForGame(string gameName, bool auto = false)
             => GetAlbumsFromExplodeApiAsync(gameName, auto).Result;
 
-        public IEnumerable<Song> GetSongsFromAlbum(Album album) 
-            => album.Songs ?? GetSongsFromExplodeApiAsync(album).ToEnumerable();
-
-        public bool DownloadSong(Song song, string path) => DownloadSongExplodeAsync(song, path).Result;
-
-        private async Task<IEnumerable<Album>> GetAlbumsFromExplodeApiAsync(string gameName, bool auto)
+        private async Task<List<Album>> GetAlbumsFromExplodeApiAsync(string gameName, bool auto)
         {
             if (auto)
             {
@@ -101,6 +110,13 @@ namespace PlayniteSounds.Downloaders
             return albums;
         }
 
+        #endregion
+
+        #region GetSongs
+
+        public IEnumerable<Song> GetSongsFromAlbum(Album album)
+            => album.Songs ?? GetSongsFromExplodeApiAsync(album).ToEnumerable();
+
         private IAsyncEnumerable<Song> GetSongsFromExplodeApiAsync(Album album)
             => _youtubeClient.Playlists.GetVideosAsync(album.Id).Select(video => new Song
             {
@@ -110,6 +126,12 @@ namespace PlayniteSounds.Downloaders
                 Source = DlSource,
                 IconUrl= video.Thumbnails.FirstOrDefault()?.Url
             });
+
+        #endregion
+
+        #region DownloadSong
+
+        public bool DownloadSong(Song song, string path) => DownloadSongExplodeAsync(song, path).Result;
 
         private async Task<bool> DownloadSongExplodeAsync(Song song, string path)
         {
@@ -124,5 +146,9 @@ namespace PlayniteSounds.Downloaders
                 return false;
             }
         }
+
+        #endregion
+
+        #endregion
     }
 }

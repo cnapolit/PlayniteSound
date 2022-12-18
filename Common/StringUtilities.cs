@@ -10,8 +10,10 @@ namespace PlayniteSounds.Common
     internal class StringUtilities
     {
         private static readonly string[] StringsToRemove = { "-", ":"};
-        private static readonly IDictionary<string, string> StringsToReplace = new Dictionary<string, string> { { " & ", @" (&|and) " } };
-        private static readonly IDictionary<string, string> ReplaceExtraWhitespace = new Dictionary<string, string> { { "  ", " " } };
+        private static readonly IDictionary<string, string> StringsToReplace
+            = new Dictionary<string, string> { { " & ", @" (&|and) " } };
+        private static readonly IDictionary<string, string> ReplaceExtraWhitespace
+            = new Dictionary<string, string> { { "  ", " " } };
         private static readonly string InvalidCharacters = new string(Path.GetInvalidFileNameChars());
         private static readonly Regex InvalidCharsRegex = new Regex($"[{Regex.Escape(InvalidCharacters)}]");
 
@@ -29,7 +31,7 @@ namespace PlayniteSounds.Common
                 => current.Replace(stringToReplace.Key, stringToReplace.Value));
         }
 
-        public static string SanitizeGameName(string gameName) => InvalidCharsRegex.Replace(gameName, string.Empty);
+        public static string Sanitize(string str) => InvalidCharsRegex.Replace(str, string.Empty);
 
         public static TimeSpan? GetTimeSpan(string time)
         {

@@ -8,7 +8,6 @@ using PlayniteSounds.Common.Constants;
 namespace PlayniteSounds
 
 {
-
     //based on code from lacro59 from 
     //https://github.com/Lacro59/playnite-plugincommon/blob/master/Localization.cs
     //
@@ -16,10 +15,10 @@ namespace PlayniteSounds
     {
         private static readonly ILogger Logger = LogManager.GetLogger();
 
-        public static void SetPluginLanguage(string pluginFolder, string language = SoundFile.LocalizationSource)
+        public static void SetPluginLanguage(string language = SoundFile.LocalizationSource)
         {
             var dictionaries = Application.Current.Resources.MergedDictionaries;
-            var langFile = Path.Combine(pluginFolder, SoundDirectory.Localization, language + ".xaml");
+            var langFile = Path.Combine(SoundDirectory.PluginFolder, SoundDirectory.Localization, language + ".xaml");
 
             // Load localization
             if (File.Exists(langFile))

@@ -1,4 +1,7 @@
-﻿namespace PlayniteSounds.Common.Constants
+﻿using System.IO;
+using System.Reflection;
+
+namespace PlayniteSounds.Common.Constants
 {
     public static class SoundDirectory
     {
@@ -14,5 +17,8 @@
         public const string Orphans = "Orphans";
         public const string ExtraMetaData = "ExtraMetadata";
         public const string GamesFolder = "Games";
+
+        public static readonly string PluginFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        public static readonly string IconPath = Path.Combine(PluginFolder, "icon.png");
     }
 }
