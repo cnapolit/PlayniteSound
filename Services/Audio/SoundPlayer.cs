@@ -9,7 +9,7 @@ using PlayniteSounds.Services.Files;
 
 namespace PlayniteSounds.Services.Audio
 {
-    internal class SoundPlayer : BasePlayer,ISoundPlayer
+    internal class SoundPlayer : BasePlayer, ISoundPlayer
     {
         #region Infrastructure
 
@@ -17,7 +17,6 @@ namespace PlayniteSounds.Services.Audio
         private readonly IPathingService                 _pathingService;
         private          Dictionary<string, PlayerEntry> _players                  = new Dictionary<string, PlayerEntry>();
         private          bool                            _firstSelectSound         = true;
-        private          bool                            _closeAudioFilesNextPlay;
 
         public SoundPlayer(
             IErrorHandler errorHandler,
@@ -50,13 +49,11 @@ namespace PlayniteSounds.Services.Audio
             }
             else
             {
-                var filename = entry.MediaPlayer.Source is null
-                    ? string.Empty
-                    : entry.MediaPlayer.Source.LocalPath;
-
                 entry.MediaPlayer.Stop();
                 entry.MediaPlayer.Close();
                 entry.MediaPlayer = null;
+
+                var filename = entry.MediaPlayer?.Source.LocalPath;
                 if (File.Exists(filename))
                 {
                     var fileInfo = new FileInfo(filename);
@@ -103,7 +100,24 @@ namespace PlayniteSounds.Services.Audio
 
         #endregion
 
-        public void PlayAppStarted() => PlaySound(SoundFile.ApplicationStartedSound, true);
+        #region PlayAppStarted
+
+        public void PlayAppStarted(EventHandler mediaEndedHandler)
+        {
+            var playerEntry = CreatePlayerEntry(SoundFile.ApplicationStartedSound, false);
+            if (playerEntry is null)
+            {
+                // Interpret missing file as 'instantly' ended
+                mediaEndedHandler.Invoke(null, null);
+            }
+            else
+            {
+                playerEntry.MediaPlayer.MediaEnded += mediaEndedHandler;
+                playerEntry.MediaPlayer.Play();
+            }
+        }
+
+        #endregion
 
         public void PlayAppStopped() => PlaySound(SoundFile.ApplicationStoppedSound, true);
 
@@ -126,12 +140,6 @@ namespace PlayniteSounds.Services.Audio
 
         private void AttemptPlay(string fileName, bool useSoundPlayer)
         {
-            if (_closeAudioFilesNextPlay)
-            {
-                Close();
-                _closeAudioFilesNextPlay = false;
-            }
-
             _players.TryGetValue(fileName, out var entry);
             if (entry is null)
             {

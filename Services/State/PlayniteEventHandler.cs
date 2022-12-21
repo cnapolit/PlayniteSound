@@ -28,6 +28,7 @@ namespace PlayniteSounds.Services.State
         private readonly IPathingService        _pathingService;
         private readonly PlayniteSoundsSettings _settings;
         private          bool                   _extraMetaDataPluginIsLoaded;
+        private          bool                   _appStartedCompleted;
 
         public PlayniteEventHandler(
             IPlayniteAPI api,
@@ -79,7 +80,10 @@ namespace PlayniteSounds.Services.State
         {
             _soundPlayer.PlayGameSelected();
 
-            _musicPlayer.Play(_api.SelectedGames());
+            if (_appStartedCompleted)
+            {
+                _musicPlayer.Play(_api.SelectedGames());
+            }
         }
 
         #endregion
@@ -128,7 +132,7 @@ namespace PlayniteSounds.Services.State
         {
             _fileManager.CopyAudioFiles();
 
-            _soundPlayer.PlayAppStarted();
+            _soundPlayer.PlayAppStarted(AppStartedEnded);
 
             _extraMetaDataPluginIsLoaded = _api.Addons.Plugins.Any(p => p.Id.ToString() is App.ExtraMetaGuid);
 
@@ -136,6 +140,12 @@ namespace PlayniteSounds.Services.State
             Application.Current.MainWindow.StateChanged += _appStateChangeHandler.OnWindowStateChanged;
             Application.Current.Deactivated += _appStateChangeHandler.OnApplicationDeactivate;
             Application.Current.Activated += _appStateChangeHandler.OnApplicationActivate;
+        }
+
+        private void AppStartedEnded(object _, EventArgs __)
+        {
+            _appStartedCompleted = true;
+            _musicPlayer.Play(_api.SelectedGames());
         }
 
         #endregion

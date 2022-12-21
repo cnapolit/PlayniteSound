@@ -1,8 +1,10 @@
-﻿namespace PlayniteSounds.Services.Audio
+﻿using System;
+
+namespace PlayniteSounds.Services.Audio
 {
     public interface ISoundPlayer
     {
-        void PlayAppStarted();
+        void PlayAppStarted(EventHandler mediaEndedHandler);
         void PlayAppStopped();
         void PlayGameSelected();
         void PlayGameInstalled();

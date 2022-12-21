@@ -17,8 +17,8 @@ namespace PlayniteSounds.Services.UI
     {
         #region Infrastructure
 
-        private readonly List<GameMenuItem>     _gameMenuItems;
-        private readonly PlayniteSoundsSettings _settings;
+        private readonly Lazy<List<GameMenuItem>>     _gameMenuItems;
+        private readonly PlayniteSoundsSettings       _settings;
 
         public GameMenuFactory(
             IPlayniteAPI api,
@@ -29,14 +29,14 @@ namespace PlayniteSounds.Services.UI
         {
             _settings = settings;
 
-            _gameMenuItems = new List<GameMenuItem>
+            _gameMenuItems = new Lazy<List<GameMenuItem>>(() => new List<GameMenuItem>
             {
                 ConstructGameMenuItem(Resource.Youtube,                    SelectedAction(DownloadMusicFromYouTube), "|" + Resource.Actions_Download),
                 ConstructGameMenuItem(Resource.ActionsCopySelectMusicFile, SelectedAction(_fileMutationService.SelectMusicForGames)),
                 ConstructGameMenuItem(Resource.ActionsOpenSelected,        SelectedAction(_fileManager.OpenGameDirectories)),
                 ConstructGameMenuItem(Resource.ActionsDeleteSelected,      SelectedAction(_fileMutationService.DeleteMusicDirectories)),
                 ConstructGameMenuItem(Resource.Actions_Normalize,          _fileMutationService.CreateNormalizationDialogue),
-            };
+            });
         }
 
         #endregion
@@ -58,7 +58,7 @@ namespace PlayniteSounds.Services.UI
                     "|" + Resource.Actions_Download);
             }
 
-            foreach (var item in _gameMenuItems) yield return item;
+            foreach (var item in _gameMenuItems.Value) yield return item;
 
             if (_api.SingleGame())
             {

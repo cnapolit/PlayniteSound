@@ -15,10 +15,10 @@ namespace PlayniteSounds.Services.UI
     {
         #region Infrastructure
 
-        private readonly IPathingService    _pathingService;
-        private readonly ISoundPlayer       _soundPlayer;
-        private readonly ISoundManager      _soundManager;
-        private readonly List<MainMenuItem> _mainMenuItems;
+        private readonly IPathingService          _pathingService;
+        private readonly ISoundPlayer             _soundPlayer;
+        private readonly ISoundManager            _soundManager;
+        private readonly Lazy<List<MainMenuItem>> _mainMenuItems;
 
         public MainMenuFactory(
             IPlayniteAPI api,
@@ -33,7 +33,7 @@ namespace PlayniteSounds.Services.UI
             _soundPlayer = audioPlayer;
             _soundManager = soundManager;
 
-            _mainMenuItems = new List<MainMenuItem>
+            _mainMenuItems = new Lazy<List<MainMenuItem>>(() => new List<MainMenuItem>
             {
                 ConstructMainMenuItem(Resource.ActionsOpenMusicFolder,     _soundManager.OpenMusicFolder),
                 ConstructMainMenuItem(Resource.ActionsOpenSoundsFolder,    _soundManager.OpenSoundsFolder),
@@ -41,7 +41,7 @@ namespace PlayniteSounds.Services.UI
                 ConstructMainMenuItem(Resource.ActionsHelp,                _soundManager.HelpMenu),
                 new MainMenuItem { Description = "-", MenuSection = App.MainMenuName },
                 ConstructMainMenuItem(Resource.ActionsCopySelectMusicFile, _fileMutationService.SelectMusicForDefault, "|" + Resource.ActionsDefault),
-            };
+            });
         }
 
         #endregion
@@ -52,7 +52,7 @@ namespace PlayniteSounds.Services.UI
 
         public IEnumerable<MainMenuItem> GetMainMenuItems(GetMainMenuItemsArgs __)
         {
-            var mainMenuItems = new List<MainMenuItem>(_mainMenuItems);
+            var mainMenuItems = new List<MainMenuItem>(_mainMenuItems.Value);
 
             mainMenuItems.AddRange(CreateDirectoryMainMenuItems(
                 _api.Database.Platforms,
