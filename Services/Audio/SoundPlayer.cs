@@ -11,13 +11,13 @@ namespace PlayniteSounds.Services.Audio
 {
     internal class SoundPlayer : BasePlayer,ISoundPlayer
     {
-        private readonly IErrorHandler _errorHandler;
-        private readonly IPathingService _pathingService;
-        public PlayniteSoundsSettings Settings { get => _settings; set => _settings = value; }
+        #region Infrastructure
 
-        private bool _firstSelectSound = true;
-        private bool _closeAudioFilesNextPlay;
-        private Dictionary<string, PlayerEntry> _players = new Dictionary<string, PlayerEntry>();
+        private readonly IErrorHandler                   _errorHandler;
+        private readonly IPathingService                 _pathingService;
+        private          Dictionary<string, PlayerEntry> _players                  = new Dictionary<string, PlayerEntry>();
+        private          bool                            _firstSelectSound         = true;
+        private          bool                            _closeAudioFilesNextPlay;
 
         public SoundPlayer(
             IErrorHandler errorHandler,
@@ -29,6 +29,101 @@ namespace PlayniteSounds.Services.Audio
             _pathingService = pathingService;
         }
 
+        #endregion
+
+        #region Implementation
+
+        #region Close
+
+        public void Close()
+        {
+            _players.Values.ForEach(p => _errorHandler.Try(() => CloseAudioFile(p)));
+            _players = new Dictionary<string, PlayerEntry>();
+        }
+
+        private static void CloseAudioFile(PlayerEntry entry)
+        {
+            if (entry.MediaPlayer is null)
+            {
+                entry.SoundPlayer.Stop();
+                entry.SoundPlayer = null;
+            }
+            else
+            {
+                var filename = entry.MediaPlayer.Source is null
+                    ? string.Empty
+                    : entry.MediaPlayer.Source.LocalPath;
+
+                entry.MediaPlayer.Stop();
+                entry.MediaPlayer.Close();
+                entry.MediaPlayer = null;
+                if (File.Exists(filename))
+                {
+                    var fileInfo = new FileInfo(filename);
+                    for (var count = 0; IsFileLocked(fileInfo) && count < 100; count++)
+                    {
+                        Thread.Sleep(5);
+                    }
+                }
+            }
+        }
+
+        private static bool IsFileLocked(FileInfo file)
+        {
+            try
+            {
+                using (var stream = file.Open(FileMode.Open, FileAccess.Write, FileShare.None))
+                    stream.Close();
+
+                //file is not locked
+                return false;
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+                return true;
+            }
+        }
+
+        #endregion
+
+        #region PlayGameSelected
+
+        public void PlayGameSelected()
+        {
+            if (!_firstSelectSound || !_settings.SkipFirstSelectSound)
+            {
+                PlaySound(SoundFile.GameSelectedSound);
+            }
+            _firstSelectSound = false;
+        }
+
+        #endregion
+
+        public void PlayAppStarted() => PlaySound(SoundFile.ApplicationStartedSound, true);
+
+        public void PlayAppStopped() => PlaySound(SoundFile.ApplicationStoppedSound, true);
+
+        public void PlayGameInstalled() => PlaySound(SoundFile.GameInstalledSound);
+
+        public void PlayGameUnInstalled() => PlaySound(SoundFile.GameUninstalledSound);
+
+        public void PlayGameStarting() => PlaySound(SoundFile.GameStartingSound);
+
+        public void PlayGameStarted() => PlaySound(SoundFile.GameStartedSound, true);
+
+        public void PlayGameStopped() => PlaySound(SoundFile.GameStoppedSound);
+
+        public void PlayLibraryUpdated() => PlaySound(SoundFile.LibraryUpdatedSound);
+
+        #region Helpers
+
+        private void PlaySound(string fileName, bool useSoundPlayer = false)
+            => _errorHandler.Try(() => AttemptPlay(fileName, useSoundPlayer));
+
         private void AttemptPlay(string fileName, bool useSoundPlayer)
         {
             if (_closeAudioFilesNextPlay)
@@ -38,7 +133,7 @@ namespace PlayniteSounds.Services.Audio
             }
 
             _players.TryGetValue(fileName, out var entry);
-            if (entry == null)
+            if (entry is null)
             {
                 entry = CreatePlayerEntry(fileName, useSoundPlayer);
             }
@@ -81,84 +176,8 @@ namespace PlayniteSounds.Services.Audio
             return _players[fileName] = entry;
         }
 
-        public void Close()
-        {
-            _players.Values.ForEach(p => _errorHandler.Try(() => CloseAudioFile(p)));
-            _players = new Dictionary<string, PlayerEntry>();
-        }
+        #endregion
 
-        private static void CloseAudioFile(PlayerEntry entry)
-        {
-            if (entry.MediaPlayer is null)
-            {
-                entry.SoundPlayer.Stop();
-                entry.SoundPlayer = null;
-            }
-            else
-            {
-                var filename = entry.MediaPlayer.Source is null
-                    ? string.Empty
-                    : entry.MediaPlayer.Source.LocalPath;
-
-                entry.MediaPlayer.Stop();
-                entry.MediaPlayer.Close();
-                entry.MediaPlayer = null;
-                if (File.Exists(filename))
-                {
-                    var fileInfo = new FileInfo(filename);
-                    for (var count = 0; IsFileLocked(fileInfo) && count < 100; count++)
-                    {
-                        Thread.Sleep(5);
-                    }
-                }
-            }
-        }
-
-        public void PlayAppStarted() => PlaySound(SoundFile.ApplicationStartedSound);
-
-        public void PlayAppStopped() => PlaySound(SoundFile.ApplicationStoppedSound, true);
-
-        public void PlayGameSelected()
-        {
-            if (!_firstSelectSound || !Settings.SkipFirstSelectSound)
-            {
-                PlaySound(SoundFile.GameSelectedSound);
-            }
-            _firstSelectSound = false;
-        }
-
-        public void PlayGameInstalled() => PlaySound(SoundFile.GameInstalledSound);
-
-        public void PlayGameUnInstalled() => PlaySound(SoundFile.GameUninstalledSound);
-
-        public void PlayGameStarting() => PlaySound(SoundFile.GameStartingSound);
-
-        public void PlayGameStarted() => PlaySound(SoundFile.GameStartedSound, true);
-
-        public void PlayGameStopped() => PlaySound(SoundFile.GameStoppedSound);
-
-        public void PlayLibraryUpdated() => PlaySound(SoundFile.LibraryUpdatedSound);
-
-        private void PlaySound(string fileName, bool useSoundPlayer = false) => _errorHandler.Try(() => AttemptPlay(fileName, useSoundPlayer));
-
-        private static bool IsFileLocked(FileInfo file)
-        {
-            try
-            {
-                using (var stream = file.Open(FileMode.Open, FileAccess.Write, FileShare.None))
-                    stream.Close();
-
-                //file is not locked
-                return false;
-            }
-            catch (IOException)
-            {
-                //the file is unavailable because it is:
-                //still being written to
-                //or being processed by another thread
-                //or does not exist (has already been processed)
-                return true;
-            }
-        }
+        #endregion
     }
 }

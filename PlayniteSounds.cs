@@ -23,14 +23,13 @@ namespace PlayniteSounds
 {
     public class PlayniteSounds : GenericPlugin
     {
-        private readonly IWindsorContainer _container;
-        private readonly IPlayniteEventHandler _playniteEventHandler;
-        private readonly IGameMenuFactory _gameMenuFactory;
-        private readonly IMainMenuFactory _mainMenuFactory;
+        #region Infrastructure
 
-        private PlayniteSoundsSettingsViewModel SettingsModel { get; }
-
-        #region Constructor
+        private readonly IWindsorContainer               _container;
+        private readonly IPlayniteEventHandler           _playniteEventHandler;
+        private readonly IGameMenuFactory                _gameMenuFactory;
+        private readonly IMainMenuFactory                _mainMenuFactory;
+        private readonly PlayniteSoundsSettingsViewModel _settingsModel;
 
         public PlayniteSounds(IPlayniteAPI api) : base(api)
         {
@@ -78,7 +77,7 @@ namespace PlayniteSounds
                     DependsOn(isDesktopDepedency).
                     LifestyleSingleton());
 
-            SettingsModel = _container.Resolve<PlayniteSoundsSettingsViewModel>();
+            _settingsModel = _container.Resolve<PlayniteSoundsSettingsViewModel>();
             _playniteEventHandler = _container.Resolve<IPlayniteEventHandler>();
             _gameMenuFactory = _container.Resolve<IGameMenuFactory>();
             _mainMenuFactory = _container.Resolve<IMainMenuFactory>();
@@ -93,11 +92,11 @@ namespace PlayniteSounds
 
         #endregion
 
-        #region Playnite Interface
+        #region Playnite Implementation
 
         public override Guid Id { get; } = Guid.Parse(App.AppGuid);
 
-        public override ISettings GetSettings(bool firstRunSettings) => SettingsModel;
+        public override ISettings GetSettings(bool firstRunSettings) => _settingsModel;
 
         public override UserControl GetSettingsView(bool firstRunSettings)
             => _container.Resolve<PlayniteSoundsSettingsView>();
@@ -128,8 +127,8 @@ namespace PlayniteSounds
 
         public override void OnLibraryUpdated(OnLibraryUpdatedEventArgs args)
         {
-            SettingsModel.Settings.LastAutoLibUpdateAssetsDownload = DateTime.Now;
-            SavePluginSettings(SettingsModel.Settings);
+            _settingsModel.Settings.LastAutoLibUpdateAssetsDownload = DateTime.Now;
+            SavePluginSettings(_settingsModel.Settings);
 
             _playniteEventHandler.OnLibraryUpdated();
         }

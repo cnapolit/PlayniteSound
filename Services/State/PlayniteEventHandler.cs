@@ -153,23 +153,23 @@ namespace PlayniteSounds.Services.State
                 Application.Current.MainWindow.StateChanged -= _appStateChangeHandler.OnWindowStateChanged;
             }
 
+            _musicPlayer.Dispose();
             _soundPlayer.PlayAppStopped();
             _soundPlayer.Close();
-            _musicPlayer.Dispose();
         }
 
         #region OnLibraryUpdated
 
         public void OnLibraryUpdated()
         {
-            _soundPlayer.PlayLibraryUpdated();
-
             if (_settings.AutoDownload)
             {
                 var games = _api.Database.Games.Where(
                     x => x.Added != null && x.Added > _settings.LastAutoLibUpdateAssetsDownload);
                 _fileMutationService.CreateDownloadDialogue(games, Source.All);
             }
+
+            _soundPlayer.PlayLibraryUpdated();
         }
 
         #endregion

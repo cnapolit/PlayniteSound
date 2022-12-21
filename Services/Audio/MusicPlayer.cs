@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace PlayniteSounds.Services.Audio
 {
@@ -68,6 +69,7 @@ namespace PlayniteSounds.Services.Audio
         {
             if (!_disposed)
             {
+                Close();
                 _disposed = true;
                 _musicPlayer.MediaEnded -= MediaEnded;
                 _musicPlayer = null;
