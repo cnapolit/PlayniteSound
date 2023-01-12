@@ -240,7 +240,7 @@ namespace PlayniteSounds.Services.Audio
                     break;
                 case MusicType.Platform:
                     var newPlatform = _currentGame?.Platforms?.FirstOrDefault();
-                    if (_lastPlayedType != MusicType.Platform || _currentPlatform?.Name != newPlatform?.Name)
+                    if (NewMusicSource(_currentPlatform?.Name, newPlatform?.Name))
                     {
                         _currentPlatform = newPlatform;
                         files = _pathingService.GetPlatformMusicFiles(_currentPlatform);
@@ -252,7 +252,7 @@ namespace PlayniteSounds.Services.Audio
                     break;
                 case MusicType.Filter:
                     var activeFilter = _mainView.GetActiveFilterPreset();
-                    if (_lastPlayedType != MusicType.Filter || _currentFilterGuid != activeFilter)
+                    if (NewMusicSource(_currentFilterGuid, activeFilter))
                     {
                         _currentFilterGuid = activeFilter;
                         files = _pathingService.GeFilterMusicFiles(_mainView.GetActiveFilterPreset());
@@ -263,7 +263,7 @@ namespace PlayniteSounds.Services.Audio
                     }
                     break;
                 default:
-                    files = _lastPlayedType != MusicType.Default
+                    files = _lastPlayedType != MusicType.Default || string.IsNullOrWhiteSpace(_currentMusicFileName)
                         ? _pathingService.GetDefaultMusicFiles()
                         : new string[] { _currentMusicFileName };
                     break;
@@ -278,6 +278,11 @@ namespace PlayniteSounds.Services.Audio
             _lastPlayedType = _settings.MusicType;
             return files;
         }
+
+        private bool NewMusicSource<T>(T expected, T actual)
+            => _lastPlayedType != _settings.MusicType
+            || !expected.Equals(actual) 
+            || string.IsNullOrWhiteSpace(_currentMusicFileName);
 
         // Backup order is game -> filter -> default
         private string[] GetBackupFiles()

@@ -13,10 +13,9 @@ namespace PlayniteSounds.Files.Download.Downloaders
     {
         #region Infrastructure
 
-        private const           string     KhInsiderBaseUrl = @"https://downloads.khinsider.com/";
-        private const           Source     Source           = Models.Source.KHInsider;
-        private static readonly ILogger    Logger          = LogManager.GetLogger();
-
+        private const           string     baseUrl     = @"https://downloads.khinsider.com/";
+        private const           Source     Source      = Models.Source.KHInsider;
+        private static readonly ILogger    Logger      = LogManager.GetLogger();
         private        readonly HttpClient _httpClient;
         private        readonly HtmlWeb    _web;
 
@@ -31,11 +30,15 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         #region Implementation
 
-        #region BaseUrl
+        #region AlbumUrl
 
-        public string BaseUrl() => KhInsiderBaseUrl;
+        public string AlbumUrl(Album album) => baseUrl + album.Name;
 
         #endregion
+
+        #region SongUrl
+
+        public string SongUrl(Song song) => song.Id;
 
         #region DownloadSource
         public Source DownloadSource() => Source;
@@ -49,7 +52,7 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
             var albumsToPartialUrls = new List<Album>();
 
-            var htmlDoc = _web.Load($"{KhInsiderBaseUrl}search?search={gameName}");
+            var htmlDoc = _web.Load($"{baseUrl}search?search={gameName}");
 
             var tableRows = htmlDoc.DocumentNode.Descendants("tr").Skip(1);
             foreach (var row in tableRows)
@@ -124,7 +127,7 @@ namespace PlayniteSounds.Files.Download.Downloaders
         {
             var songs = new List<Song>();
 
-            var htmlDoc = _web.Load($"{KhInsiderBaseUrl}{album.Id}");
+            var htmlDoc = _web.Load($"{baseUrl}{album.Id}");
 
             // Validate Html
             var headerRow = htmlDoc.GetElementbyId("songlist_header");
@@ -196,7 +199,7 @@ namespace PlayniteSounds.Files.Download.Downloaders
         public bool DownloadSong(Song song, string path)
         {
             // Get Url for file from Song html page
-            var htmlDoc = _web.Load($"{KhInsiderBaseUrl}{song.Id}");
+            var htmlDoc = _web.Load($"{baseUrl}{song.Id}");
 
             var fileUrl = htmlDoc.GetElementbyId("audio").GetAttributeValue("src", null);
             if (fileUrl == null)
@@ -213,6 +216,8 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
             return true;
         }
+
+        #endregion
 
         #endregion
 

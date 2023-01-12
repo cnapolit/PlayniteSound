@@ -16,7 +16,8 @@ namespace PlayniteSounds.Files.Download.Downloaders
         #region Infrastructure
 
         private const           Source                 DlSource        = Source.Youtube;
-        private const           string                 BaseYtUrl       = "https://www.youtube.com";
+        private const           string                 baseUrl         = "https://www.youtube.com/embed/";
+        private const           string                 PlaylistUrl     = baseUrl + "videoseries?list=";
         private static readonly ILogger                Logger          = LogManager.GetLogger();
         private        readonly YoutubeClient          _youtubeClient;
         private        readonly PlayniteSoundsSettings _settings;
@@ -37,9 +38,15 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         #endregion
 
-        #region BaseUrl
+        #region AlbumUrl
 
-        public string BaseUrl() => BaseYtUrl;
+        public string AlbumUrl(Album album) => PlaylistUrl + album.Id;
+
+        #endregion
+
+        #region SongUrl
+
+        public string SongUrl(Song song) => baseUrl + song.Id;
 
         #endregion
 

@@ -44,7 +44,7 @@ namespace PlayniteSounds
 
             _container = new WindsorContainer();
 
-            var isDesktopDepedency = Dependency.OnValue("isDesktop", isDesktop);
+            var isDesktopDependency = Dependency.OnValue("isDesktop", isDesktop);
             var settings = LoadPluginSettings<PlayniteSoundsSettings>() ?? new PlayniteSoundsSettings();
 
             _container.Register(
@@ -70,11 +70,11 @@ namespace PlayniteSounds
                 Component.For<PlayniteSoundsSettingsView>(),
                 Component.For<IMusicPlayer>().
                     ImplementedBy<MusicPlayer>().
-                    DependsOn(isDesktopDepedency).
+                    DependsOn(isDesktopDependency).
                     LifestyleSingleton(),
                 Component.For<ISoundPlayer>().
                     ImplementedBy<SoundPlayer>().
-                    DependsOn(isDesktopDepedency).
+                    DependsOn(isDesktopDependency).
                     LifestyleSingleton());
 
             _settingsModel = _container.Resolve<PlayniteSoundsSettingsViewModel>();

@@ -23,8 +23,11 @@ namespace PlayniteSounds.Views.Models
                 // Copying allows changes to propagate across the plugin due to this instance being singleton
                 // We still need to manually update the volume for the change to be immediate
                 _settings.Copy(value);
-                _musicPlayer.ResetVolume();
                 OnPropertyChanged();
+
+                _musicPlayer.ResetVolume();
+                _musicPlayer.Pause(false);
+                _musicPlayer.Resume(false);
             }
         }
 

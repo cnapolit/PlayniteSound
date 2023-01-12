@@ -1,0 +1,50 @@
+﻿<UserControl x:Class="PlayniteSounds.Views.Layouts.DownloadPrompt"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:models="clr-namespace:PlayniteSounds.Views.Models"
+             d:DataContext="{d:DesignInstance Type=models:DownloadPromptModel}"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <StackPanel>
+        <TextBlock Name="Title"></TextBlock>
+        <TextBlock Name="ProgressText"></TextBlock>
+        <ProgressBar Name="ProgressBar"></ProgressBar>
+        <ListBox x:Name="DownloadItems" Height="400" Width="600" 
+                 ItemsSource="{Binding SearchItems}" 
+                 SelectedItem="{Binding SelectedItem}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <DockPanel>
+                        <Image Margin="3" Height="80" Source="{Binding IconUrl, IsAsync=True}"/>
+                        <StackPanel Margin="5,0,0,0">
+                            <TextBlock x:Name="Name" Margin="3" Text="{Binding Name}"/>
+                            <TextBlock x:Name="Description" Margin="0" Text="{Binding this}"/>
+                        </StackPanel>
+                        <DockPanel.InputBindings>
+                            <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding SelectCommand}"/>
+                        </DockPanel.InputBindings>
+                    </DockPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <DockPanel>
+            <Button Content="Search" Command="{Binding SearchCommand}"
+                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
+            <TextBox VerticalAlignment="Center" Text="SomeSearch"/>
+        </DockPanel>
+        <DockPanel>
+            <Button Content="Return To Albums" IsEnabled="{Binding PromptForAlbum}" Command="{Binding ReturnCommand}"
+                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
+            <Button Content="Select" IsEnabled="{Binding IsItemSelected}" Command="{Binding SelectCommand}"
+                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
+            <Button Content="Preview" IsEnabled="{Binding IsItemSelected}" Command="{Binding PreviewCommand}"
+                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
+            <Button Content="Skip" Command="{Binding SkipCommand}"
+                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}"
+                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
+        </DockPanel>
+    </StackPanel>
+</UserControl>

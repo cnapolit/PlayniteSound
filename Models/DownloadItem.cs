@@ -34,7 +34,7 @@ namespace PlayniteSounds.Models
                 where IsValidField(property, propertyValue)
                 select $"{property.Name}: {propertyValue}";
 
-            return string.Join(", ", strings);
+            return string.Join("\n", strings);
         }
 
         private static bool IsValidField(PropertyInfo property, object propertyValue)

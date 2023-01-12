@@ -45,7 +45,7 @@ namespace PlayniteSounds.Files.Download
             if (source is Source.All)
             {
                 IEnumerable<Album> retrieveAlbums(Source d) 
-                    => SourceToDownloader(source).GetAlbumsForGame(gameName, auto);
+                    => SourceToDownloader(d).GetAlbumsForGame(gameName, auto);
 
                 return ShouldSearchInParrallel(auto)
                     ? _settings.Downloaders.SelectMany(retrieveAlbums)
@@ -71,6 +71,18 @@ namespace PlayniteSounds.Files.Download
 
         public bool DownloadSong(Song song, string path)
             => SourceToDownloader(song.Source).DownloadSong(song, path);
+
+        #endregion
+
+        #region GetAlbumUrl
+
+        public string GetItemUrl(DownloadItem item)
+        {
+            var downloader = SourceToDownloader(item.Source);
+            return item is Album album
+            ? downloader.AlbumUrl(album)
+            : downloader.SongUrl(item as Song);
+        }
 
         #endregion
 
@@ -129,6 +141,7 @@ namespace PlayniteSounds.Files.Download
         #endregion
 
         #region Helpers
+
         private IDownloader SourceToDownloader(Source source)
         {
             switch (source)
