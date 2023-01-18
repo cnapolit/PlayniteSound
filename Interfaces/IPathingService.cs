@@ -24,5 +24,6 @@ namespace PlayniteSounds.Services.Files
         string[] GetDefaultMusicFiles();
         string[] GeFilterMusicFiles(Guid filterId);
         string GetFilterDirectoryPath(Guid filterId);
+        string GetGameStartSoundFile(Game game);
     }
 }

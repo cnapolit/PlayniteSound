@@ -3,6 +3,7 @@ using Playnite.SDK.Models;
 using PlayniteSounds.Common.Constants;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace PlayniteSounds.Services.Files
 {
@@ -55,6 +56,14 @@ namespace PlayniteSounds.Services.Files
 
         public string[] GetGameMusicFiles(Game game)
             => GetDirectoryFiles(GetGameDirectoryPath(game));
+
+        public string GetGameStartSoundFile(Game game)
+        {
+            var gameStartSoundFileDirectory = Path.Combine(
+                GetGameDirectoryPath(game), SoundDirectory.StartingSoundFolder);
+            
+            return Directory.GetFiles(gameStartSoundFileDirectory).FirstOrDefault();
+        }
 
         public string[] GetPlatformMusicFiles(Platform platform)
             => GetDirectoryFiles(GetPlatformDirectoryPath(platform));

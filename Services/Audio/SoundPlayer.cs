@@ -6,6 +6,8 @@ using System.IO;
 using System.Threading;
 using System.Windows.Media;
 using PlayniteSounds.Services.Files;
+using Playnite.SDK.Models;
+using System.Linq;
 
 namespace PlayniteSounds.Services.Audio
 {
@@ -119,13 +121,34 @@ namespace PlayniteSounds.Services.Audio
 
         #endregion
 
+        #region  PlayGameStarted
+
+        public void PlayGameStarting(Game startingGame)
+        {
+            string gameStartingSoundFile = null;
+            if (_settings.PerGameStartSound)
+            {
+                gameStartingSoundFile = _pathingService.GetGameStartSoundFile(startingGame);
+            }
+            
+            if (gameStartingSoundFile is null)
+            {
+                PlaySound(SoundFile.GameStartingSound);
+            }
+            else
+            {
+                // Dispose game-specific media player to prevent memory growth over time
+                PlaySound(gameStartingSoundFile, disposeOnEnd: true);
+            }
+        }
+
+        #endregion
+
         public void PlayAppStopped() => PlaySound(SoundFile.ApplicationStoppedSound, true);
 
         public void PlayGameInstalled() => PlaySound(SoundFile.GameInstalledSound);
 
         public void PlayGameUnInstalled() => PlaySound(SoundFile.GameUninstalledSound);
-
-        public void PlayGameStarting() => PlaySound(SoundFile.GameStartingSound);
 
         public void PlayGameStarted() => PlaySound(SoundFile.GameStartedSound, true);
 
@@ -135,10 +158,10 @@ namespace PlayniteSounds.Services.Audio
 
         #region Helpers
 
-        private void PlaySound(string fileName, bool useSoundPlayer = false)
-            => _errorHandler.Try(() => AttemptPlay(fileName, useSoundPlayer));
+        private void PlaySound(string fileName, bool useSoundPlayer = false, bool disposeOnEnd = false)
+            => _errorHandler.Try(() => AttemptPlay(fileName, useSoundPlayer, disposeOnEnd));
 
-        private void AttemptPlay(string fileName, bool useSoundPlayer)
+        private void AttemptPlay(string fileName, bool useSoundPlayer, bool disposeOnEnd)
         {
             _players.TryGetValue(fileName, out var entry);
             if (entry is null)
@@ -154,9 +177,21 @@ namespace PlayniteSounds.Services.Audio
             }
             else
             {
+                if (disposeOnEnd)
+                {
+                    entry.MediaPlayer.MediaEnded += DisposeOnEnd;
+                }
+
                 entry.MediaPlayer.Stop();
                 entry.MediaPlayer.Play();
             }
+        }
+
+        private void DisposeOnEnd(object sender, EventArgs args)
+        {
+            var fileToEntry = _players.FirstOrDefault(p => p.Value.MediaPlayer == sender);
+            CloseAudioFile(fileToEntry.Value);
+            _players.Remove(fileToEntry.Key);
         }
 
         private PlayerEntry CreatePlayerEntry(string fileName, bool useSoundPlayer)

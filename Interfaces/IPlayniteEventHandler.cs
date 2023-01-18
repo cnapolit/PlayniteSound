@@ -1,4 +1,6 @@
-﻿namespace PlayniteSounds.Services.State
+﻿using Playnite.SDK.Models;
+
+namespace PlayniteSounds.Services.State
 {
     internal interface IPlayniteEventHandler
     {
@@ -7,7 +9,7 @@
         void OnGameInstalled();
         void OnGameSelected();
         void OnGameStarted();
-        void OnGameStarting();
+        void OnGameStarting(Game game);
         void OnGameStopped();
         void OnGameUninstalled();
         void OnLibraryUpdated();

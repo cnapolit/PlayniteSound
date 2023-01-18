@@ -1,4 +1,5 @@
 ﻿using System;
+using Playnite.SDK.Models;
 
 namespace PlayniteSounds.Services.Audio
 {
@@ -9,7 +10,7 @@ namespace PlayniteSounds.Services.Audio
         void PlayGameSelected();
         void PlayGameInstalled();
         void PlayGameUnInstalled();
-        void PlayGameStarting();
+        void PlayGameStarting(Game game);
         void PlayGameStarted();
         void PlayGameStopped();
         void PlayLibraryUpdated();

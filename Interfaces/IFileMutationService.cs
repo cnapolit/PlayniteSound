@@ -21,5 +21,6 @@ namespace PlayniteSounds.Services.Files
         void SelectMusicForFilter(FilterPreset filter);
         void SelectMusicForGames(IEnumerable<Game> games);
         void SelectMusicForPlatform(Platform platform);
+        void SelectStartSoundForGame(Game game);
     }
 }

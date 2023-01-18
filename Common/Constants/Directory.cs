@@ -17,6 +17,7 @@ namespace PlayniteSounds.Common.Constants
         public const string Orphans = "Orphans";
         public const string ExtraMetaData = "ExtraMetadata";
         public const string GamesFolder = "Games";
+        public const string StartingSoundFolder = "StartingSound";
 
         public static readonly string PluginFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         public static readonly string IconPath = Path.Combine(PluginFolder, "icon.png");

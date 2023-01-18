@@ -108,6 +108,16 @@ namespace PlayniteSounds.Services.Files
 
         #endregion
 
+        #region  SelectStartSoundForGame
+
+        public string SelectStartSoundForGame(Game game, string file)
+        {
+            var dir = Directory.CreateDirectory(Path.Combine(CreateMusicDirectory(game), SoundDirectory.StartingSoundFolder));
+            return CopyFileToDirectory(dir.FullName, file);
+        }
+
+        #endregion
+
         #region SelectMusicForPlatform
 
         public IEnumerable<string> SelectMusicForPlatform(Platform platform, IEnumerable<string> files)
@@ -167,16 +177,21 @@ namespace PlayniteSounds.Services.Files
 
         #region Helpers
 
-        private IEnumerable<string> SelectMusicForDirectory(string directory, IEnumerable<string> files)
+        private static IEnumerable<string> SelectMusicForDirectory(string directory, IEnumerable<string> files)
         {
             foreach (var musicFile in files)
             {
-                var newMusicFile = Path.Combine(directory, Path.GetFileName(musicFile));
-
-                File.Copy(musicFile, newMusicFile, true);
-
-                yield return newMusicFile;
+                yield return CopyFileToDirectory(directory, musicFile);
             }
+        }
+
+        private static string CopyFileToDirectory(string directory, string musicFile)
+        {
+            var newMusicFile = Path.Combine(directory, Path.GetFileName(musicFile));
+
+            File.Copy(musicFile, newMusicFile, true);
+
+            return newMusicFile;
         }
 
         #endregion

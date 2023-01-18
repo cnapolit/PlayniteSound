@@ -100,6 +100,20 @@ namespace PlayniteSounds.Services.Files
 
         #endregion
 
+        #region SelectStartSoundForGame
+
+        public void SelectStartSoundForGame(Game game)
+        {
+            var filePath = _promptFactory.PromptForAudioFile().FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(filePath))
+            {
+                _fileManager.SelectStartSoundForGame(game, filePath);
+            }
+        }
+
+        #endregion
+
         #region SelectMusicForDefault
 
         public void SelectMusicForDefault()

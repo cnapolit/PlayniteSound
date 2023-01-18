@@ -17,6 +17,7 @@ namespace PlayniteSounds.Services.Files
         IEnumerable<string> SelectMusicForDefault(IEnumerable<string> files);
         IEnumerable<string> SelectMusicForFilter(FilterPreset filter, IEnumerable<string> files);
         IEnumerable<string> SelectMusicForGame(Game game, IEnumerable<string> files);
+        string SelectStartSoundForGame(Game game, string file);
         IEnumerable<string> SelectMusicForPlatform(Platform platform, IEnumerable<string> files);
     }
 }

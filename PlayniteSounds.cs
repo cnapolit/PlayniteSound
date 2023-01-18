@@ -114,7 +114,7 @@ namespace PlayniteSounds
             => _playniteEventHandler.OnGameStarted();
 
         public override void OnGameStarting(OnGameStartingEventArgs args)
-            => _playniteEventHandler.OnGameStarting();
+            => _playniteEventHandler.OnGameStarting(args.Game);
 
         public override void OnGameStopped(OnGameStoppedEventArgs args)
             => _playniteEventHandler.OnGameStopped();

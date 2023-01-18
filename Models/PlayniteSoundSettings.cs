@@ -22,6 +22,7 @@ namespace PlayniteSounds.Models
         public bool YtPlaylists { get; set; } = true;
         public bool NormalizeMusic { get; set; } = true;
         public bool TagNormalizedGames { get; set; }
+        public bool PerGameStartSound { get; set; } = true;
         public string FFmpegPath { get; set; }
         public string FFmpegNormalizePath { get; set; }
         public string FFmpegNormalizeArgs { get; set; }

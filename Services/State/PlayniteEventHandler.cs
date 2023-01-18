@@ -104,14 +104,14 @@ namespace PlayniteSounds.Services.State
 
         #region OnGameStarting
 
-        public void OnGameStarting()
+        public void OnGameStarting(Game game)
         {
             if (!_settings.StopMusic)
             {
                 _musicPlayer.Pause(true);
             }
 
-            _soundPlayer.PlayGameStarting();
+            _soundPlayer.PlayGameStarting(game);
         }
 
         #endregion

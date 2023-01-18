@@ -71,6 +71,12 @@ namespace PlayniteSounds.Services.UI
 
         #endregion
 
+        #region PromptForAudioFile
+
+        public IEnumerable<string> PromptForAudioFile() => _dialogs.SelectFiles("ALL|*.*") ?? new List<string>();
+
+        #endregion
+
         #region CreateGlobalProgress
 
         public void CreateGlobalProgress(string progressSubTitle, Action<GlobalProgressActionArgs, string> action)

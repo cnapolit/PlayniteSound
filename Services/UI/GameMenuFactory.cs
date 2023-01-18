@@ -71,6 +71,10 @@ namespace PlayniteSounds.Services.UI
             if (_api.SingleGame())
             {
                 var game = _api.SelectedGames().First();
+
+                yield return ConstructGameMenuItem(
+                    "Select 'GameStarting' sound", _ => _fileMutationService.SelectStartSoundForGame(game));
+
                 var files = Directory.GetFiles(_fileManager.CreateMusicDirectory(game));
                 if (files.Any())
                 {
