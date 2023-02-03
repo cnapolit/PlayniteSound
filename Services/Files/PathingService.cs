@@ -71,6 +71,9 @@ namespace PlayniteSounds.Services.Files
         public string[] GetDefaultMusicFiles()
             => GetDirectoryFiles(DefaultMusicPath);
 
+        public string[] GetSoundFiles()
+            => GetDirectoryFiles(SoundDirectory.Sound);
+
         #region Helpers
 
         private string[] GetDirectoryFiles(string directory) 

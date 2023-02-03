@@ -53,13 +53,17 @@ namespace PlayniteSounds.Views.Models
             => new RelayCommand<object>(url => Process.Start((url as Uri).AbsoluteUri));
 
         private readonly PlayniteSounds _plugin;
+        private readonly ModeSettingsModel _desktopSettings;
+        private readonly ModeSettingsModel _fullscreenSettings;
 
-
-        public PlayniteSoundsSettingsViewModel(PlayniteSounds plugin, PlayniteSoundsSettings settings, IMusicPlayer musicPlayer)
+        public PlayniteSoundsSettingsViewModel(
+            PlayniteSounds plugin, PlayniteSoundsSettings settings, IMusicPlayer musicPlayer)
         {
             _plugin = plugin;
             _musicPlayer = musicPlayer;
             _settings = settings;
+            _desktopSettings = new ModeSettingsModel(settings.DesktopSettings);
+            _fullscreenSettings = new ModeSettingsModel(settings.FullscreenSettings);
         }
 
         // Use serialization for a deep copy of Settings

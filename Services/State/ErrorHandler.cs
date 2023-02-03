@@ -28,9 +28,37 @@ namespace PlayniteSounds.Services.State
 
         #endregion
 
-        #region Try
+        #region Try(Action action)
 
         public void Try(Action action) { try { action(); } catch (Exception ex) { HandleException(ex); } }
+
+        #endregion
+
+        #region Try<T>(Action action)
+
+        public void Try<T>(Action<T> action, T arg)
+        {
+            try { action(arg); } 
+            catch (Exception ex) { HandleException(ex); } 
+        }
+
+        #endregion
+
+        #region Try<T>(Func action)
+
+        public T Try<T>(Func<T> action)
+        { 
+            try { return action(); } 
+            catch (Exception ex) { HandleException(ex); } 
+            return default;
+        }
+
+        #endregion
+
+        #region Try(Action action, Action final)
+
+        public void Try(Action action, Action final) 
+        { try { action(); } catch (Exception ex) { HandleException(ex); } finally { final(); } }
 
         #endregion
 

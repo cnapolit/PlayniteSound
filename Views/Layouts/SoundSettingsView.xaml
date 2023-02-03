@@ -3,61 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:common="clr-namespace:PlayniteSounds.Common"
-             xmlns:Models="clr-namespace:PlayniteSounds.Views.Models"
-             d:DataContext="{d:DesignInstance Type=Models:PlayniteSoundsSettingsViewModel}"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
-    <StackPanel Margin="2">
-        <GroupBox Name="GrpSettings" Header="{DynamicResource LOC_PLAYNITESOUNDS_Settings}" Margin="0,5,0,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="160"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition Height="5"/>
-                    <RowDefinition/>
-                    <RowDefinition Height="5"/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <Label Grid.Row="0"  Name="LblSoundWhere" Content="{DynamicResource LOC_PLAYNITESOUNDS_SoundWhere}" d:LayoutOverrides="VerticalAlignment"/>
-                <ComboBox Grid.Row="0" Grid.Column="1" Name="CmbSoundWhere" SelectedIndex="{Binding Settings.SoundState, Converter={common:AudioStateConverter}}" Height="20">
-                    <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbItemNever}"/>
-                    <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbItemDesktop}"/>
-                    <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbItemFullscreen}"/>
-                    <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbItemDesktopFullscreen}"/>
-                </ComboBox>
-                <CheckBox Name="ChkSkipFirstSelectSound" Grid.Row="10" Grid.ColumnSpan="2" IsChecked="{Binding Settings.SkipFirstSelectSound}" Content="{DynamicResource LOC_PLAYNITESOUNDS_ChkSkipFirstSelectSound}"/>
-            </Grid>
-        </GroupBox>
-        <GroupBox Name="GrpActions" Header="{DynamicResource LOC_PLAYNITESOUNDS_Actions}" Margin="0,5,0,0">
-            <StackPanel Orientation="Horizontal">
-                <Button Name="ButReloadAudio" Content="{DynamicResource LOC_PLAYNITESOUNDS_ActionsReloadAudioFiles}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButReloadAudio_Click"/>
-                <Button Name="ButOpenSoundsFolder" Content="{DynamicResource LOC_PLAYNITESOUNDS_ActionsOpenSoundsFolder}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButOpenSoundsFolder_Click"/>
-                <Button Name="ButOpenMusicFolder" Content="{DynamicResource LOC_PLAYNITESOUNDS_ActionsOpenMusicFolder}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButOpenMusicFolder_Click"/>
-                <Button Name="ButOpenInfo" Content="{DynamicResource LOC_PLAYNITESOUNDS_ActionsHelp}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButOpenInfo_Click"/>
-            </StackPanel>
-        </GroupBox>
-        <GroupBox Name="GrpManager" Header="{DynamicResource LOC_PLAYNITESOUNDS_Manager}" Margin="0,5,0,0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition Height="10"/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <StackPanel Grid.Row="0" Orientation="Horizontal">
-                    <Button Name="ButLoadSounds" Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerLoad}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButLoadSounds_Click"/>
-                    <Button Name="ButSaveSounds" Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerSave}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButSaveSounds_Click"/>
-                    <Button Name="ButRemoveSounds" Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerRemove}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButRemoveSounds_Click"/>
-                </StackPanel>
-                <Separator Grid.Row="1"/>
-                <StackPanel Grid.Row="2" Orientation="Horizontal">
-                    <Button Name="ButImportSounds" Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerImport}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButImportSounds_Click"/>
-                    <Button Name="ButOpenSoundManagerFolder" Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerOpenManagerFolder}" HorizontalAlignment="Left" Margin="2" VerticalAlignment="Center" Click="ButOpenSoundManagerFolder_Click"/>
-                </StackPanel>
-            </Grid>
-        </GroupBox>
-    </StackPanel>
+    <TabControl x:Name="Tabs"/>
 </UserControl>

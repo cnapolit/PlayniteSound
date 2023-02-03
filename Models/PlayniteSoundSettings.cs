@@ -3,12 +3,13 @@ using System.Collections.Generic;
 
 namespace PlayniteSounds.Models
 {
-    public class PlayniteSoundsSettings
+    public class PlayniteSoundsSettings : ObservableObject
     {
         public AudioState MusicState { get; set; } = AudioState.Always;
         public AudioState SoundState { get; set; } = AudioState.Always;
         public MusicType MusicType { get; set; } = MusicType.Game;
-        public int MusicVolume { get; set; } = 25;
+        public ModeSettings DesktopSettings { get; set; }
+        public ModeSettings FullscreenSettings { get; set; }
         public bool StopMusic { get; set; } = true;
         public bool SkipFirstSelectSound { get; set; }
         public bool PlayBackupMusic { get; set; }

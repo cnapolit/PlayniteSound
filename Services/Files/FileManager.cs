@@ -112,8 +112,9 @@ namespace PlayniteSounds.Services.Files
 
         public string SelectStartSoundForGame(Game game, string file)
         {
-            var dir = Directory.CreateDirectory(Path.Combine(CreateMusicDirectory(game), SoundDirectory.StartingSoundFolder));
-            return CopyFileToDirectory(dir.FullName, file);
+            var dir = Path.Combine(CreateMusicDirectory(game), SoundDirectory.StartingSoundFolder);
+            Directory.CreateDirectory(dir);
+            return CopyFileToDirectory(dir, file);
         }
 
         #endregion

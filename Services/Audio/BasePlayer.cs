@@ -9,13 +9,15 @@ namespace PlayniteSounds.Services.Audio
     {
         #region Infrastructure
 
-        private   readonly bool                   _isDesktop;
-        protected          PlayniteSoundsSettings _settings;
+        protected readonly bool                   _isDesktop;
+        protected readonly PlayniteSoundsSettings _settings;
+        protected readonly ModeSettings           _modeSettings;
 
         public BasePlayer(PlayniteSoundsSettings settings, bool isDekstop)
         {
             _settings = settings;
             _isDesktop = isDekstop;
+            _modeSettings = isDekstop ? settings.DesktopSettings : settings.FullscreenSettings;
         }
 
         #endregion
@@ -28,12 +30,10 @@ namespace PlayniteSounds.Services.Audio
             var playOnBoth = state == AudioState.Always;
             var playOnDesktop = _isDesktop && state == AudioState.Desktop;
 
-            var isInForeground = !_settings.PauseOnDeactivate || PlayniteIsInForeground();
-
-            return (playOnFullScreen || playOnBoth || playOnDesktop) && isInForeground;
+            return playOnFullScreen || playOnBoth || playOnDesktop;
         }
 
-        private static bool PlayniteIsInForeground()
+        protected static bool PlayniteIsInForeground()
         {
             var foregroundHandle = User32.GetForegroundWindow();
 
