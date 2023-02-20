@@ -2,7 +2,7 @@
 
 namespace PlayniteSounds.Services.Files
 {
-    internal interface IMusicFileSelector
+    public interface IMusicFileSelector
     {
         (string[], MusicType) GetBackupFiles();
         string SelectFile(string[] files, string previousMusicFile, bool musicEnded);

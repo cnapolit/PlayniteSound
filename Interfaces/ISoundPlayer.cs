@@ -15,7 +15,7 @@ namespace PlayniteSounds.Services.Audio
         void PlayGameStarted();
         void PlayGameStopped();
         void PlayLibraryUpdated();
-        void Preview(SoundType soundType);
+        void Preview(SoundType soundType, bool playDesktop);
         void Close();
     }
 }

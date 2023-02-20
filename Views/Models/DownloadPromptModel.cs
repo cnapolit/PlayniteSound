@@ -2,7 +2,6 @@
 using Playnite.SDK.Models;
 using PlayniteSounds.Common;
 using PlayniteSounds.Common.Constants;
-using PlayniteSounds.Common.Extensions;
 using PlayniteSounds.Files.Download;
 using PlayniteSounds.Models;
 using PlayniteSounds.Services.Files;
@@ -17,7 +16,7 @@ using System.Windows;
 namespace PlayniteSounds.Views.Models
 {
 
-    internal class DownloadPromptModel : INotifyPropertyChanged
+    public class DownloadPromptModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)

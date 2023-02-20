@@ -2,7 +2,7 @@
 
 namespace PlayniteSounds.Common.Constants
 {
-    internal static class App
+    public static class App
     {
         public const string AppName = "Playnite Sounds";
         public const string MainMenuName = "@" + AppName;

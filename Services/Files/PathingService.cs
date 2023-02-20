@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace PlayniteSounds.Services.Files
 {
-    internal class PathingService : IPathingService
+    public class PathingService : IPathingService
     {
         #region Infrastructure
 

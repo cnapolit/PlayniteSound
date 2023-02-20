@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace PlayniteSounds.Services.State
 {
-    internal class ErrorHandler : IErrorHandler
+    public class ErrorHandler : IErrorHandler
     {
         #region Infrastructure
 

@@ -2,7 +2,7 @@
 
 namespace PlayniteSounds.Common.Utilities
 {
-    internal static class CommonUtilties
+    public static class CommonUtilties
     {
         public static void Try(Action action) { try { action(); } catch { } }
         public static void Try(Action action, Action<Exception> handler)

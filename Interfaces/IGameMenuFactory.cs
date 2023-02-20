@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PlayniteSounds.Services.UI
 {
-    internal interface IGameMenuFactory
+    public interface IGameMenuFactory
     {
         IEnumerable<GameMenuItem> GetGameMenuItems(GetGameMenuItemsArgs __);
     }

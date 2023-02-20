@@ -7,7 +7,7 @@ using System.Windows;
 
 namespace PlayniteSounds.Services.UI
 {
-    internal class PromptFactory : IPromptFactory
+    public class PromptFactory : IPromptFactory
     {
         #region Infrastructure
 
@@ -67,7 +67,7 @@ namespace PlayniteSounds.Services.UI
 
         #region PromptForMp3
 
-        public IEnumerable<string> PromptForMp3() => _dialogs.SelectFiles("MP3 File|*.mp3") ?? new List<string>();
+        public IEnumerable<string> PromptForMp3() => _dialogs.SelectFiles("Any|*.*") ?? new List<string>();
 
         #endregion
 

@@ -32,6 +32,15 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug Full|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug Full\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="AngleSharp, Version=0.17.1.0, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
       <HintPath>packages\AngleSharp.0.17.1\lib\net461\AngleSharp.dll</HintPath>
@@ -130,7 +139,12 @@
     <Compile Include="Common\Imports\User32.cs" />
     <Compile Include="Common\ObjectUtilities.cs" />
     <Compile Include="Common\StringUtilities.cs" />
+    <Compile Include="Common\Utilities\EnumUtilities.cs" />
     <Compile Include="Common\Utilities\CommonUtilties.cs" />
+    <Compile Include="Models\UIState.cs" />
+    <Compile Include="Services\Installers\Installation.cs" />
+    <Compile Include="Services\Installers\PlayniteInstaller.cs" />
+    <Compile Include="Services\Installers\ServiceInstaller.cs" />
     <Compile Include="Interfaces\ISoundPlayer.cs" />
     <Compile Include="Interfaces\IErrorHandler.cs" />
     <Compile Include="Interfaces\IFileManager.cs" />
@@ -150,7 +164,6 @@
     <Compile Include="Interfaces\IDownloadManager.cs" />
     <Compile Include="Services\Files\Download\Downloaders\KHDownloader.cs" />
     <Compile Include="Models\Album.cs" />
-    <Compile Include="Models\AudioState.cs" />
     <Compile Include="Models\DownloadItem.cs" />
     <Compile Include="Models\GenericObjectOption.cs" />
     <Compile Include="Models\Source.cs" />
@@ -160,13 +173,18 @@
     <Compile Include="Models\PlayerEntry.cs" />
     <Compile Include="Interfaces\IMusicFileSelector.cs" />
     <Compile Include="Services\Files\MusicFileSelector.cs" />
+    <Compile Include="Services\Installers\ViewInstaller.cs" />
     <Compile Include="Services\UI\GameViewControlFactory.cs" />
+    <Compile Include="Interfaces\IGameViewControlFactory.cs" />
     <Compile Include="Services\UI\Localization.cs" />
     <Compile Include="PlayniteSounds.cs" />
     <Compile Include="Views\Layouts\DefaultSoundSettingsView.xaml.cs">
       <DependentUpon>DefaultSoundSettingsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Layouts\DownloadPrompt.xaml.cs" />
+    <Compile Include="Views\Layouts\GameViewControls\HandlerControl.xaml.cs">
+      <DependentUpon>HandlerControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Layouts\GameViewControls\PlayerControl.xaml.cs">
       <DependentUpon>PlayerControl.xaml</DependentUpon>
     </Compile>
@@ -180,6 +198,7 @@
       <DependentUpon>SoundModeSettingsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Models\DownloadPromptModel.cs" />
+    <Compile Include="Views\Models\GameViewControls\HandlerControlModel.cs" />
     <Compile Include="Views\Models\GameViewControls\PlayerControlModel.cs" />
     <Compile Include="Views\Models\ModeSettingsModel.cs" />
     <Compile Include="Views\Models\PlayniteSoundsSettingsViewModel.cs" />
@@ -416,6 +435,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Layouts\DownloadPrompt.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Layouts\GameViewControls\HandlerControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

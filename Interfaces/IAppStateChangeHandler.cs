@@ -3,7 +3,7 @@ using System;
 
 namespace PlayniteSounds.Services.State
 {
-    internal interface IAppStateChangeHandler
+    public interface IAppStateChangeHandler
     {
         void OnApplicationActivate(object sender, EventArgs e);
         void OnApplicationDeactivate(object sender, EventArgs e);

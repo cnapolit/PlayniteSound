@@ -6,22 +6,28 @@ namespace PlayniteSounds.Views.Models
 {
     public class ModeSettingsModel : ObservableObject
     {
-        private readonly ModeSettings _settings;
+        private          ModeSettings _settings;
         public ModeSettings Settings
         {
             get => _settings;
             set
             {
-                // Copying allows changes to propagate across the plugin due to this instance being singleton
-                _settings.Copy(value);
+                if (_settings is null)
+                {
+                    // Allow main model to pass in value
+                    _settings = value;
+                }
+                else
+                {
+                    // Copying allows changes to propagate across the plugin due to the settings being singleton
+                    _settings.Copy(value);
+                }
+
                 OnPropertyChanged();
             }
         }
 
-        public ModeSettingsModel(ModeSettings settings)
-            => _settings = settings;
-
-        public double GameUninstalledPercent
+        public int GameUninstalledPercent
         {
             get => (int)(_settings.GameUninstalledVolume * 100);
             set
@@ -120,6 +126,5 @@ namespace PlayniteSounds.Views.Models
                 OnPropertyChanged();
             }
         }
-
     }
 }

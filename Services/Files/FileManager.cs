@@ -10,7 +10,7 @@ using File = System.IO.File;
 
 namespace PlayniteSounds.Services.Files
 {
-    internal class FileManager : IFileManager
+    public class FileManager : IFileManager
     {
         #region Infrastructure
 

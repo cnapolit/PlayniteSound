@@ -3,7 +3,7 @@ using PlayniteSounds.Models;
 
 namespace PlayniteSounds.Files.Download
 {
-    internal interface IDownloadManager
+    public interface IDownloadManager
     {
         Album BestAlbumPick(IEnumerable<Album> albums, string gameName, string regexGameName);
         Song BestSongPick(IEnumerable<Song> songs, string regexGameName);

@@ -9,7 +9,7 @@ using System.IO;
 
 namespace PlayniteSounds.Services.UI
 {
-    internal abstract class BaseMenuFactory
+    public abstract class BaseMenuFactory
     {
         #region Infrastructure
 

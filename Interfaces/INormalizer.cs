@@ -1,6 +1,6 @@
 ﻿namespace PlayniteSounds.Services.Files
 {
-    internal interface INormalizer
+    public interface INormalizer
     {
         bool NormalizeAudioFile(string filePath);
     }

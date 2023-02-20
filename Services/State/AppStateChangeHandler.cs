@@ -6,7 +6,7 @@ using System.Windows;
 
 namespace PlayniteSounds.Services.State
 {
-    internal class AppStateChangeHandler : IAppStateChangeHandler
+    public class AppStateChangeHandler : IAppStateChangeHandler
     {
         #region Infrastructure
 

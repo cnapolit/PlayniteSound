@@ -7,7 +7,7 @@ using PlayniteSounds.Models;
 
 namespace PlayniteSounds.Services.Files
 {
-    internal class Normalizer : INormalizer
+    public class Normalizer : INormalizer
     {
         #region Infrastructure
 

@@ -17,7 +17,7 @@ using System.Windows;
 
 namespace PlayniteSounds.Services.UI
 {
-    internal class GameMenuFactory : BaseMenuFactory, IGameMenuFactory
+    public class GameMenuFactory : BaseMenuFactory, IGameMenuFactory
     {
         #region Infrastructure
 

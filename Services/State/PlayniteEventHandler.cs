@@ -5,21 +5,22 @@ using System.Linq;
 using PlayniteSounds.Services.Audio;
 using System.Windows;
 using PlayniteSounds.Services.Files;
-using PlayniteSounds.Common.Extensions;
 using Playnite.SDK.Events;
 using Playnite.SDK.Models;
 using PlayniteSounds.Common.Constants;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using Playnite.SDK.Plugins;
 
 namespace PlayniteSounds.Services.State
 {
-    internal class PlayniteEventHandler : IPlayniteEventHandler
+    public class PlayniteEventHandler : IPlayniteEventHandler
     {
         #region Infrastructure
 
-        private readonly IPlayniteAPI           _api;
+        private readonly IMainViewAPI           _mainViewAPI;
+        private readonly IGameDatabaseAPI       _gameDatabaseAPI;
         private readonly IMusicPlayer           _musicPlayer;
         private readonly ISoundPlayer           _soundPlayer;
         private readonly IAppStateChangeHandler _appStateChangeHandler;
@@ -31,7 +32,9 @@ namespace PlayniteSounds.Services.State
         private          bool                   _appStartedCompleted;
 
         public PlayniteEventHandler(
-            IPlayniteAPI api,
+            IMainViewAPI mainViewAPI,
+            IGameDatabaseAPI gameDatabaseAPI,
+            IUriHandlerAPI uriHandlerAPI,
             IAppStateChangeHandler appStateChangeHandler,
             IMusicPlayer musicPlayer,
             ISoundPlayer audioPlayer,
@@ -40,7 +43,8 @@ namespace PlayniteSounds.Services.State
             IPathingService pathingService,
             PlayniteSoundsSettings settings)
         {
-            _api = api;
+            _mainViewAPI = mainViewAPI;
+            _gameDatabaseAPI = gameDatabaseAPI;
             _appStateChangeHandler = appStateChangeHandler;
             _musicPlayer = musicPlayer;
             _soundPlayer = audioPlayer;
@@ -49,11 +53,11 @@ namespace PlayniteSounds.Services.State
             _pathingService = pathingService;
             _settings = settings;
 
-            api.Database.Games.ItemCollectionChanged += UpdateGames;
-            api.Database.Platforms.ItemCollectionChanged += UpdatePlatforms;
-            api.Database.FilterPresets.ItemCollectionChanged += UpdateFilters;
+            _gameDatabaseAPI.Games.ItemCollectionChanged += UpdateGames;
+            _gameDatabaseAPI.Platforms.ItemCollectionChanged += UpdatePlatforms;
+            _gameDatabaseAPI.FilterPresets.ItemCollectionChanged += UpdateFilters;
 
-            api.UriHandler.RegisterSource("Sounds", HandleUriEvent);
+            uriHandlerAPI.RegisterSource("Sounds", HandleUriEvent);
         }
 
         #endregion
@@ -82,7 +86,7 @@ namespace PlayniteSounds.Services.State
 
             if (_appStartedCompleted)
             {
-                _musicPlayer.Play(_api.SelectedGames());
+                _musicPlayer.Play(_mainViewAPI.SelectedGames);
             }
         }
 
@@ -128,13 +132,13 @@ namespace PlayniteSounds.Services.State
 
         #region OnApplicationStarted
 
-        public void OnApplicationStarted()
+        public void OnApplicationStarted(List<Plugin> plugins)
         {
             _fileManager.CopyAudioFiles();
 
             _soundPlayer.PlayAppStarted(AppStartedEnded);
 
-            _extraMetaDataPluginIsLoaded = _api.Addons.Plugins.Any(p => p.Id.ToString() is App.ExtraMetaGuid);
+            _extraMetaDataPluginIsLoaded = plugins.Any(p => p.Id.ToString() is App.ExtraMetaGuid);
 
             SystemEvents.PowerModeChanged += _appStateChangeHandler.OnPowerModeChanged;
             Application.Current.MainWindow.StateChanged += _appStateChangeHandler.OnWindowStateChanged;
@@ -145,7 +149,7 @@ namespace PlayniteSounds.Services.State
         private void AppStartedEnded(object _, EventArgs __)
         {
             _appStartedCompleted = true;
-            _musicPlayer.Play(_api.SelectedGames());
+            _musicPlayer.Play(_mainViewAPI.SelectedGames);
         }
 
         #endregion
@@ -163,26 +167,58 @@ namespace PlayniteSounds.Services.State
                 Application.Current.MainWindow.StateChanged -= _appStateChangeHandler.OnWindowStateChanged;
             }
 
-            _musicPlayer.Dispose();
             _soundPlayer.PlayAppStopped();
-            _soundPlayer.Close();
         }
 
         #region OnLibraryUpdated
 
-        public void OnLibraryUpdated()
+        public void OnLibraryUpdated(Action<PlayniteSoundsSettings> saveAction)
         {
             if (_settings.AutoDownload)
             {
-                var games = _api.Database.Games.Where(
+                var games = _gameDatabaseAPI.Games.Where(
                     x => x.Added != null && x.Added > _settings.LastAutoLibUpdateAssetsDownload);
                 _fileMutationService.CreateDownloadDialogue(games, Source.All);
+
+                // Cache time for next update event
+                _settings.LastAutoLibUpdateAssetsDownload = DateTime.Now;
+                saveAction(_settings);
             }
 
             _soundPlayer.PlayLibraryUpdated();
         }
 
         #endregion
+
+        #endregion
+
+        #region OnGameDetailsEntered
+
+        public void OnGameDetailsEntered()
+        {
+            _settings.UIState = UIState.GameDetails;
+            _musicPlayer.UIState = UIState.GameDetails;
+        }
+
+        #endregion
+
+        #region OnMainViewEntered
+
+        public void OnMainViewEntered()
+        {
+            _settings.UIState = UIState.Main;
+            _musicPlayer.UIState = UIState.Main;
+        }
+
+        #endregion
+
+        #region OnSettingsEntered
+
+        public void OnSettingsEntered()
+        {
+            _settings.UIState = UIState.Settings;
+            _musicPlayer.UIState = UIState.Settings;
+        }
 
         #endregion
 

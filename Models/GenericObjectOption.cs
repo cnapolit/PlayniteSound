@@ -2,7 +2,7 @@
 
 namespace PlayniteSounds.Models
 {
-    internal class GenericObjectOption : GenericItemOption
+    public class GenericObjectOption : GenericItemOption
     {
         public Source Source { get; set; }
         public object Object { get; set; }

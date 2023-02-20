@@ -2,13 +2,12 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:PlayniteSounds.Views.Layouts"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:Models="clr-namespace:PlayniteSounds.Views.Models"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=Models:ModeSettingsModel}"
              d:DesignHeight="450" d:DesignWidth="800">
-    <grid>
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300"/>
             <ColumnDefinition Width="*"/>
@@ -81,6 +80,7 @@
         <CheckBox Grid.Row="16" Grid.ColumnSpan="2" 
                   IsChecked="{Binding Settings.PlayLibraryUpdate}" 
                   Content="Play when the library finishes updating"/>
+        
         <StackPanel Grid.Row="18" Orientation="Horizontal">
             <Label Content="'Application Started' Volume" d:LayoutOverrides="VerticalAlignment"/>
             <Label Content=" "/>
@@ -188,11 +188,11 @@
         <StackPanel Grid.Row="34" Orientation="Horizontal">
             <Label Content="'Library Updated' Volume" d:LayoutOverrides="VerticalAlignment"/>
             <Label Content=" "/>
-            <Label Content="{Binding LibaryUpdatedPercent}" />
+            <Label Content="{Binding LibraryUpdatedPercent}" />
             <Label Content="%"/>
         </StackPanel>
         <Slider Grid.Row="34" Grid.Column="1" Maximum="100"
-                Value="{Binding LibaryUpdatedPercent}"  
+                Value="{Binding LibraryUpdatedPercent}"  
                 AutoToolTipPlacement="TopLeft"
                 Thumb.DragCompleted="PreviewLibaryUpdated"
                 IsEnabled="{Binding Settings.PlayLibraryUpdate}" 

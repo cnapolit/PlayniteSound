@@ -15,13 +15,6 @@ namespace PlayniteSounds.Common
         public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => (MusicType)value;
     }
 
-    public class AudioStateConverter : BaseValueConverter<AudioStateConverter>
-    {
-        public override object Convert(object value, Type targetType, object parameter, CultureInfo culture) => (int)value;
-
-        public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => (AudioState)value;
-    }
-
     public abstract class BaseValueConverter<T> : MarkupExtension, IValueConverter where T : class, new()
     {
         private static T _converter;

@@ -3,7 +3,7 @@ using PlayniteSounds.Models;
 
 namespace PlayniteSounds.Files.Download.Downloaders
 {
-    internal interface IDownloader
+    public interface IDownloader
     {
         string AlbumUrl(Album album);
         string SongUrl(Song song);

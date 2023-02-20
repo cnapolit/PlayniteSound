@@ -10,18 +10,18 @@ using PlayniteSounds.Common.Extensions;
 using PlayniteSounds.Common;
 using PlayniteSounds.Services.Audio;
 using System.IO;
-using Castle.Core.Internal;
 using PlayniteSounds.Files.Download;
 using PlayniteSounds.Services.Play;
+using PlayniteSounds.Common.Utilities;
 
 namespace PlayniteSounds.Services.Files
 {
-    internal class FileMutationService : IFileMutationService
+    public class FileMutationService : IFileMutationService
     {
         #region Infrastructure
 
         private static readonly ILogger                Logger            = LogManager.GetLogger();
-        private        readonly IPlayniteAPI           _api;
+        private        readonly IMainViewAPI           _mainViewAPI;
         private        readonly IDownloadManager       _downloadManager;
         private        readonly IErrorHandler          _errorHandler;
         private        readonly IFileManager           _fileManager;
@@ -33,7 +33,7 @@ namespace PlayniteSounds.Services.Files
         private        readonly PlayniteSoundsSettings _settings;
 
         public FileMutationService(
-            IPlayniteAPI api,
+            IMainViewAPI mainViewAPI,
             IDownloadManager downloadManager,
             IErrorHandler errorHandler,
             IFileManager fileManager,
@@ -44,7 +44,7 @@ namespace PlayniteSounds.Services.Files
             IMusicPlayer musicPlayer,
             PlayniteSoundsSettings settings)
         {
-            _api = api;
+            _mainViewAPI = mainViewAPI;
             _downloadManager = downloadManager;
             _errorHandler = errorHandler;
             _fileManager = fileManager;
@@ -65,9 +65,9 @@ namespace PlayniteSounds.Services.Files
         public void SelectMusicForPlatform(Platform platform)
         {
             var playNewMusic =
-                _settings.MusicType is MusicType.Platform
-                && _api.SingleGame()
-                && _api.SelectedGames().First().Platforms.Contains(platform);
+                   EnumUtilities.SoundsSettingsToMusicType(_settings) is MusicType.Platform
+                && _mainViewAPI.SingleGame()
+                && _mainViewAPI.SelectedGames.First().Platforms.Contains(platform);
 
             RestartMusicAfterSelect(
                 () => _fileManager.SelectMusicForPlatform(platform, _promptFactory.PromptForMp3()), playNewMusic);
@@ -82,7 +82,7 @@ namespace PlayniteSounds.Services.Files
             RestartMusicAfterSelect(
                 () => games.Select(
                     g => _fileManager.SelectMusicForGame(g, _promptFactory.PromptForMp3()).FirstOrDefault()),
-                games.Count() is 1 && _settings.MusicType is MusicType.Game);
+                games.Count() is 1 && EnumUtilities.SoundsSettingsToMusicType(_settings) is MusicType.Game);
 
             var gamesToNewFiles = games.ToDictionary(
                 g => g, g => _fileManager.SelectMusicForGame(g, _promptFactory.PromptForMp3()));
@@ -119,7 +119,7 @@ namespace PlayniteSounds.Services.Files
         public void SelectMusicForDefault()
             => RestartMusicAfterSelect(
                 () => _fileManager.SelectMusicForDefault(_promptFactory.PromptForMp3()),
-                _settings.MusicType is MusicType.Default);
+                EnumUtilities.SoundsSettingsToMusicType(_settings) is MusicType.Default);
 
         #endregion
 
@@ -127,8 +127,8 @@ namespace PlayniteSounds.Services.Files
 
         public void SelectMusicForFilter(FilterPreset filter)
         {
-            var playNewMusic = _settings.MusicType is MusicType.Filter
-                && _api.MainView.GetActiveFilterPreset() == filter.Id;
+            var playNewMusic = EnumUtilities.SoundsSettingsToMusicType(_settings) is MusicType.Filter
+                && _mainViewAPI.GetActiveFilterPreset() == filter.Id;
 
             RestartMusicAfterSelect(
                 () => _fileManager.SelectMusicForFilter(filter, _promptFactory.PromptForMp3()), playNewMusic);
@@ -201,7 +201,7 @@ namespace PlayniteSounds.Services.Files
             var failedGames = new List<string>();
 
             _promptFactory.CreateGlobalProgress(Resource.DialogMessageNormalizingFiles,(args, title)
-                => failedGames = NormalizeSelectedGameMusicFiles(args, _api.SelectedGames().ToList(), title));
+                => failedGames = NormalizeSelectedGameMusicFiles(args, _mainViewAPI.SelectedGames.ToList(), title));
 
             if (failedGames.Any())
             {
@@ -212,7 +212,7 @@ namespace PlayniteSounds.Services.Files
                 _promptFactory.ShowMessage(Resource.DialogMessageDone);
             }
 
-            _musicPlayer.Play(_api.SelectedGames());
+            _musicPlayer.Play(_mainViewAPI.SelectedGames);
         }
 
         private List<string> NormalizeSelectedGameMusicFiles(
@@ -279,7 +279,7 @@ namespace PlayniteSounds.Services.Files
             }
             else
             {
-                _musicPlayer.Play(_api.SelectedGames());
+                _musicPlayer.Play(_mainViewAPI.SelectedGames);
             }
         }
 
@@ -293,7 +293,7 @@ namespace PlayniteSounds.Services.Files
 
             Thread.Sleep(250);
 
-            _musicPlayer.Play(_api.SelectedGames());
+            _musicPlayer.Play(_mainViewAPI.SelectedGames);
         }
 
         private static string GenerateTitle(GlobalProgressActionArgs args, Game game, string progressTitle)

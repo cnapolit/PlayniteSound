@@ -1,17 +1,24 @@
 ﻿using Playnite.SDK.Models;
+using Playnite.SDK.Plugins;
+using PlayniteSounds.Models;
+using System;
+using System.Collections.Generic;
 
 namespace PlayniteSounds.Services.State
 {
-    internal interface IPlayniteEventHandler
+    public interface IPlayniteEventHandler
     {
-        void OnApplicationStarted();
+        void OnApplicationStarted(List<Plugin> plugins);
         void OnApplicationStopped();
+        void OnGameDetailsEntered();
         void OnGameInstalled();
         void OnGameSelected();
         void OnGameStarted();
         void OnGameStarting(Game game);
         void OnGameStopped();
         void OnGameUninstalled();
-        void OnLibraryUpdated();
+        void OnLibraryUpdated(Action<PlayniteSoundsSettings> saveAction);
+        void OnMainViewEntered();
+        void OnSettingsEntered();
     }
 }

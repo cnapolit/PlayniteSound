@@ -7,7 +7,7 @@ using PlayniteSounds.Common.Extensions;
 
 namespace PlayniteSounds.Common
 {
-    internal class StringUtilities
+    public class StringUtilities
     {
         private static readonly string[] StringsToRemove = { "-", ":"};
         private static readonly IDictionary<string, string> StringsToReplace

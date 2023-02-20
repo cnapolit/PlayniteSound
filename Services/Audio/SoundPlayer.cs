@@ -9,10 +9,11 @@ using PlayniteSounds.Services.Files;
 using Playnite.SDK.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace PlayniteSounds.Services.Audio
 {
-    internal class SoundPlayer : BasePlayer, ISoundPlayer
+    public class SoundPlayer : BasePlayer, ISoundPlayer
     {
         #region Infrastructure
 
@@ -24,20 +25,25 @@ namespace PlayniteSounds.Services.Audio
         public SoundPlayer(
             IErrorHandler errorHandler,
             IPathingService pathingService,
-            PlayniteSoundsSettings settings,
-            bool isDesktop) : base(settings, isDesktop)
+            PlayniteSoundsSettings settings) : base(settings)
         {
             _errorHandler = errorHandler;
             _pathingService = pathingService;
         }
 
-        ~SoundPlayer()
+        public override void Dispose()
         {
+            if (_disposed) return;
+
+            _disposed = true;
+            
             // Give AppStopped and any other sounds 5 seconds to finish
             for (var i = 0; _players.Any(e => e?.IsPlaying ?? false) && i < 50; i++)
             {
-                Task.Delay(100);
+                Thread.Sleep(100);
             }
+
+            Application.Current.Dispatcher.Invoke(Close);
         }
 
         #endregion
@@ -204,13 +210,45 @@ namespace PlayniteSounds.Services.Audio
 
         public void PlayLibraryUpdated() => PlaySound(_modeSettings.PlayLibraryUpdate, SoundType.LibraryUpdated);
 
-        public void Preview(SoundType soundType) => AttemptPlay(soundType);
+        public void Preview(SoundType soundType, bool playDesktop)
+        {
+            if (_settings.IsDesktop == playDesktop)
+            {
+                _errorHandler.Try(AttemptPlay, soundType);
+                return;
+            }
+
+            var prefix = playDesktop ? SoundFile.DesktopPrefix : SoundFile.FullScreenPrefix;
+            var baseFileName = SoundTypeToBaseFileName(soundType);
+            var filePath = Path.Combine(_pathingService.ExtraMetaDataFolder, SoundDirectory.Sound, prefix + baseFileName);
+
+            var mediaPlayer = new MediaPlayer();
+            mediaPlayer.Open(new Uri(filePath));
+            StartMedia(mediaPlayer, soundType);
+
+        }
+        
+        private static string SoundTypeToBaseFileName(SoundType soundType)
+        {
+            switch (soundType)
+            {
+                case SoundType.AppStarted:      return SoundFile. BaseApplicationStartedSound;
+                case SoundType.AppStopped:      return SoundFile. BaseApplicationStoppedSound;
+                case SoundType.GameStarting:    return SoundFile.       BaseGameStartingSound;
+                case SoundType.GameStarted:     return SoundFile.        BaseGameStartedSound;
+                case SoundType.GameStopped:     return SoundFile.        BaseGameStoppedSound;
+                case SoundType.GameSelected:    return SoundFile.       BaseGameSelectedSound;
+                case SoundType.GameInstalled:   return SoundFile.      BaseGameInstalledSound;
+                case SoundType.GameUninstalled: return SoundFile.    BaseGameUninstalledSound;
+                default:                        return SoundFile.     BaseLibraryUpdatedSound;
+            }
+        }
 
         #region Helpers
 
         private void HandlePlayAction(bool playEnabled, Action action)
         {
-            if (playEnabled && ShouldPlayAudio(_settings.SoundState))
+            if (playEnabled)
             {
                 _errorHandler.Try(action);
             }
@@ -231,10 +269,15 @@ namespace PlayniteSounds.Services.Audio
 
         private void StartMedia(PlayerEntry entry, SoundType soundType)
         {
-            entry.MediaPlayer.Stop();
-            entry.MediaPlayer.Volume = SoundTypeToVolume(soundType);
             entry.IsPlaying = true;
-            entry.MediaPlayer.Play();
+            StartMedia(entry.MediaPlayer, soundType);
+        }
+
+        private void StartMedia(MediaPlayer player, SoundType soundType)
+        {
+            player.Stop();
+            player.Volume = SoundTypeToVolume(soundType);
+            player.Play();
         }
 
         private void MediaEnded(object sender, EventArgs args)

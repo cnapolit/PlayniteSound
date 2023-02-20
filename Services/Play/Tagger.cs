@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PlayniteSounds.Services.Play
 {
-    internal class Tagger : ITagger
+    public class Tagger : ITagger
     {
         #region Infrastructure
 

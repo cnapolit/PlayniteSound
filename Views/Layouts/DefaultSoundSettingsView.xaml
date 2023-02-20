@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:common="clr-namespace:PlayniteSounds.Common"
              xmlns:Models="clr-namespace:PlayniteSounds.Views.Models"
              d:DataContext="{d:DesignInstance Type=Models:PlayniteSoundsSettingsViewModel}"
              mc:Ignorable="d" 
@@ -19,21 +18,9 @@
                     <RowDefinition/>
                     <RowDefinition Height="5"/>
                     <RowDefinition/>
-                    <RowDefinition Height="5"/>
-                    <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Label Grid.Row="0"  Name="LblSoundWhere" 
-                       Content="{DynamicResource LOC_PLAYNITESOUNDS_SoundWhere}" d:LayoutOverrides="VerticalAlignment"/>
-                <ComboBox Grid.Row="0" Grid.Column="1" Name="CmbSoundWhere" 
-                          SelectedIndex="{Binding Settings.SoundState, Converter={common:AudioStateConverter}}" 
-                          Height="20">
-                    <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbItemNever}"/>
-                    <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbItemDesktop}"/>
-                    <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbItemFullscreen}"/>
-                    <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbItemDesktopFullscreen}"/>
-                </ComboBox>
                 <CheckBox Name="ChkSkipFirstSelectSound" 
-                          Grid.Row="2" Grid.ColumnSpan="2" 
+                          Grid.Row="0" Grid.ColumnSpan="2" 
                           IsChecked="{Binding Settings.SkipFirstSelectSound}" 
                           Content="{DynamicResource LOC_PLAYNITESOUNDS_ChkSkipFirstSelectSound}"/>
             </Grid>

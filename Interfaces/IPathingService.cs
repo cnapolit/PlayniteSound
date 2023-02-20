@@ -3,7 +3,7 @@ using System;
 
 namespace PlayniteSounds.Services.Files
 {
-    internal interface IPathingService
+    public interface IPathingService
     {
         string ExtraMetaDataFolder { get; }
         string MusicFilesDataPath { get; }

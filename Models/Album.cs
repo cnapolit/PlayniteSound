@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace PlayniteSounds.Models
 {
-    internal class Album : DownloadItem
+    public class Album : DownloadItem
     {
         public string Type { get; set; }
         public string Url { get; set; }

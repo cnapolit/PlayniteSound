@@ -1,5 +1,4 @@
 ﻿using Playnite.SDK;
-using PlayniteSounds.Common.Extensions;
 using PlayniteSounds.Models;
 using PlayniteSounds.Services.Files;
 using System;
@@ -9,7 +8,7 @@ using System.Windows.Controls;
 
 namespace PlayniteSounds.Views.Models.GameViewControls
 {
-    internal class PlayerControlModel : ObservableObject
+    public class PlayerControlModel : ObservableObject
     {
         public IPlayniteAPI PlayniteAPI { get; set; }
         public IMusicFileSelector MusicFileSelector { get; set; }
@@ -49,9 +48,28 @@ namespace PlayniteSounds.Views.Models.GameViewControls
             }
         }
 
-        public string MusicFilePath { get; set; }
+        private string _musicFilePath;
+        public string MusicFilePath 
+        { 
+            get => _musicFilePath;
+            set
+            { 
+                _musicFilePath = value;
+                OnPropertyChanged();
+            }
+        }
         public bool HasMusic => !string.IsNullOrWhiteSpace(MusicFilePath);
-        public MusicType MusicType { get; set; }
+
+        private MusicType _musicType;
+        public MusicType MusicType
+        {
+            get => _musicType; 
+            set 
+            {
+                _musicType = value;
+                UpdateMusic();
+            } 
+        }
 
         public PlayerControlModel(
             IPlayniteAPI api, 
@@ -65,18 +83,32 @@ namespace PlayniteSounds.Views.Models.GameViewControls
             Settings = settings;
         }
 
+        public void Play(object sender, EventArgs e)
+        {
+            if (sender is MediaElement player)
+            {
+                player.Play();
+                Pause = false;
+            }
+        }
+
         public void OnEnd(object sender, EventArgs e)
         {
-            var media = sender as MediaElement;
-            media.Position = TimeSpan.Zero;
-
-            if (Settings.RandomizeOnMusicEnd) 
+            if (!Pause && sender is MediaElement player)
             {
-                MusicFilePath = MusicFileSelector.SelectFile(MusicTypeToFiles(), MusicFilePath, true);
-            }
+                player.Position = TimeSpan.Zero;
 
-            media.Play();
+                if (Settings.RandomizeOnMusicEnd) 
+                {
+                    UpdateMusic();
+                }
+
+                player.Play();
+            }
         }
+
+        public void UpdateMusic() 
+            => MusicFilePath = MusicFileSelector.SelectFile(MusicTypeToFiles(), MusicFilePath, true);
 
         private string[] MusicTypeToFiles()
         {

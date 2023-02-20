@@ -10,7 +10,7 @@ using PlayniteSounds.Files.Download.Downloaders;
 namespace PlayniteSounds.Files.Download
 {
 
-    internal class DownloadManager : IDownloadManager
+    public class DownloadManager : IDownloadManager
     {
         #region Infrastructure
 

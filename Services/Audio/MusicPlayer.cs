@@ -1,15 +1,17 @@
 ﻿using Playnite.SDK;
 using Playnite.SDK.Models;
+using PlayniteSounds.Common.Utilities;
 using PlayniteSounds.Models;
 using PlayniteSounds.Services.Files;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 using System.Windows.Media;
 
 namespace PlayniteSounds.Services.Audio
 {
-    internal class MusicPlayer : BasePlayer, IMusicPlayer
+    public class MusicPlayer : BasePlayer, IMusicPlayer
     {
         #region Infrastructure
 
@@ -44,47 +46,62 @@ namespace PlayniteSounds.Services.Audio
             }
         }
 
-        private readonly IMainViewAPI       _mainView;
-        private readonly IErrorHandler      _errorHandler;
-        private readonly IPathingService    _pathingService;
-        private readonly IMusicFileSelector _musicFileSelector;
-        private readonly MediaTimeline      _timeLine;
-        private readonly ISet<string>       _pausers            = new HashSet<string>();
-        private          MediaPlayer        _musicPlayer;
+        private UIState _uiState;
+        public UIState UIState
+        {
+            get => _uiState;
+            set
+            {
+                if (_uiState != value)
+                {
+                    _uiState = value;
 
-        private          Guid               _currentFilterGuid;
-        private          Platform           _currentPlatform;
-        private          MusicType          _lastPlayedType;
-        private          int                _gamesRunning;
-        private          bool               _disposed           = false;
+                    PlayNextFile(false);
+                }
+            }
+        }
+
+        private readonly IMainViewAPI _mainView;
+        private readonly IErrorHandler _errorHandler;
+        private readonly IPathingService _pathingService;
+        private readonly IMusicFileSelector _musicFileSelector;
+        private readonly ISet<string> _pausers = new HashSet<string>();
+
+        private MediaTimeline _timeLine;
+        private MediaPlayer _musicPlayer;
+
+        private          Guid _currentFilterGuid;
+        private          Platform _currentPlatform;
+        private          MusicType _lastPlayedType;
+        private          uint _gamesRunning;
 
         public MusicPlayer(
             IErrorHandler errorHandler,
             IPathingService pathingService,
             IPlayniteAPI api,
             IMusicFileSelector musicFileSelector,
-            PlayniteSoundsSettings _settings,
-            bool isDesktop) : base(_settings, isDesktop)
+            PlayniteSoundsSettings _settings) : base(_settings)
         {
             _errorHandler = errorHandler;
             _pathingService = pathingService;
             _mainView = api.MainView;
             _musicFileSelector = musicFileSelector;
-
-            _musicPlayer = new MediaPlayer();
-            _musicPlayer.MediaEnded += MediaEnded;
-            _timeLine = new MediaTimeline();
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (!_disposed)
             {
-                Close();
+                Application.Current.Dispatcher.Invoke(DisposePlayer);
                 _disposed = true;
-                _musicPlayer.MediaEnded -= MediaEnded;
-                _musicPlayer = null;
             }
+        }
+
+        private void DisposePlayer()
+        {
+            Close();
+            _musicPlayer.MediaEnded -= MediaEnded;
+            _musicPlayer = null;
         }
 
         #endregion
@@ -114,13 +131,13 @@ namespace PlayniteSounds.Services.Audio
 
         #endregion
 
-        #region ResetVolume
+        #region SetVolume
 
-        public void ResetVolume()
+        public void SetVolume(double volume)
         {
             if (_musicPlayer != null)
             {
-                _musicPlayer.Volume = _modeSettings.MusicVolume;
+                _musicPlayer.Volume = volume;
             }
         }
 
@@ -143,7 +160,7 @@ namespace PlayniteSounds.Services.Audio
 
         public void Pause(string pauser)
         {
-            _pausers.Add(pauser); 
+            _pausers.Add(pauser);
             PauseClock();
         }
 
@@ -153,7 +170,7 @@ namespace PlayniteSounds.Services.Audio
 
         public void Close()
         {
-            if (_musicPlayer.Clock != null)
+            if (_musicPlayer?.Clock != null)
             {
                 _errorHandler.Try(AttemptClose);
             }
@@ -216,12 +233,26 @@ namespace PlayniteSounds.Services.Audio
         private void AttemptPlay(string musicFile)
         {
             Close();
+
             if (!string.IsNullOrWhiteSpace(musicFile))
             {
+                LoadPlayer();
+
                 _timeLine.Source = new Uri(musicFile);
-                _musicPlayer.Volume = _modeSettings.MusicVolume;
+                _musicPlayer.Volume = _settings.ActiveModeSettings.MusicVolume;
                 _musicPlayer.Clock = _timeLine.CreateClock();
                 _musicPlayer.Clock.Controller.Begin();
+            }
+        }
+
+        private void LoadPlayer()
+        {
+            if (_musicPlayer is null)
+            {
+                // Defer loading until first use
+                _musicPlayer = new MediaPlayer();
+                _musicPlayer.MediaEnded += MediaEnded;
+                _timeLine = new MediaTimeline();
             }
         }
 
@@ -239,7 +270,10 @@ namespace PlayniteSounds.Services.Audio
         }
 
         private bool ShouldPlayMusic() 
-            => _pausers.Count is 0 && _gamesRunning is 0 && ShouldPlayAudio(_settings.MusicState);
+            => _pausers.Count is 0 
+            && _gamesRunning is 0 
+            && _settings.ActiveModeSettings.MusicEnabled 
+            && !_settings.ActiveModeSettings.IsThemeControlled;
 
         private void PlayNextFile(bool musicEnded)
         {
@@ -251,7 +285,10 @@ namespace PlayniteSounds.Services.Audio
         private string[] GetFiles()
         {
             string[] files;
-            switch (_settings.MusicType)
+
+            var musicType = EnumUtilities.SoundsSettingsToMusicType(_settings);
+
+            switch (musicType)
             {
                 case MusicType.Game:
                     files = _pathingService.GetGameMusicFiles(_currentGame);
@@ -287,25 +324,24 @@ namespace PlayniteSounds.Services.Audio
                     break;
             }
 
-            var typePlayed = _settings.MusicType;
-            if (_settings.PlayBackupMusic && !files.Any())
+            var typePlayed = musicType;
+            if (_settings.BackupMusicEnabled && !files.Any())
             {
                 (files, typePlayed) = _musicFileSelector.GetBackupFiles();
             }
 
-            // Playing intended type
             _lastPlayedType = typePlayed;
             return files;
         }
 
         private bool NewMusicSource<T>(T expected, T actual)
-            => _lastPlayedType != _settings.MusicType
-            || !expected.Equals(actual) 
+            => _lastPlayedType != _settings.ActiveModeSettings.MainMusicType
+            || !expected.Equals(actual)
             || string.IsNullOrWhiteSpace(_currentMusicFileName);
 
         private void PauseClock()
         {
-            if (_musicPlayer.Clock != null)
+            if (_musicPlayer?.Clock != null)
             {
                 _errorHandler.Try(_musicPlayer.Clock.Controller.Pause);
             }
@@ -313,6 +349,8 @@ namespace PlayniteSounds.Services.Audio
 
         private void StartClock()
         {
+            LoadPlayer();
+
             if (ShouldPlayMusic() && _musicPlayer.Clock != null)
             {
                 _errorHandler.Try(_musicPlayer.Clock.Controller.Resume);

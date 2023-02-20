@@ -15,6 +15,6 @@ namespace PlayniteSounds.Views.Layouts
         }
 
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-            => _musicPlayer.ResetVolume();
+            => _musicPlayer.SetVolume();
     }
 }

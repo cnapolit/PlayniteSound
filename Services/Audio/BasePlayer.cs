@@ -1,37 +1,28 @@
 ﻿using PlayniteSounds.Common.Imports;
 using PlayniteSounds.Models;
+using System;
 using System.Diagnostics;
 using System.Linq;
 
 namespace PlayniteSounds.Services.Audio
 {
-    internal abstract class BasePlayer
+    public abstract class BasePlayer : IDisposable
     {
         #region Infrastructure
 
-        protected readonly bool                   _isDesktop;
         protected readonly PlayniteSoundsSettings _settings;
-        protected readonly ModeSettings           _modeSettings;
+        protected          bool                   _disposed;
 
-        public BasePlayer(PlayniteSoundsSettings settings, bool isDekstop)
+        public BasePlayer(PlayniteSoundsSettings settings)
         {
             _settings = settings;
-            _isDesktop = isDekstop;
-            _modeSettings = isDekstop ? settings.DesktopSettings : settings.FullscreenSettings;
         }
+
+        public abstract void Dispose();
 
         #endregion
 
         #region Implementation
-
-        protected bool ShouldPlayAudio(AudioState state)
-        {
-            var playOnFullScreen = !_isDesktop && state == AudioState.Fullscreen;
-            var playOnBoth = state == AudioState.Always;
-            var playOnDesktop = _isDesktop && state == AudioState.Desktop;
-
-            return playOnFullScreen || playOnBoth || playOnDesktop;
-        }
 
         protected static bool PlayniteIsInForeground()
         {

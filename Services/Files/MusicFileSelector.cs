@@ -1,15 +1,23 @@
 ﻿using Playnite.SDK;
+using PlayniteSounds.Common.Utilities;
 using PlayniteSounds.Models;
 using System;
 using System.Linq;
 
 namespace PlayniteSounds.Services.Files
 {
-    internal class MusicFileSelector : IMusicFileSelector
+    public class MusicFileSelector : IMusicFileSelector
     {
         private readonly PlayniteSoundsSettings _settings;
         private readonly IPathingService _pathingService;
         private readonly IMainViewAPI _mainView;
+
+        public MusicFileSelector(IPathingService pathingService, IPlayniteAPI api, PlayniteSoundsSettings settings)
+        {
+            _pathingService= pathingService;
+            _mainView = api.MainView;
+            _settings= settings;
+        }
 
         private static readonly Random RNG = new Random();
         public string SelectFile(string[] files, string previousMusicFile, bool musicEnded)
@@ -29,7 +37,7 @@ namespace PlayniteSounds.Services.Files
         // Backup order is game -> filter -> default
         public (string[], MusicType) GetBackupFiles()
         {
-            if (_settings.MusicType != MusicType.Default)
+            if (EnumUtilities.SoundsSettingsToMusicType(_settings) != MusicType.Default)
             {
                 var filterFiles = _pathingService.GeFilterMusicFiles(_mainView.GetActiveFilterPreset());
                 if (filterFiles.Any())

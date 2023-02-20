@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PlayniteSounds.Services.Files
 {
-    internal interface IFileManager
+    public interface IFileManager
     {
         void CopyAudioFiles();
         string CreateFilterDirectory(FilterPreset filter);

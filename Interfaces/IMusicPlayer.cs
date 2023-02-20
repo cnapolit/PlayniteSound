@@ -1,13 +1,14 @@
 ﻿using Playnite.SDK.Models;
-using System;
+using PlayniteSounds.Models;
 using System.Collections.Generic;
 
 namespace PlayniteSounds.Services.Audio
 {
-    public interface IMusicPlayer : IDisposable
+    public interface IMusicPlayer
     {
         Game CurrentGame { get; set; }
         string CurrentMusicFile { set; }
+        UIState UIState { get; set; }
 
         void Close();
         void Pause(bool gameStarted);
@@ -15,6 +16,6 @@ namespace PlayniteSounds.Services.Audio
         void Play(IEnumerable<Game> games);
         void Resume(bool gameStopped);
         void Resume(string pauser);
-        void ResetVolume();
+        void SetVolume(double volume);
     }
 }

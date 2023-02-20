@@ -5,19 +5,13 @@ using System.Windows.Controls;
 using Playnite.SDK.Events;
 using PlayniteSounds.Common.Constants;
 using PlayniteSounds.Models;
-using PlayniteSounds.Services;
 using PlayniteSounds.Services.UI;
 using Castle.Windsor;
-using Castle.MicroKernel.Registration;
-using PlayniteSounds.Services.Files;
-using PlayniteSounds.Services.Audio;
-using PlayniteSounds.Common;
 using System.Collections.Generic;
 using PlayniteSounds.Views.Models;
 using PlayniteSounds.Views.Layouts;
 using PlayniteSounds.Services.State;
-using PlayniteSounds.Services.Play;
-using PlayniteSounds.Files.Download;
+using PlayniteSounds.Services.Installers;
 
 namespace PlayniteSounds
 {
@@ -25,70 +19,65 @@ namespace PlayniteSounds
     {
         #region Infrastructure
 
-        private readonly IWindsorContainer               _container;
-        private readonly IPlayniteEventHandler           _playniteEventHandler;
-        private readonly IGameMenuFactory                _gameMenuFactory;
-        private readonly IMainMenuFactory                _mainMenuFactory;
-        private readonly PlayniteSoundsSettingsViewModel _settingsModel;
+        private readonly IPlayniteAPI _api;
+        private readonly IWindsorContainer _container;
+
+        private readonly Lazy<IPlayniteEventHandler> _playniteEventHandler;
+        private IPlayniteEventHandler PlayniteEventHandler => _playniteEventHandler.Value;
+
+        private readonly Lazy<IGameMenuFactory> _gameMenuFactory;
+        private IGameMenuFactory GameMenuFactory => _gameMenuFactory.Value;
+
+        private readonly Lazy<IMainMenuFactory> _mainMenuFactory;
+        private IMainMenuFactory MainMenuFactory => _mainMenuFactory.Value;
+
+        private readonly Lazy<IGameViewControlFactory> _gameViewFactory;
+        private IGameViewControlFactory GameViewFactory => _gameViewFactory.Value;
+
 
         public PlayniteSounds(IPlayniteAPI api) : base(api)
         {
-            var isDesktop = api.ApplicationInfo.Mode is ApplicationMode.Desktop;
-            SoundFile.CurrentPrefix = isDesktop ? SoundFile.DesktopPrefix : SoundFile.FullScreenPrefix;
             Properties = new GenericPluginProperties
             {
                 HasSettings = true
             };
 
-            Localization.SetPluginLanguage(api.ApplicationSettings.Language);
+            AddCustomElementSupport(new AddCustomElementSupportArgs
+            {
+                ElementList = new List<string> 
+                { 
+                    "Player_Default",
+                    "Player_Filter",
+                    "Player_Platform",
+                    "Player_Game",
+                    "Handler"
+                },
+                SourceName = "Sounds"
+            });
 
-            _container = new WindsorContainer();
-
-            var isDesktopDependency = Dependency.OnValue("isDesktop", isDesktop);
             var settings = LoadPluginSettings<PlayniteSoundsSettings>() ?? new PlayniteSoundsSettings();
 
-            _container.Register(
-                RegisterSingleton<IAppStateChangeHandler, AppStateChangeHandler>(),
-                RegisterSingleton<IPlayniteEventHandler, PlayniteEventHandler>(),
-                RegisterSingleton<IGameMenuFactory, GameMenuFactory>(),
-                RegisterSingleton<IMainMenuFactory, MainMenuFactory>(),
-                RegisterSingleton<IFileMutationService, FileMutationService>(),
-                RegisterSingleton<IFileManager, FileManager>(),
-                RegisterSingleton<IPathingService, PathingService>(),
-                RegisterSingleton<INormalizer, Normalizer>(),
-                RegisterSingleton<IDownloadManager, DownloadManager>(),
-                RegisterSingleton<IPromptFactory, PromptFactory>(),
-                RegisterSingleton<IErrorHandler, ErrorHandler>(),
-                RegisterSingleton<ITagger, Tagger>(),
-                RegisterSingleton<ISoundManager, SoundManager>(),
-                RegisterInstance(this),
-                RegisterInstance(api),
-                RegisterInstance(settings),
-                Component.For<PlayniteSoundsSettingsViewModel>().LifestyleSingleton(),
-                Component.For<SoundSettingsView>(),
-                Component.For<MusicSettingsView>(),
-                Component.For<PlayniteSoundsSettingsView>(),
-                Component.For<IMusicPlayer>().
-                    ImplementedBy<MusicPlayer>().
-                    DependsOn(isDesktopDependency).
-                    LifestyleSingleton(),
-                Component.For<ISoundPlayer>().
-                    ImplementedBy<SoundPlayer>().
-                    DependsOn(isDesktopDependency).
-                    LifestyleSingleton());
+            // Set the 
+            settings.DesktopSettings.IsDesktop = true;
 
-            _settingsModel = _container.Resolve<PlayniteSoundsSettingsViewModel>();
-            _playniteEventHandler = _container.Resolve<IPlayniteEventHandler>();
-            _gameMenuFactory = _container.Resolve<IGameMenuFactory>();
-            _mainMenuFactory = _container.Resolve<IMainMenuFactory>();
+            var isDesktop = api.ApplicationInfo.Mode is ApplicationMode.Desktop;
+            settings. ActiveModeSettings = isDesktop ? settings.DesktopSettings : settings.FullscreenSettings;
+            SoundFile. CurrentPrefix     = isDesktop ? SoundFile.DesktopPrefix : SoundFile.FullScreenPrefix;
+
+            Localization.SetPluginLanguage(api.ApplicationSettings.Language);
+
+            // Install services
+            _container = Installation.RegisterInstallers(api, this, settings);
+
+            _playniteEventHandler = LazyResolve<IPlayniteEventHandler>();
+            _gameMenuFactory      = LazyResolve<IGameMenuFactory>();
+            _mainMenuFactory      = LazyResolve<IMainMenuFactory>();
+            _gameViewFactory      = LazyResolve<IGameViewControlFactory>();
         }
 
-        private static IRegistration RegisterSingleton<TInterface, TImplementation>() 
-          where TInterface : class
-          where TImplementation : TInterface
-            => Component.For<TInterface>().ImplementedBy<TImplementation>().LifestyleSingleton();
-        private static IRegistration RegisterInstance<T>(T instance) where T : class
-            => Component.For<T>().Instance(instance).LifestyleSingleton();
+        public override void Dispose() => _container.Dispose();
+
+        private Lazy<T> LazyResolve<T>() => new Lazy<T>(_container.Resolve<T>);
 
         #endregion
 
@@ -96,51 +85,47 @@ namespace PlayniteSounds
 
         public override Guid Id { get; } = Guid.Parse(App.AppGuid);
 
-        public override ISettings GetSettings(bool firstRunSettings) => _settingsModel;
+        public override ISettings GetSettings(bool firstRunSettings)
+            => _container.Resolve<PlayniteSoundsSettingsViewModel>();
 
         public override UserControl GetSettingsView(bool firstRunSettings)
             => _container.Resolve<PlayniteSoundsSettingsView>();
 
         public override void OnGameInstalled(OnGameInstalledEventArgs args)
-            => _playniteEventHandler.OnGameInstalled();
+            => _playniteEventHandler.Value.OnGameInstalled();
 
         public override void OnGameUninstalled(OnGameUninstalledEventArgs args)
-            => _playniteEventHandler.OnGameUninstalled();
+            => PlayniteEventHandler.OnGameUninstalled();
 
         public override void OnGameSelected(OnGameSelectedEventArgs args)
-            => _playniteEventHandler.OnGameSelected();
+            => PlayniteEventHandler.OnGameSelected();
 
         public override void OnGameStarted(OnGameStartedEventArgs args)
-            => _playniteEventHandler.OnGameStarted();
+            => PlayniteEventHandler.OnGameStarted();
 
         public override void OnGameStarting(OnGameStartingEventArgs args)
-            => _playniteEventHandler.OnGameStarting(args.Game);
+            => PlayniteEventHandler.OnGameStarting(args.Game);
 
         public override void OnGameStopped(OnGameStoppedEventArgs args)
-            => _playniteEventHandler.OnGameStopped();
+            => PlayniteEventHandler.OnGameStopped();
 
         public override void OnApplicationStarted(OnApplicationStartedEventArgs args)
-            => _playniteEventHandler.OnApplicationStarted();
+            => PlayniteEventHandler.OnApplicationStarted(_api.Addons.Plugins);
 
         public override void OnApplicationStopped(OnApplicationStoppedEventArgs args)
-            => _playniteEventHandler.OnApplicationStopped();
+            => PlayniteEventHandler.OnApplicationStopped();
 
         public override void OnLibraryUpdated(OnLibraryUpdatedEventArgs args)
-        {
-            _settingsModel.Settings.LastAutoLibUpdateAssetsDownload = DateTime.Now;
-            SavePluginSettings(_settingsModel.Settings);
-
-            _playniteEventHandler.OnLibraryUpdated();
-        }
-
-        public void UpdateSettings(PlayniteSoundsSettings settings) 
-            => _container.Resolve<PlayniteSoundsSettings>().Copy(settings);
+            => PlayniteEventHandler.OnLibraryUpdated(SavePluginSettings);
 
         public override IEnumerable<MainMenuItem> GetMainMenuItems(GetMainMenuItemsArgs args)
-            => _mainMenuFactory.GetMainMenuItems(args);
+            => MainMenuFactory.GetMainMenuItems(args);
 
         public override IEnumerable<GameMenuItem> GetGameMenuItems(GetGameMenuItemsArgs args)
-            => _gameMenuFactory.GetGameMenuItems(args);
+            => GameMenuFactory.GetGameMenuItems(args);
+
+        public override Control GetGameViewControl(GetGameViewControlArgs args)
+            => GameViewFactory.GetGameViewControl(args);
 
         #endregion
 

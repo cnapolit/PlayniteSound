@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace PlayniteSounds.Services.Files
 {
-    internal interface IFileMutationService
+    public interface IFileMutationService
     {
         void CreateDownloadDialogue(
             IEnumerable<Game> games,

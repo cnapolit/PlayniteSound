@@ -2,7 +2,7 @@
 
 namespace PlayniteSounds.Services.Play
 {
-    internal interface ITagger
+    public interface ITagger
     {
         void AddMissingTag(Game game);
         void UpdateMissingTag(Game game, bool fileCreated, string gameDirectory);

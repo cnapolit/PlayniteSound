@@ -3,7 +3,7 @@ using System.Windows.Controls;
 
 namespace PlayniteSounds.Views.Layouts
 {
-    public partial class PlayniteSoundsSettingsView
+    public partial class PlayniteSoundsSettingsView : UserControl
     {
         public PlayniteSoundsSettingsView(SoundSettingsView soundSettingsView, MusicSettingsView musicSettingsView)
         {

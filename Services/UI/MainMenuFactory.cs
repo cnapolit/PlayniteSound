@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace PlayniteSounds.Services.UI
 {
-    internal class MainMenuFactory : BaseMenuFactory, IMainMenuFactory
+    public class MainMenuFactory : BaseMenuFactory, IMainMenuFactory
     {
         #region Infrastructure
 

@@ -14,7 +14,7 @@ using PlayniteSounds.Services.Audio;
 
 namespace PlayniteSounds.Services.UI
 {
-    internal class SoundManager : ISoundManager
+    public class SoundManager : ISoundManager
     {
         #region Infrastructure
 

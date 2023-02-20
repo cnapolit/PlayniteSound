@@ -8,9 +8,8 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=model:PlayerControlModel}">
     <MediaElement Name="Player"
-                  Source="{Binding MusicFilePath}"
-                  LoadedBehavior="Play"
+                  LoadedBehavior="Manual"
                   UnloadedBehavior="Manual"
-                  MediaOpened="Start"
-                  MediaEnded="OnEnd"/>
+                  Source="{Binding MusicFilePath}">
+    </MediaElement>
 </PluginUserControl>

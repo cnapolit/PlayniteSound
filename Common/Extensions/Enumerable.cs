@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PlayniteSounds.Common.Extensions
 {
-    internal static class Enumerable
+    public static class Enumerable
     {
         public static bool ForAny<T>(this IEnumerable<T> data, Func<T, bool> func)
         {
