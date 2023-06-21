@@ -12,6 +12,7 @@ using PlayniteSounds.Views.Models;
 using PlayniteSounds.Views.Layouts;
 using PlayniteSounds.Services.State;
 using PlayniteSounds.Services.Installers;
+using System.Text.Json;
 
 namespace PlayniteSounds
 {
@@ -37,6 +38,10 @@ namespace PlayniteSounds
 
         public PlayniteSounds(IPlayniteAPI api) : base(api)
         {
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+            {
+                return args.Name.StartsWith("System.Text.Json") ? typeof(JsonSerializer).Assembly : null;
+            };
             Properties = new GenericPluginProperties
             {
                 HasSettings = true
