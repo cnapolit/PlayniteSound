@@ -195,7 +195,7 @@ namespace PlayniteSounds.Views.Models
             PlayniteAPI = api;
             DownloadManager = downloadManager;
             FileManager = fileManager;
-            Games = api.SelectedGames().GetEnumerator();
+            Games = api.MainView.SelectedGames.GetEnumerator();
             GetNextGame();
         }
 

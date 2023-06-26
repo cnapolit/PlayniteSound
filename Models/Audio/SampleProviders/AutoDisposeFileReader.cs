@@ -25,8 +25,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
             var read = _reader.Read(buffer, offset, count);
             if (read == 0)
             {
-                _reader.Dispose();
-                _isDisposed = true;
+                Dispose();
             }
             return read;
         }
@@ -38,7 +37,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
                 return;
             }
 
-            _reader?.Dispose();
+            _reader.Dispose();
             _isDisposed = true;
         }
     }

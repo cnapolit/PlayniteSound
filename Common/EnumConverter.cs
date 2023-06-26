@@ -8,11 +8,18 @@ using System.Windows.Markup;
 // Possible solution may involve factory: https://stackoverflow.com/questions/8235421/how-do-i-set-wpf-xaml-forms-design-datacontext-to-class-that-uses-generic-type/8235459#8235459
 namespace PlayniteSounds.Common
 {
-    public class MusicTypeConverter : BaseValueConverter<MusicTypeConverter>
+    public class UIStateConverter : BaseValueConverter<UIStateConverter>
     {
         public override object Convert(object value, Type targetType, object parameter, CultureInfo culture) => (int)value;
 
-        public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => (MusicType)value;
+        public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => (UIState)value;
+    }
+
+    public class AudioSourceConverter : BaseValueConverter<AudioSourceConverter>
+    {
+        public override object Convert(object value, Type targetType, object parameter, CultureInfo culture) => (int)value;
+
+        public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => (AudioSource)value;
     }
 
     public abstract class BaseValueConverter<T> : MarkupExtension, IValueConverter where T : class, new()

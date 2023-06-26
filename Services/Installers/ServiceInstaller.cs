@@ -15,8 +15,7 @@ namespace PlayniteSounds
                 FromThisAssembly().
                 Where(ValidateClass).
                 WithService.
-                DefaultInterfaces().
-                LifestyleSingleton());
+                DefaultInterfaces());
 
 
         protected static readonly Assembly Assembly = Assembly.GetCallingAssembly();

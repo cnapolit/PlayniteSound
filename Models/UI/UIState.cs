@@ -4,6 +4,12 @@
     {
         Main,
         GameDetails,
+        MainMenu,
+        Filters,
+        FilterPresets,
+        Search,
+        GameMenu_Main,
+        GameMenu_GameDetails,
         Settings
     }
 }

@@ -1,9 +1,7 @@
 ﻿using Playnite.SDK.Models;
 using Playnite.SDK;
-using PlayniteSounds.Common.Constants;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace PlayniteSounds.Services.Play
@@ -12,84 +10,59 @@ namespace PlayniteSounds.Services.Play
     {
         #region Infrastructure
 
-        private static readonly ILogger      logger = LogManager.GetLogger();
-        private        readonly IPlayniteAPI _api;
+        private readonly ILogger          _logger;
+        private readonly IGameDatabaseAPI _databaseApi;
 
-        public Tagger(IPlayniteAPI api) => _api = api;
+        public Tagger(IGameDatabaseAPI databaseApi, ILogger logger)
+        {
+            _logger = logger;
+            _databaseApi = databaseApi;
+        }
 
         #endregion
 
         #region Implementation
 
-        #region UpdateMissingTag
-
-        public void UpdateMissingTag(Game game, bool fileCreated, string gameDirectory)
+        public bool AddTag(Game game, string tagName)
         {
-            var missingTag = _api.Database.Tags.Add(Resource.MissingTag);
-
-            if (fileCreated)
-            {
-                RemoveTagFromGame(game, missingTag);
-            }
-            else if (!Directory.Exists(gameDirectory) || !Directory.GetFiles(gameDirectory).Any())
-            {
-                AddTagToGame(game, missingTag);
-            }
-        }
-
-        #endregion
-
-        #region AddMissingTag
-
-        public void AddMissingTag(Game game)
-            => AddTagToGame(game, _api.Database.Tags.Add(Resource.MissingTag));
-
-        #endregion
-
-        #region AddNormalizedTag
-
-        public void AddNormalizedTag(Game game)
-        {
-            var normalizedTag = _api.Database.Tags.Add(Resource.NormTag);
-            AddTagToGame(game, normalizedTag);
-        }
-
-        #endregion
-
-        #region Helpers
-
-        private void AddTagToGame(Game game, Tag tag)
-        {
-            var tagAdded = false;
+            var tag = _databaseApi.Tags.Add(tagName);
             if (game.Tags is null)
             {
                 game.TagIds = new List<Guid> { tag.Id };
-                _api.Database.Games.Update(game);
-                tagAdded = true;
+                LogAdd(game, tagName);
+                return true;
             }
             else if (!game.TagIds.Contains(tag.Id))
             {
                 game.TagIds.Add(tag.Id);
-                _api.Database.Games.Update(game);
-                tagAdded = true;
+                LogAdd(game, tagName);
+                return true;
             }
 
-            if (tagAdded)
-            {
-                logger.Info($"Added tag '{tag.Name}' to '{game.Name}'");
-            }
+            return false;
         }
 
-        private void RemoveTagFromGame(Game game, Tag tag)
+        private void LogAdd(Game game, string tagName) 
+            => _logger.Info($"Added tag '{tagName}' to game '{game.Name}'");
+
+        public bool RemoveTag(Game game, string tagName)
         {
+            var tag = _databaseApi.Tags.Add(tagName);
             if (game.Tags != null && game.TagIds.Remove(tag.Id))
             {
-                _api.Database.Games.Update(game);
-                logger.Info($"Removed tag '{tag.Name}' from '{game.Name}'");
+                _logger.Info($"Removed tag '{tagName}' from game '{game.Name}'");
+                return true;
             }
+
+            return false;
         }
 
-        #endregion
+        public void UpdateGames(IEnumerable<Game> games) => UpdateGames(games.ToList());
+        public void UpdateGames(IList<Game> games)
+        {
+            _databaseApi.Games.Update(games);
+            _logger.Info($"Updated the tags of {games.Count} games: {games.Select(g => g.Name)}");
+        }
 
         #endregion
     }

@@ -1,18 +1,20 @@
 ﻿using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.SubSystems.Configuration;
 using Castle.Windsor;
+using PlayniteSounds.Views.Layouts;
+using PlayniteSounds.Views.Models;
 using System;
-using System.Collections.Generic;
 
 namespace PlayniteSounds.Services.Installers
 {
     public class ViewInstaller : IWindsorInstaller
     {
         public void Install(IWindsorContainer container, IConfigurationStore store)
-            => container.Register(Classes.FromThisAssembly().Where(IsViewClass).LifestyleTransient());
+            => container.Register(RegisterComponent<PlayniteSoundsSettingsViewModel>(container),
+                                  RegisterComponent<PlayniteSoundsSettingsView>(container));
 
-        private static bool IsViewClass(Type classType)
-            => classType.IsSubclassOf(typeof(ObservableObject)) 
-             || classType.IsSubclassOf(typeof(System.Windows.Controls.UserControl));
+        private ComponentRegistration<T> RegisterComponent<T>(IWindsorContainer container) where T : class
+            => Component.For<T>().LifestyleTransient().DependsOn(
+                Dependency.OnValue("containerReleaseMethod", new Action<object>(container.Release)));
     }
 }

@@ -1,0 +1,30 @@
+﻿<UserControl x:Class="PlayniteSounds.Views.Layouts.SoundTypeSettingsControl"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+            xmlns:Models="clr-namespace:PlayniteSounds.Views.Models"
+            xmlns:common="clr-namespace:PlayniteSounds.Common"
+            d:DataContext="{d:DesignInstance Type=Models:SoundTypeSettingsModel}"
+            mc:Ignorable="d"
+          Loaded="LoadSlider_ValueChanged">
+    <GroupBox x:Name="Group">
+        <StackPanel>
+            <CheckBox IsChecked="{Binding Settings.Enabled}" Content="Enable"/>
+            <StackPanel Orientation="Horizontal" IsEnabled="{Binding Settings.Enabled}">
+                <Label Content="Volume" d:LayoutOverrides="VerticalAlignment"/>
+                <Label Content=" "/>
+                <Label Content="{Binding VolumePercent}" />
+                <Label Content="%"/>
+            </StackPanel>
+            <Slider x:Name="Slider" Value="{Binding VolumePercent}" IsEnabled="{Binding Settings.Enabled}"/>
+            <ComboBox SelectedIndex="{Binding Settings.Source, Converter={common:AudioSourceConverter}}"
+                      IsEnabled="{Binding Settings.Enabled}">
+                <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusic}"/>
+                <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusicPlatform}"/>
+                <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusicPlatformGame}"/>
+                <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeFilter}"/>
+            </ComboBox>
+        </StackPanel>
+    </GroupBox>
+</UserControl>

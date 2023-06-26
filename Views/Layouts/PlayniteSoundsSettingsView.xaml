@@ -1,5 +1,44 @@
 ﻿<UserControl x:Class="PlayniteSounds.Views.Layouts.PlayniteSoundsSettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:l="clr-namespace:PlayniteSounds.Views.Layouts"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <TabControl x:Name="Tabs"/>
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="C:\Users\bandg\Documents\git\PlayniteSound\Views\Layouts\Styling.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <TabControl>
+        <TabItem Header="General">
+            <l:GeneralSettingsTab x:Name="General"/>
+        </TabItem>
+        <TabItem Header="Sound">
+            <TabControl>
+                <TabItem Header="Desktop">
+                    <ScrollViewer>
+                        <StackPanel x:Name="DesktopSound"/>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="Fullscreen">
+                    <ScrollViewer>
+                        <StackPanel x:Name="FullscreenSound"/>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+        </TabItem>
+        <TabItem Header="Music">
+            <TabControl>
+                <TabItem Header="General">
+                    <l:GeneralMusicSettingsView x:Name="GeneralMusic"/>
+                </TabItem>
+                <TabItem Header="Desktop">
+                    <l:MusicModeSettingsView x:Name="DesktopMusic"/>
+                </TabItem>
+                <TabItem Header="Fullscreen">
+                    <l:MusicModeSettingsView x:Name="FullscreenMusic"/>
+                </TabItem>
+            </TabControl>
+        </TabItem>
+    </TabControl>
 </UserControl>

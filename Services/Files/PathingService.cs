@@ -20,16 +20,16 @@ namespace PlayniteSounds.Services.Files
         public string PlatformMusicFilePath     { get; private set; }
         public string FilterMusicFilePath       { get; private set; }
 
-        public PathingService(IPlayniteAPI api)
+        public PathingService(IPlaynitePathsAPI pathsApi)
         {
-            ExtraMetaDataFolder       = Path.Combine(api.Paths.ConfigurationPath, SoundDirectory.ExtraMetaData);
-            MusicFilesDataPath        = Path.Combine(        ExtraMetaDataFolder, SoundDirectory.Music);
-            SoundFilesDataPath        = Path.Combine(        ExtraMetaDataFolder, SoundDirectory.Sound);
-            SoundManagerFilesDataPath = Path.Combine(        ExtraMetaDataFolder, SoundDirectory.SoundManager);
-            DefaultMusicPath          = Path.Combine(        ExtraMetaDataFolder, SoundDirectory.Default);
-            PlatformMusicFilePath     = Path.Combine(        ExtraMetaDataFolder, SoundDirectory.Platform);
-            FilterMusicFilePath       = Path.Combine(        ExtraMetaDataFolder, SoundDirectory.Filter);
-            GameMusicFilePath         = Path.Combine(        ExtraMetaDataFolder, SoundDirectory.GamesFolder);
+            ExtraMetaDataFolder       = Path.Combine(pathsApi.ConfigurationPath, SoundDirectory.ExtraMetaData);
+            MusicFilesDataPath        = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.Music);
+            SoundFilesDataPath        = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.Sound);
+            SoundManagerFilesDataPath = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.SoundManager);
+            DefaultMusicPath          = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.Default);
+            PlatformMusicFilePath     = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.Platform);
+            FilterMusicFilePath       = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.Filter);
+            GameMusicFilePath         = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.GamesFolder);
         }
 
         #endregion

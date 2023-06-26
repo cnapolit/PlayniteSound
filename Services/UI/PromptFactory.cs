@@ -14,9 +14,9 @@ namespace PlayniteSounds.Services.UI
         private readonly IDialogsFactory _dialogs;
         private readonly IErrorHandler   _errorHandler;
 
-        public PromptFactory(IPlayniteAPI api, IErrorHandler errorHandler)
+        public PromptFactory(IDialogsFactory dialogs, IErrorHandler errorHandler)
         {
-            _dialogs = api.Dialogs;
+            _dialogs = dialogs;
             _errorHandler = errorHandler;
         }
 
@@ -85,7 +85,7 @@ namespace PlayniteSounds.Services.UI
             var progressTitle = $"{App.AppName} - {progressSubTitle}";
             var progressOptions = new GlobalProgressOptions(progressTitle, true) { IsIndeterminate = false };
 
-            _dialogs.ActivateGlobalProgress(a => _errorHandler.Try(() => action(a, progressTitle)), progressOptions);
+            _dialogs.ActivateGlobalProgress(a => _errorHandler.TryWithPrompt(() => action(a, progressTitle)), progressOptions);
         }
 
         #endregion

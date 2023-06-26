@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace PlayniteSounds.Common.Extensions
 {
@@ -7,14 +6,15 @@ namespace PlayniteSounds.Common.Extensions
     {
         public static TItem Pop<TItem>(this IList<TItem> list)
         {
-            var item = list.LastOrDefault();
-
             if (list.Count > 0)
             {
-                list.RemoveAt(list.Count - 1);
+                var index = list.Count - 1;
+                var item = list[index];
+                list.RemoveAt(index);
+                return item;
             }
 
-            return item;
+            return default;
         }
     }
 }

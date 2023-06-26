@@ -1,5 +1,4 @@
 ﻿using Playnite.SDK;
-using PlayniteSounds.Common.Utilities;
 using PlayniteSounds.Models;
 using System;
 using System.Linq;
@@ -12,10 +11,10 @@ namespace PlayniteSounds.Services.Files
         private readonly IPathingService _pathingService;
         private readonly IMainViewAPI _mainView;
 
-        public MusicFileSelector(IPathingService pathingService, IPlayniteAPI api, PlayniteSoundsSettings settings)
+        public MusicFileSelector(IPathingService pathingService, IMainViewAPI mainViewApi, PlayniteSoundsSettings settings)
         {
             _pathingService= pathingService;
-            _mainView = api.MainView;
+            _mainView = mainViewApi;
             _settings= settings;
         }
 
@@ -35,18 +34,18 @@ namespace PlayniteSounds.Services.Files
         }
 
         // Backup order is game -> filter -> default
-        public (string[], MusicType) GetBackupFiles()
+        public (string[], AudioSource) GetBackupFiles()
         {
-            if (EnumUtilities.SoundsSettingsToMusicType(_settings) != MusicType.Default)
+            if (_settings.CurrentUIStateSettings.MusicSource != AudioSource.Default)
             {
                 var filterFiles = _pathingService.GeFilterMusicFiles(_mainView.GetActiveFilterPreset());
                 if (filterFiles.Any())
                 {
-                    return (filterFiles, MusicType.Filter);
+                    return (filterFiles, AudioSource.Filter);
                 }
             }
 
-            return (_pathingService.GetDefaultMusicFiles(), MusicType.Default);
+            return (_pathingService.GetDefaultMusicFiles(), AudioSource.Default);
         }
     }
 }

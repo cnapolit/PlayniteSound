@@ -10,7 +10,7 @@ namespace PlayniteSounds.Views.Models.GameViewControls
 {
     public class PlayerControlModel : ObservableObject
     {
-        public IPlayniteAPI PlayniteAPI { get; set; }
+        public IMainViewAPI MainViewApi { get; set; }
         public IMusicFileSelector MusicFileSelector { get; set; }
         public IPathingService PathingService { get; set; }
         public PlayniteSoundsSettings Settings { get; set; }
@@ -60,8 +60,8 @@ namespace PlayniteSounds.Views.Models.GameViewControls
         }
         public bool HasMusic => !string.IsNullOrWhiteSpace(MusicFilePath);
 
-        private MusicType _musicType;
-        public MusicType MusicType
+        private AudioSource _musicType;
+        public AudioSource MusicType
         {
             get => _musicType; 
             set 
@@ -72,12 +72,12 @@ namespace PlayniteSounds.Views.Models.GameViewControls
         }
 
         public PlayerControlModel(
-            IPlayniteAPI api, 
+            IMainViewAPI mainViewApi, 
             IPathingService pathingService, 
             IMusicFileSelector musicFileSelector,
             PlayniteSoundsSettings settings)
         {
-            PlayniteAPI = api;
+            MainViewApi = mainViewApi;
             PathingService = pathingService;
             MusicFileSelector = musicFileSelector;
             Settings = settings;
@@ -112,16 +112,16 @@ namespace PlayniteSounds.Views.Models.GameViewControls
 
         private string[] MusicTypeToFiles()
         {
-            var game = PlayniteAPI.SelectedGames().FirstOrDefault();
+            var game = MainViewApi.SelectedGames.FirstOrDefault();
 
             switch (MusicType)
             {
-                case MusicType.Game:
+                case AudioSource.Game:
                     return PathingService.GetGameMusicFiles(game);
-                case MusicType.Platform:
+                case AudioSource.Platform:
                     return PathingService.GetPlatformMusicFiles(game?.Platforms?.FirstOrDefault());
-                case MusicType.Filter:
-                    return PathingService.GeFilterMusicFiles(PlayniteAPI.MainView.GetActiveFilterPreset());
+                case AudioSource.Filter:
+                    return PathingService.GeFilterMusicFiles(MainViewApi.GetActiveFilterPreset());
                 default:
                     return PathingService.GetDefaultMusicFiles();
             }

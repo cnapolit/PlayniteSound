@@ -10,7 +10,6 @@ using System.Linq;
 using System.Windows.Controls;
 using System.Windows;
 using PlayniteSounds.Services.Files;
-using PlayniteSounds.Services.Audio;
 
 namespace PlayniteSounds.Services.UI
 {
@@ -20,19 +19,16 @@ namespace PlayniteSounds.Services.UI
 
         private readonly IErrorHandler _errorHandler;
         private readonly IPathingService _pathingService;
-        private readonly ISoundPlayer _soundPlayer;
         private readonly IDialogsFactory _dialogs;
 
         public SoundManager(
+            IDialogsFactory dialogs,
             IErrorHandler errorHandler,
-            IPathingService pathingService,
-            ISoundPlayer audioPlayer,
-            IPlayniteAPI api)
+            IPathingService pathingService)
         {
             _errorHandler = errorHandler;
             _pathingService = pathingService;
-            _soundPlayer = audioPlayer;
-            _dialogs = api.Dialogs;
+            _dialogs = dialogs;
         }
 
         #endregion
@@ -41,7 +37,7 @@ namespace PlayniteSounds.Services.UI
 
         #region LoadSounds
 
-        public void LoadSounds() => _errorHandler.Try(AttemptLoadSounds);
+        public void LoadSounds() => _errorHandler.TryWithPrompt(AttemptLoadSounds);
         private void AttemptLoadSounds()
         {
             //just in case user deleted it
@@ -56,7 +52,6 @@ namespace PlayniteSounds.Services.UI
             var result = dialog.ShowDialog(_dialogs.GetCurrentAppWindow());
             if (result == true)
             {
-                _soundPlayer.Close();
                 var targetPath = dialog.FileName;
                 //just in case user deleted it
                 Directory.CreateDirectory(_pathingService.SoundFilesDataPath);
@@ -135,7 +130,7 @@ namespace PlayniteSounds.Services.UI
                 }
                 catch (Exception e)
                 {
-                    _errorHandler.HandleException(e);
+                    _errorHandler.CreateExceptionPrompt(e);
                 }
             };
 
@@ -151,7 +146,7 @@ namespace PlayniteSounds.Services.UI
 
         #region RemoveSounds
 
-        public void RemoveSounds() => _errorHandler.Try(AttemptRemoveSounds);
+        public void RemoveSounds() => _errorHandler.TryWithPrompt(AttemptRemoveSounds);
         private void AttemptRemoveSounds()
         {
             //just in case user deleted it
@@ -163,13 +158,11 @@ namespace PlayniteSounds.Services.UI
                 InitialDirectory = _pathingService.SoundManagerFilesDataPath
             };
 
-            var result = dialog.ShowDialog(_dialogs.GetCurrentAppWindow());
-            if (result == true)
+            if (dialog.ShowDialog(_dialogs.GetCurrentAppWindow()) is true)
             {
                 var targetPath = dialog.FileName;
                 File.Delete(targetPath);
-                _dialogs.ShowMessage(
-                    $"{Resource.ManagerDeleteConfirm} {Path.GetFileNameWithoutExtension(targetPath)}");
+                _dialogs.ShowMessage($"{Resource.ManagerDeleteConfirm} {Path.GetFileNameWithoutExtension(targetPath)}");
             }
         }
 
@@ -183,7 +176,7 @@ namespace PlayniteSounds.Services.UI
 
             if (targetPaths.HasNonEmptyItems())
             {
-                _errorHandler.Try(() => AttemptImportSounds(targetPaths));
+                _errorHandler.TryWithPrompt(() => AttemptImportSounds(targetPaths));
             }
         }
 
@@ -217,7 +210,7 @@ namespace PlayniteSounds.Services.UI
             }
             catch (Exception e)
             {
-                _errorHandler.HandleException(e);
+                _errorHandler.CreateExceptionPrompt(e);
             }
         }
 
@@ -243,11 +236,9 @@ namespace PlayniteSounds.Services.UI
 
         #region Helpers
 
-        private void OpenFolder(string folderPath) => _errorHandler.Try(() => AttemptOpenFolder(folderPath));
+        private void OpenFolder(string folderPath) => _errorHandler.TryWithPrompt(() => AttemptOpenFolder(folderPath));
         private void AttemptOpenFolder(string folderPath)
         {
-            //need to release them otherwise explorer can't overwrite files even though you can delete them
-            _soundPlayer.Close();
             // just in case user deleted it
             Directory.CreateDirectory(folderPath);
             Process.Start(folderPath);

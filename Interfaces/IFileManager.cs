@@ -10,14 +10,14 @@ namespace PlayniteSounds.Services.Files
         string CreateMusicDirectory(Game game);
         string CreatePlatformDirectory(Platform platform);
         string CreatePlatformDirectoryPathFromGame(Game game);
-        IEnumerable<Game> DeleteMusicDirectories(IEnumerable<Game> games);
         bool DeleteMusicDirectory(Game game);
         void DeleteMusicFile(string musicFile, string musicFileName, Game game);
         void OpenGameDirectories(IEnumerable<Game> games);
-        IEnumerable<string> SelectMusicForDefault(IEnumerable<string> files);
-        IEnumerable<string> SelectMusicForFilter(FilterPreset filter, IEnumerable<string> files);
-        IEnumerable<string> SelectMusicForGame(Game game, IEnumerable<string> files);
-        string SelectStartSoundForGame(Game game, string file);
-        IEnumerable<string> SelectMusicForPlatform(Platform platform, IEnumerable<string> files);
+        void SelectMusicForDefault();
+        void SelectMusicForFilter(FilterPreset filter);
+        void SelectMusicForPlatform(Platform platform);
+        void SelectMusicForGames(IEnumerable<Game> games);
+        string SelectStartSoundForGame(Game game);
+        void DeleteMusicDirectories(IEnumerable<Game> games);
     }
 }

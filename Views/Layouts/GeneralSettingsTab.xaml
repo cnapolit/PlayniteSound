@@ -1,0 +1,47 @@
+﻿<UserControl x:Class="PlayniteSounds.Views.Layouts.GeneralSettingsTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:Models="clr-namespace:PlayniteSounds.Views.Models"
+             d:DataContext="{d:DesignInstance Type=Models:PlayniteSoundsSettingsViewModel}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <StackPanel>
+        <GroupBox Header="{DynamicResource LOC_PLAYNITESOUNDS_Settings}">
+            <StackPanel>
+                <CheckBox IsChecked="{Binding Settings.SkipFirstSelectSound}"
+                          Content="{DynamicResource LOC_PLAYNITESOUNDS_ChkSkipFirstSelectSound}"/>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Header="{DynamicResource LOC_PLAYNITESOUNDS_Actions}">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ActionsOpenSoundsFolder}" 
+                        Command="{Binding ButOpenSoundsFolder_Click }"/>
+                <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ActionsOpenMusicFolder}"
+                        Command="{Binding ButOpenMusicFolder_Click }"/>
+                <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ActionsHelp}"
+                        Command="{Binding ButOpenInfo_Click }"/>
+        </StackPanel>
+        </GroupBox>
+        <GroupBox Name="GrpManager" Header="{DynamicResource LOC_PLAYNITESOUNDS_Manager}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerLoad}"
+                            Command="{Binding ButLoadSounds_Click }"/>
+                    <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerSave}"
+                            Command="{Binding ButSaveSounds_Click }"/>
+                    <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerRemove}"
+                            Command="{Binding ButRemoveSounds_Click }"/>
+                </StackPanel>
+                <Separator/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerImport}"
+                            Command="{Binding ButImportSounds_Click }"/>
+                    <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerOpenManagerFolder}"
+                            Command="{Binding ButOpenSoundManagerFolder_Click }"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+    </StackPanel>
+</UserControl>

@@ -42,6 +42,9 @@ namespace PlayniteSounds
             {
                 return args.Name.StartsWith("System.Text.Json") ? typeof(JsonSerializer).Assembly : null;
             };
+
+            _api = api;
+
             Properties = new GenericPluginProperties
             {
                 HasSettings = true
@@ -51,23 +54,24 @@ namespace PlayniteSounds
             {
                 ElementList = new List<string> 
                 { 
-                    "Player_Default",
-                    "Player_Filter",
-                    "Player_Platform",
-                    "Player_Game",
                     "Handler"
                 },
-                SourceName = "Sounds"
+                SourceName = App.SourceName
             });
 
             var settings = LoadPluginSettings<PlayniteSoundsSettings>() ?? new PlayniteSoundsSettings();
 
             // Set the 
+            // Set the Desktop mode settings
             settings.DesktopSettings.IsDesktop = true;
 
             var isDesktop = api.ApplicationInfo.Mode is ApplicationMode.Desktop;
             settings. ActiveModeSettings = isDesktop ? settings.DesktopSettings : settings.FullscreenSettings;
             SoundFile. CurrentPrefix     = isDesktop ? SoundFile.DesktopPrefix : SoundFile.FullScreenPrefix;
+
+            settings.ActiveModeSettings     = isDesktop ? settings.  DesktopSettings : settings.  FullscreenSettings;
+            settings.CurrentUIStateSettings = settings.ActiveModeSettings.UIStatesToSettings[UIState.Main];
+            SoundFile.CurrentPrefix         = isDesktop ? SoundFile. DesktopPrefix   : SoundFile. FullScreenPrefix;
 
             Localization.SetPluginLanguage(api.ApplicationSettings.Language);
 
@@ -75,9 +79,9 @@ namespace PlayniteSounds
             _container = Installation.RegisterInstallers(api, this, settings);
 
             _playniteEventHandler = LazyResolve<IPlayniteEventHandler>();
-            _gameMenuFactory      = LazyResolve<IGameMenuFactory>();
-            _mainMenuFactory      = LazyResolve<IMainMenuFactory>();
-            _gameViewFactory      = LazyResolve<IGameViewControlFactory>();
+            _gameMenuFactory = LazyResolve<IGameMenuFactory>();
+            _mainMenuFactory = LazyResolve<IMainMenuFactory>();
+            _gameViewFactory = LazyResolve<IGameViewControlFactory>();
         }
 
         public override void Dispose() => _container.Dispose();
@@ -97,7 +101,7 @@ namespace PlayniteSounds
             => _container.Resolve<PlayniteSoundsSettingsView>();
 
         public override void OnGameInstalled(OnGameInstalledEventArgs args)
-            => _playniteEventHandler.Value.OnGameInstalled();
+            => PlayniteEventHandler.OnGameInstalled();
 
         public override void OnGameUninstalled(OnGameUninstalledEventArgs args)
             => PlayniteEventHandler.OnGameUninstalled();

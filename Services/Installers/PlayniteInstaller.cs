@@ -2,10 +2,11 @@
 using Castle.MicroKernel.SubSystems.Configuration;
 using Castle.Windsor;
 using Playnite.SDK;
+using static PlayniteSounds.Services.Installers.Installation;
 
 namespace PlayniteSounds.Services.Installers
 {
-    public class PlayniteInstaller : IWindsorInstaller
+    internal class PlayniteInstaller : IWindsorInstaller
     {
         private readonly IPlayniteAPI _api;
 
@@ -13,11 +14,12 @@ namespace PlayniteSounds.Services.Installers
 
         public void Install(IWindsorContainer container, IConfigurationStore store)
             => container.Register(
-                Installation.RegisterInstance(_api.MainView),
-                Installation.RegisterInstance(_api.Database),
-                Installation.RegisterInstance(_api.Dialogs),
-                Installation.RegisterInstance(_api.UriHandler),
-                Installation.RegisterInstance(_api.Addons),
-                Installation.RegisterInstance(LogManager.GetLogger()));
+                RegisterInstance(_api.Addons),
+                RegisterInstance(_api.Database),
+                RegisterInstance(_api.Dialogs),
+                RegisterInstance(_api.MainView),
+                RegisterInstance(_api.Paths),
+                RegisterInstance(_api.UriHandler),
+                RegisterInstance(LogManager.GetLogger()));
     }
 }

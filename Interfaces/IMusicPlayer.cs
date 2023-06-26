@@ -1,5 +1,4 @@
 ﻿using Playnite.SDK.Models;
-using PlayniteSounds.Models;
 using System.Collections.Generic;
 
 namespace PlayniteSounds.Services.Audio
@@ -8,14 +7,15 @@ namespace PlayniteSounds.Services.Audio
     {
         Game CurrentGame { get; set; }
         string CurrentMusicFile { set; }
-        UIState UIState { get; set; }
+        bool StartSoundFinished { get; set; }
 
-        void Close();
         void Pause(bool gameStarted);
         void Pause(string pauser);
         void Play(IEnumerable<Game> games);
+        void Preview();
         void Resume(bool gameStopped);
         void Resume(string pauser);
-        void SetVolume(double volume);
+        void SetVolume(float? volume = null);
+        void UIStateChanged();
     }
 }

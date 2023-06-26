@@ -1,21 +1,20 @@
-﻿using Playnite.SDK.Plugins;
-using Playnite.SDK;
-using System;
+﻿using System;
 using System.Windows.Controls;
 using PlayniteSounds.Models;
+using Playnite.SDK;
 using Playnite.SDK.Controls;
-using PlayniteSounds.Views.Layouts.GameViewControls;
-using PlayniteSounds.Views.Models.GameViewControls;
-using System.Windows.Data;
+using Playnite.SDK.Plugins;
 using PlayniteSounds.Services.Files;
 using PlayniteSounds.Services.State;
 using PlayniteSounds.Services.Audio;
+using PlayniteSounds.Views.Layouts.GameViewControls;
+using PlayniteSounds.Views.Models.GameViewControls;
 
 namespace PlayniteSounds.Services.UI
 {
     public class GameViewControlFactory : IGameViewControlFactory
     {
-        private readonly IPlayniteAPI _api;
+        private readonly IMainViewAPI _mainViewApi;
         private readonly IPathingService _pathingService;
         private readonly IMusicFileSelector _musicFileSelector;
         private readonly IPlayniteEventHandler _playniteEventHandler;
@@ -23,75 +22,53 @@ namespace PlayniteSounds.Services.UI
         private readonly PlayniteSoundsSettings _settings;
 
         public GameViewControlFactory(
-            IPlayniteAPI api,
+            IMainViewAPI mainViewApi,
             IPathingService pathingService,
             IMusicFileSelector musicFileSelector,
+            IPlayniteEventHandler playniteEventHandler,
+            IMusicPlayer musicPlayer,
             PlayniteSoundsSettings settings)
         {
-            _api = api;
+            _mainViewApi = mainViewApi;
             _pathingService = pathingService;
             _musicFileSelector = musicFileSelector;
+            _playniteEventHandler = playniteEventHandler;
+            _musicPlayer = musicPlayer;
             _settings = settings;
         }
 
-        // args: {FilePath,Player}_{Default,Filter,Platform,Game},Handler
+        // args: FilePath_{Default,Filter,Platform,Game},Handler
         public Control GetGameViewControl(GetGameViewControlArgs args)
         {
-            
             var strArgs = args.Name.Split('_');
 
             var controlType = strArgs[0];
 
             switch (controlType)
             {
-                case "FilePath": return ConstructFilePathView(musicType);
-                case "Player": return ConstructPlayerView(musicType);
-                case "Handler": return ConstructHandlerView();
-                default: throw new Exception($"Unrecognized controlType '{controlType}' for request '{args.Name}'");
+                case "FilePath": return ConstructFilePathView(RetrieveMusicType(strArgs));
+                case "Handler":  return new HandlerControl()
+                {
+                    DataContext = new HandlerControlModel(_playniteEventHandler, _musicPlayer)
+                };
+                default: throw new ArgumentException($"Unrecognized controlType '{controlType}' for request '{args.Name}'");
             }
         }
 
-        private PluginUserControl ConstructFilePathView(MusicType musicType)
+        private PluginUserControl ConstructFilePathView(AudioSource musicSource)
         {
             return null;
         }
 
-        private PluginUserControl ConstructPlayerView(MusicType musicType)
-        {
-            var userControl = new PlayerControl
-            {
-                DataContext = new PlayerControlModel(_api, _pathingService, _musicFileSelector, _settings)
-                {
-                    MusicType = musicType
-                }
-            };
-
-            var volumeBinding = new Binding("MusicVolume")
-            {
-                Mode = BindingMode.OneWay,
-                Source = _settings.IsDesktop ? _settings.DesktopSettings : _settings.FullscreenSettings
-            };
-
-            BindingOperations.SetBinding(userControl, MediaElement.VolumeProperty, volumeBinding);
-
-            return userControl;
-        }
-
-        private static MusicType RetrieveMusicType(string[] strArgs)
+        private static AudioSource RetrieveMusicType(string[] strArgs)
         {
             var musicTypeStr = strArgs[1];
-            if (Enum.TryParse<MusicType>(musicTypeStr, true, out var musicType))
+            if (Enum.TryParse<AudioSource>(musicTypeStr, true, out var musicType))
             {
                 return musicType;
             }
 
-
             throw new ArgumentException($"Unrecognized musicType '{musicTypeStr}'");
         }
-
-        private PluginUserControl ConstructHandlerView() => new HandlerControl
-        {
-            DataContext = new HandlerControlModel(_playniteEventHandler, _musicPlayer)
-        };
     }
 }

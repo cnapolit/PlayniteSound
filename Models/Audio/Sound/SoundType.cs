@@ -10,6 +10,7 @@
         GameSelected,
         GameInstalled,
         GameUninstalled,
-        LibraryUpdated
+        LibraryUpdated,
+        GameCancelled
     }
 }

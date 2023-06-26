@@ -42,8 +42,8 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AngleSharp, Version=0.17.1.0, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
-      <HintPath>packages\AngleSharp.0.17.1\lib\net461\AngleSharp.dll</HintPath>
+    <Reference Include="AngleSharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
+      <HintPath>packages\AngleSharp.1.0.1\lib\net461\AngleSharp.dll</HintPath>
     </Reference>
     <Reference Include="Castle.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <HintPath>packages\Castle.Core.4.4.1\lib\net45\Castle.Core.dll</HintPath>
@@ -51,23 +51,23 @@
     <Reference Include="Castle.Windsor, Version=5.0.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <HintPath>packages\Castle.Windsor.5.1.2\lib\net45\Castle.Windsor.dll</HintPath>
     </Reference>
-    <Reference Include="CliWrap, Version=3.5.0.0, Culture=neutral, PublicKeyToken=1c4a4fc2d6886e5a, processorArchitecture=MSIL">
-      <HintPath>packages\CliWrap.3.5.0\lib\net461\CliWrap.dll</HintPath>
+    <Reference Include="CliWrap, Version=3.6.1.0, Culture=neutral, PublicKeyToken=1c4a4fc2d6886e5a, processorArchitecture=MSIL">
+      <HintPath>packages\CliWrap.3.6.1\lib\net462\CliWrap.dll</HintPath>
     </Reference>
     <Reference Include="HtmlAgilityPack, Version=1.11.46.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <HintPath>packages\HtmlAgilityPack.1.11.46\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=7.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Bcl.AsyncInterfaces.7.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
-    <Reference Include="NAudio.Core, Version=2.1.0.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
-      <HintPath>packages\NAudio.Core.2.1.0\lib\netstandard2.0\NAudio.Core.dll</HintPath>
+    <Reference Include="NAudio, Version=1.10.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\NAudio.1.10.0\lib\net35\NAudio.dll</HintPath>
     </Reference>
-    <Reference Include="NAudio.Lame, Version=2.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\NAudio.Lame.2.0.1\lib\netstandard2.0\NAudio.Lame.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Playnite.SDK, Version=6.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PlayniteSDK.6.4.0\lib\net462\Playnite.SDK.dll</HintPath>
+    <Reference Include="Playnite.SDK, Version=6.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\PlayniteSDK.6.9.0\lib\net462\Playnite.SDK.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -75,6 +75,7 @@
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -101,11 +102,11 @@
     <Reference Include="System.Text.Encoding.CodePages, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Text.Encoding.CodePages.7.0.0\lib\net462\System.Text.Encoding.CodePages.dll</HintPath>
     </Reference>
-    <Reference Include="System.Text.Encodings.Web, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Text.Encodings.Web.6.0.0\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+    <Reference Include="System.Text.Encodings.Web, Version=7.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Text.Encodings.Web.7.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
     </Reference>
-    <Reference Include="System.Text.Json, Version=6.0.0.6, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Text.Json.6.0.6\lib\net461\System.Text.Json.dll</HintPath>
+    <Reference Include="System.Text.Json, Version=7.0.0.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Text.Json.7.0.2\lib\net462\System.Text.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
@@ -120,11 +121,11 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
-    <Reference Include="YoutubeExplode, Version=6.2.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\YoutubeExplode.6.2.5\lib\net461\YoutubeExplode.dll</HintPath>
+    <Reference Include="YoutubeExplode, Version=6.2.14.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\YoutubeExplode.6.2.14\lib\net461\YoutubeExplode.dll</HintPath>
     </Reference>
-    <Reference Include="YoutubeExplode.Converter, Version=6.2.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\YoutubeExplode.Converter.6.2.5\lib\net461\YoutubeExplode.Converter.dll</HintPath>
+    <Reference Include="YoutubeExplode.Converter, Version=6.2.14.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\YoutubeExplode.Converter.6.2.14\lib\net461\YoutubeExplode.Converter.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -139,10 +140,18 @@
     <Compile Include="Common\Imports\User32.cs" />
     <Compile Include="Common\ObjectUtilities.cs" />
     <Compile Include="Common\StringUtilities.cs" />
-    <Compile Include="Common\Utilities\EnumUtilities.cs" />
     <Compile Include="Common\Utilities\CommonUtilties.cs" />
-    <Compile Include="Models\UIState.cs" />
+    <Compile Include="Common\Utilities\UIUtilities.cs" />
+    <Compile Include="Models\Audio\SampleProviders\AutoDisposeFileReader.cs" />
+    <Compile Include="Models\Audio\CachedSound.cs" />
+    <Compile Include="Models\Audio\SampleProviders\CachedSoundSampleProvider.cs" />
+    <Compile Include="Models\Audio\SampleProviders\CallBackSampleProvider.cs" />
+    <Compile Include="Models\Audio\SampleProviders\ControllableSampleProvider.cs" />
+    <Compile Include="Models\Settings\SoundTypeSettings.cs" />
+    <Compile Include="Models\UI\UIState.cs" />
+    <Compile Include="Models\Settings\UIStateSettings.cs" />
     <Compile Include="Services\Installers\Installation.cs" />
+    <Compile Include="Services\Installers\MiscInstaller.cs" />
     <Compile Include="Services\Installers\PlayniteInstaller.cs" />
     <Compile Include="Services\Installers\ServiceInstaller.cs" />
     <Compile Include="Interfaces\ISoundPlayer.cs" />
@@ -153,8 +162,8 @@
     <Compile Include="Interfaces\ITagger.cs" />
     <Compile Include="Interfaces\IMusicPlayer.cs" />
     <Compile Include="Models\AudioFile.cs" />
-    <Compile Include="Models\ModeSettings.cs" />
-    <Compile Include="Models\SoundType.cs" />
+    <Compile Include="Models\Settings\ModeSettings.cs" />
+    <Compile Include="Models\Audio\Sound\SoundType.cs" />
     <Compile Include="Services\Audio\BasePlayer.cs" />
     <Compile Include="Services\Audio\MusicPlayer.cs" />
     <Compile Include="Services\Audio\SoundPlayer.cs" />
@@ -163,23 +172,25 @@
     <Compile Include="Interfaces\IDownloader.cs" />
     <Compile Include="Interfaces\IDownloadManager.cs" />
     <Compile Include="Services\Files\Download\Downloaders\KHDownloader.cs" />
-    <Compile Include="Models\Album.cs" />
-    <Compile Include="Models\DownloadItem.cs" />
-    <Compile Include="Models\GenericObjectOption.cs" />
-    <Compile Include="Models\Source.cs" />
-    <Compile Include="Models\Song.cs" />
-    <Compile Include="Models\MusicType.cs" />
-    <Compile Include="Models\PlayniteSoundSettings.cs" />
+    <Compile Include="Models\Download\Album.cs" />
+    <Compile Include="Models\Download\DownloadItem.cs" />
+    <Compile Include="Models\Download\GenericObjectOption.cs" />
+    <Compile Include="Models\Download\Source.cs" />
+    <Compile Include="Models\Download\Song.cs" />
+    <Compile Include="Models\Audio\AudioSource.cs" />
+    <Compile Include="Models\Settings\PlayniteSoundSettings.cs" />
     <Compile Include="Models\PlayerEntry.cs" />
     <Compile Include="Interfaces\IMusicFileSelector.cs" />
     <Compile Include="Services\Files\MusicFileSelector.cs" />
     <Compile Include="Services\Installers\ViewInstaller.cs" />
     <Compile Include="Services\UI\GameViewControlFactory.cs" />
     <Compile Include="Interfaces\IGameViewControlFactory.cs" />
+    <Compile Include="Interfaces\IModelFactory.cs" />
     <Compile Include="Services\UI\Localization.cs" />
     <Compile Include="PlayniteSounds.cs" />
-    <Compile Include="Views\Layouts\DefaultSoundSettingsView.xaml.cs">
-      <DependentUpon>DefaultSoundSettingsView.xaml</DependentUpon>
+    <Compile Include="Services\UI\ModelFactory.cs" />
+    <Compile Include="Views\Layouts\GeneralSettingsTab.xaml.cs">
+      <DependentUpon>GeneralSettingsTab.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Layouts\DownloadPrompt.xaml.cs" />
     <Compile Include="Views\Layouts\GameViewControls\HandlerControl.xaml.cs">
@@ -187,6 +198,12 @@
     </Compile>
     <Compile Include="Views\Layouts\GameViewControls\PlayerControl.xaml.cs">
       <DependentUpon>PlayerControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Layouts\GeneralMusicSettingsView.xaml.cs">
+      <DependentUpon>GeneralMusicSettingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Layouts\MusicModeSettingsView.xaml.cs">
+      <DependentUpon>MusicModeSettingsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Layouts\MusicSettingsView.xaml.cs">
       <DependentUpon>MusicSettingsView.xaml</DependentUpon>
@@ -197,6 +214,16 @@
     <Compile Include="Views\Layouts\SoundModeSettingsControl.xaml.cs">
       <DependentUpon>SoundModeSettingsControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Layouts\SoundTypeSettingsControl.xaml.cs">
+      <DependentUpon>SoundTypeSettingsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Layouts\MusicUIStateSettingsControl.xaml.cs">
+      <DependentUpon>MusicUIStateSettingsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Layouts\SoundUIStateSettingsControl.xaml.cs">
+      <DependentUpon>SoundUIStateSettingsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Models\BaseSettingsModel.cs" />
     <Compile Include="Views\Models\DownloadPromptModel.cs" />
     <Compile Include="Views\Models\GameViewControls\HandlerControlModel.cs" />
     <Compile Include="Views\Models\GameViewControls\PlayerControlModel.cs" />
@@ -226,6 +253,8 @@
     <Compile Include="Services\UI\GameMenuFactory.cs" />
     <Compile Include="Services\UI\PromptFactory.cs" />
     <Compile Include="Services\UI\SoundManager.cs" />
+    <Compile Include="Views\Models\SoundTypeSettingsModel.cs" />
+    <Compile Include="Views\Models\UIStateSettingsModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -430,7 +459,7 @@
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Page Include="Views\Layouts\DefaultSoundSettingsView.xaml">
+    <Page Include="Views\Layouts\GeneralSettingsTab.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -446,13 +475,21 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\Layouts\MusicSettingsView.xaml">
+    <Page Include="Views\Layouts\GeneralMusicSettingsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Layouts\PlayniteSoundsSettingsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Layouts\MusicModeSettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Layouts\MusicSettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\Layouts\SoundSettingsView.xaml">
       <SubType>Designer</SubType>
@@ -461,6 +498,23 @@
     <Page Include="Views\Layouts\SoundModeSettingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Layouts\SoundTypeSettingsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Layouts\MusicUIStateSettingsControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Layouts\SoundUIStateSettingsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Layouts\Styling.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Page>
   </ItemGroup>
   <ItemGroup>
@@ -518,15 +572,4 @@
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>
-  <Import Project="packages\System.Text.Json.6.0.6\build\System.Text.Json.targets" Condition="Exists('packages\System.Text.Json.6.0.6\build\System.Text.Json.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\System.Text.Json.6.0.6\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\System.Text.Json.6.0.6\build\System.Text.Json.targets'))" />
-    <Error Condition="!Exists('packages\YoutubeExplode.6.2.5\build\YoutubeExplode.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\YoutubeExplode.6.2.5\build\YoutubeExplode.targets'))" />
-    <Error Condition="!Exists('packages\NAudio.Lame.2.0.1\build\NAudio.Lame.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\NAudio.Lame.2.0.1\build\NAudio.Lame.targets'))" />
-  </Target>
-  <Import Project="packages\YoutubeExplode.6.2.5\build\YoutubeExplode.targets" Condition="Exists('packages\YoutubeExplode.6.2.5\build\YoutubeExplode.targets')" />
-  <Import Project="packages\NAudio.Lame.2.0.1\build\NAudio.Lame.targets" Condition="Exists('packages\NAudio.Lame.2.0.1\build\NAudio.Lame.targets')" />
 </Project>

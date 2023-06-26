@@ -4,6 +4,13 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using PlayniteSounds.Models;
+using System.Collections.Generic;
+using System.Linq;
+using PlayniteSounds.Services.Audio;
+using Playnite.SDK.Models;
+using PlayniteSounds.Common.Extensions;
+using PlayniteSounds.Services.Play;
+using PlayniteSounds.Common.Utilities;
 
 namespace PlayniteSounds.Services.Files
 {
@@ -11,17 +18,96 @@ namespace PlayniteSounds.Services.Files
     {
         #region Infrastructure
 
-        private static readonly ILogger                Logger    = LogManager.GetLogger();
-        private        readonly PlayniteSoundsSettings _settings;
+        private readonly IMainViewAPI _mainViewAPI;
+        private readonly IPromptFactory _promptFactory;
+        private readonly IMusicPlayer _musicPlayer;
+        private readonly IPathingService _pathingService;
+        private readonly ITagger _tagger;
+        private readonly ILogger _logger;
+        private readonly PlayniteSoundsSettings _settings;
 
 
-        public Normalizer(PlayniteSoundsSettings settings) => _settings = settings;
+        public Normalizer(
+            IMainViewAPI mainViewAPI,
+            IPromptFactory promptFactory,
+            IMusicPlayer musicPlayer,
+            IPathingService pathingService,
+            ITagger tagger,
+            ILogger logger,
+            PlayniteSoundsSettings settings)
+        {
+            _mainViewAPI = mainViewAPI;
+            _promptFactory = promptFactory;
+            _musicPlayer = musicPlayer;
+            _pathingService = pathingService;
+            _tagger = tagger;
+            _logger = logger;
+            _settings = settings;
+        }
 
         #endregion
 
         #region Implementation
 
-        #region NormalizeAudioFile
+        #region CreateNormalizationDialogue
+
+        public void CreateNormalizationDialogue()
+        {
+            var failedGames = new List<string>();
+
+            void NormalizeGames(GlobalProgressActionArgs args, string title)
+                => failedGames = NormalizeSelectedGameMusicFiles(args, _mainViewAPI.SelectedGames.ToList(), title);
+
+            _promptFactory.CreateGlobalProgress(Resource.DialogMessageNormalizingFiles, NormalizeGames);
+
+            if (failedGames.Any())
+            {
+                _promptFactory.ShowError($"The following games had at least one file fail to normalize (see logs for details): {string.Join(", ", failedGames)}");
+            }
+            else
+            {
+                _promptFactory.ShowMessage(Resource.DialogMessageDone);
+            }
+
+            _musicPlayer.Play(_mainViewAPI.SelectedGames);
+        }
+
+        private List<string> NormalizeSelectedGameMusicFiles(
+            GlobalProgressActionArgs args, IList<Game> games, string progressTitle)
+        {
+            var failedGames = new List<string>();
+            var gamesToUpdate = new List<Game>();
+
+            args.ProgressMaxValue = games.Count;
+            foreach (var game in games.TakeWhile(_ => !args.CancelToken.IsCancellationRequested))
+            {
+                args.Text = UIUtilities.GenerateTitle(args, game, progressTitle);
+
+                var musicFiles = _pathingService.GetGameMusicFiles(game);
+                if (musicFiles.IsEmpty())
+                {
+                    continue;
+                }
+
+                var allMusicNormalized = musicFiles.ForAny(NormalizeAudioFile);
+                if (allMusicNormalized)
+                {
+                    _tagger.AddTag(game, Resource.NormTag);
+                    gamesToUpdate.Add(game);
+                }
+                else
+                {
+                    failedGames.Add(game.Name);
+                }
+            }
+
+            if (gamesToUpdate.Any())
+            {
+                args.Text = progressTitle + "Updating Tags";
+
+            }
+            return failedGames;
+        }
 
         public bool NormalizeAudioFile(string filePath)
         {
@@ -39,7 +125,7 @@ namespace PlayniteSounds.Services.Files
             if (!string.IsNullOrWhiteSpace(_settings.FFmpegNormalizeArgs))
             {
                 args = _settings.FFmpegNormalizeArgs;
-                Logger.Info($"Using custom args '{args}' for file '{filePath}' during normalization.");
+                _logger.Info($"Using custom args '{args}' for file '{filePath}' during normalization.");
             }
 
 
@@ -83,11 +169,11 @@ namespace PlayniteSounds.Services.Files
 
                 if (!string.IsNullOrWhiteSpace(stderr))
                 {
-                    Logger.Error($"FFmpeg-Normalize failed for file '{filePath}' with error: {stderr} and output: {stdout}");
+                    _logger.Error($"FFmpeg-Normalize failed for file '{filePath}' with error: {stderr} and output: {stdout}");
                     return false;
                 }
 
-                Logger.Info($"FFmpeg-Normalize succeeded for file '{filePath}.");
+                _logger.Info($"FFmpeg-Normalize succeeded for file '{filePath}.");
                 return true;
             }
         }

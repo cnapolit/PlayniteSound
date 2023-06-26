@@ -1,6 +1,6 @@
 ﻿using Microsoft.Win32;
+using NAudio.Wave;
 using PlayniteSounds.Models;
-using PlayniteSounds.Services.Audio;
 using System;
 using System.Windows;
 
@@ -11,19 +11,13 @@ namespace PlayniteSounds.Services.State
         #region Infrastructure
 
         private readonly PlayniteSoundsSettings _settings;
-        private readonly IMusicPlayer           _musicPlayer;
-        private readonly ISoundPlayer           _soundPlayer;
-        private readonly IErrorHandler          _errorHandler;
+        private readonly IWavePlayer            _wavePlayer;
 
         public AppStateChangeHandler(
-            IMusicPlayer musicPlayer,
-            ISoundPlayer soundPlayer,
-            IErrorHandler errorHandler,
+            IWavePlayer waveplayer,
             PlayniteSoundsSettings settings)
         {
-            _musicPlayer = musicPlayer;
-            _soundPlayer = soundPlayer;
-            _errorHandler = errorHandler;
+            _wavePlayer = waveplayer;
             _settings = settings;
         }
 
@@ -37,18 +31,9 @@ namespace PlayniteSounds.Services.State
         {
             if (args.Mode is PowerModes.Resume)
             {
-                //fix sounds not playing after system resume
-                _errorHandler.Try(_soundPlayer.Close);
-
-                if (ShouldRestartOnResume())
-                {
-                    _errorHandler.Try(() => _musicPlayer.Resume(false));
-                }
+                _wavePlayer.Play();
             }
         }
-
-        private bool ShouldRestartOnResume()
-            => _settings.PauseOnDeactivate && Application.Current?.MainWindow?.WindowState != WindowState.Minimized;
 
         #endregion
 
@@ -58,7 +43,7 @@ namespace PlayniteSounds.Services.State
         {
             if (_settings.PauseOnDeactivate)
             {
-                _musicPlayer.Pause(false);
+                _wavePlayer.Pause();
             }
         }
 
@@ -70,7 +55,7 @@ namespace PlayniteSounds.Services.State
         {
             if (_settings.PauseOnDeactivate)
             {
-                _musicPlayer.Resume(false);
+                _wavePlayer.Play();
             }
         }
 
@@ -86,10 +71,10 @@ namespace PlayniteSounds.Services.State
                 {
                     case WindowState.Normal:
                     case WindowState.Maximized:
-                        _musicPlayer.Resume(false);
+                        _wavePlayer.Play();
                         break;
                     case WindowState.Minimized:
-                        _musicPlayer.Pause(false);
+                        _wavePlayer.Pause();
                         break;
                 }
             }

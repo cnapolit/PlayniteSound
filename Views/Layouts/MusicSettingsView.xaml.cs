@@ -1,20 +1,31 @@
-﻿using PlayniteSounds.Services.Audio;
+﻿using PlayniteSounds.Views.Models;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace PlayniteSounds.Views.Layouts
 {
-    public partial class MusicSettingsView : UserControl
+    public partial class MusicSettingsView : UserControl, IDisposable
     {
-        private readonly IMusicPlayer _musicPlayer;
+        private readonly TabItem _desktopTab;
+        private readonly TabItem _fullscreenTab;
 
-        public MusicSettingsView(IMusicPlayer musicPlayer)
+        public MusicSettingsView()
         {
-            _musicPlayer = musicPlayer;
             InitializeComponent();
+            DataContextChanged += SetModeDataContext;
         }
 
-        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-            => _musicPlayer.SetVolume();
+        public void Dispose()
+        {
+            DataContextChanged -= SetModeDataContext;
+        }
+
+        public void SetModeDataContext(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var settingsModel = DataContext as PlayniteSoundsSettingsViewModel;
+            _desktopTab.DataContext = settingsModel.DesktopSettingsModel;
+            _fullscreenTab.DataContext = settingsModel.FullscreenSettingsModel;
+        }
     }
 }

@@ -6,7 +6,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using File = System.IO.File;
+using PlayniteSounds.Models;
+using PlayniteSounds.Services.Play;
+using PlayniteSounds.Common.Extensions;
+using PlayniteSounds.Services.Audio;
 
 namespace PlayniteSounds.Services.Files
 {
@@ -17,13 +20,28 @@ namespace PlayniteSounds.Services.Files
         private static readonly ILogger         Logger           = LogManager.GetLogger();
         private        readonly IErrorHandler   _errorHandler;
         private        readonly IPathingService _pathingService;
+        private readonly IPromptFactory _promptFactory;
+        private readonly IMainViewAPI _mainViewAPI;
+        private readonly ITagger _tagger;
+        private readonly IMusicPlayer _musicPlayer;
+        private readonly PlayniteSoundsSettings _settings;
 
         public FileManager(
+            IMainViewAPI mainViewAPI,
             IErrorHandler errorHandler,
-            IPathingService pathingService)
+            IPromptFactory promptFactory,
+            IPathingService pathingService,
+            ITagger tagger,
+            IMusicPlayer musicPlayer,
+            PlayniteSoundsSettings settings)
         {
             _errorHandler = errorHandler;
             _pathingService = pathingService;
+            _mainViewAPI = mainViewAPI;
+            _promptFactory = promptFactory;
+            _tagger = tagger;
+            _musicPlayer = musicPlayer;
+            _settings = settings;
 
             Directory.CreateDirectory(_pathingService.DefaultMusicPath);
             Directory.CreateDirectory(_pathingService.PlatformMusicFilePath);
@@ -43,7 +61,7 @@ namespace PlayniteSounds.Services.Files
 
             if (Directory.Exists(soundFilesInstallPath) && !Directory.Exists(_pathingService.SoundFilesDataPath))
             {
-                _errorHandler.Try(() => AttemptCopyAudioFiles(soundFilesInstallPath));
+                _errorHandler.TryWithPrompt(() => AttemptCopyAudioFiles(soundFilesInstallPath));
             }
 
             var defaultMusicFile = Path.Combine(soundFilesInstallPath, SoundFile.DefaultMusicName);
@@ -65,8 +83,11 @@ namespace PlayniteSounds.Services.Files
 
         #region DeleteMusicDirectories
 
-        public IEnumerable<Game> DeleteMusicDirectories(IEnumerable<Game> games)
-            => games.Where(g => DeleteMusicDirectory(g));
+        public void DeleteMusicDirectories(IEnumerable<Game> games)
+            => PerformDeleteAction(Resource.DialogDeleteMusicDirectory, () => DeleteDirectories(games));
+
+        private void DeleteDirectories(IEnumerable<Game> games) 
+            => _tagger.UpdateGames(games.Where(g => _errorHandler.TryWithPrompt(() => DeleteMusicDirectory(g))));
 
         #endregion
 
@@ -96,47 +117,100 @@ namespace PlayniteSounds.Services.Files
 
         #region DeleteMusicFile
 
-        public void DeleteMusicFile(string musicFile, string musicFileName, Game game) 
-            => File.Delete(musicFile);
+        public void DeleteMusicFile(string musicFile, string musicFileName, Game game)
+        {
+            var deletePromptMessage = string.Format(Resource.DialogDeleteMusicFile, musicFileName);
+            PerformDeleteAction(deletePromptMessage, () => File.Delete(musicFile));
+
+            if (_settings.TagMissingEntries && game != null)
+            {
+                var dir = _pathingService.GetGameDirectoryPath(game);
+                if (!Directory.Exists(dir) || !Directory.GetFiles(dir).Any())
+                {
+                    _tagger.AddTag(game, Resource.MissingTag);
+                    _tagger.UpdateGames(new List<Game> { game });
+                }
+            }
+        }
 
         #endregion
 
-        #region SelectMusicForGame
+        #region SelectMusicForGames
 
-        public IEnumerable<string> SelectMusicForGame(Game game, IEnumerable<string> files)
-            => SelectMusicForDirectory(CreateMusicDirectory(game), files);
+        public void SelectMusicForGames(IEnumerable<Game> games)
+        {
+            IEnumerable<string> SelectMusicForGame(Game game) 
+                => SelectMusicForDirectory(CreateMusicDirectory(game), _promptFactory.PromptForMp3());
+
+            if (games.Count() is 1)
+            {
+                RestartMusicAfterSelect(() => games.Select(SelectMusicForGame).FirstOrDefault(),
+                games.Count() is 1 && _settings.CurrentUIStateSettings.MusicSource is AudioSource.Game);
+            }
+            else
+            {
+                var updatedGames = games.Where(g =>
+                    (SelectMusicForGame(g).HasNonEmptyItems()
+                        || _pathingService.GetGameMusicFiles(g).HasNonEmptyItems())
+                    && _tagger.AddTag(g, Resource.MissingTag));
+                _tagger.UpdateGames(updatedGames);
+            }
+        }
 
         #endregion
 
         #region  SelectStartSoundForGame
 
-        public string SelectStartSoundForGame(Game game, string file)
+        public string SelectStartSoundForGame(Game game)
         {
+            var filePath = _promptFactory.PromptForAudioFile().FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return null;
+            }
+
             var dir = Path.Combine(CreateMusicDirectory(game), SoundDirectory.StartingSoundFolder);
             Directory.CreateDirectory(dir);
-            return CopyFileToDirectory(dir, file);
+            return CopyFileToDirectory(dir, filePath);
         }
 
         #endregion
 
         #region SelectMusicForPlatform
 
-        public IEnumerable<string> SelectMusicForPlatform(Platform platform, IEnumerable<string> files)
-            => SelectMusicForDirectory(CreatePlatformDirectory(platform), files);
+        public void SelectMusicForPlatform(Platform platform)
+        {
+            var playNewMusic = _settings.CurrentUIStateSettings.MusicSource is AudioSource.Platform
+                && _mainViewAPI.SingleGame()
+                && _mainViewAPI.SelectedGames.First().Platforms.Contains(platform);
+            
+            RestartMusicAfterSelect(
+                () => SelectMusicForDirectory(CreatePlatformDirectory(platform), _promptFactory.PromptForMp3()),
+                playNewMusic);
+        }
 
         #endregion
 
         #region SelectMusicForFilter
 
-        public IEnumerable<string> SelectMusicForFilter(FilterPreset filter, IEnumerable<string> files)
-            => SelectMusicForDirectory(CreateFilterDirectory(filter), files);
+        public void SelectMusicForFilter(FilterPreset filter)
+        {
+            var playNewMusic = _settings.CurrentUIStateSettings.MusicSource is AudioSource.Filter
+                && _mainViewAPI.GetActiveFilterPreset() == filter.Id;
+            RestartMusicAfterSelect(
+                () => SelectMusicForDirectory(CreateFilterDirectory(filter), _promptFactory.PromptForMp3()), 
+                playNewMusic);
+        }
 
         #endregion
 
         #region SelectMusicForDefault
 
-        public IEnumerable<string> SelectMusicForDefault(IEnumerable<string> files)
-            => SelectMusicForDirectory(_pathingService.DefaultMusicPath, files);
+        public void SelectMusicForDefault()
+            => RestartMusicAfterSelect(
+                () => SelectMusicForDirectory(_pathingService.DefaultMusicPath, _promptFactory.PromptForMp3()),
+                 _settings.CurrentUIStateSettings.MusicSource is AudioSource.Default);
 
         #endregion
 
@@ -172,7 +246,8 @@ namespace PlayniteSounds.Services.Files
         #region OpenGameDirectories
 
         public void OpenGameDirectories(IEnumerable<Game> games)
-            => _errorHandler.Try(() => games.ForEach(g => Process.Start(_pathingService.GetGameDirectoryPath(g))));
+            => _errorHandler.TryWithPrompt(
+                () => games.ForEach(g => Process.Start(_pathingService.GetGameDirectoryPath(g))));
 
         #endregion
 
@@ -193,6 +268,28 @@ namespace PlayniteSounds.Services.Files
             File.Copy(musicFile, newMusicFile, true);
 
             return newMusicFile;
+        }
+
+        private void RestartMusicAfterSelect(Func<IEnumerable<string>> selectFunc, bool playNewMusic)
+        {
+            var newMusic = selectFunc();
+            var newMusicFile = newMusic.FirstOrDefault();
+
+            if (playNewMusic && newMusicFile != null)
+            {
+                _musicPlayer.CurrentMusicFile = newMusicFile;
+            }
+            else
+            {
+                _musicPlayer.Play(_mainViewAPI.SelectedGames);
+            }
+        }
+
+        private void PerformDeleteAction(string message, Action deleteAction)
+        {
+            if (!_promptFactory.PromptForApproval(message)) return;
+            deleteAction();
+            _musicPlayer.Play(_mainViewAPI.SelectedGames);
         }
 
         #endregion

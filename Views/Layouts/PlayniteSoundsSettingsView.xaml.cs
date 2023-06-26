@@ -1,23 +1,67 @@
-﻿using Playnite.SDK;
+﻿using PlayniteSounds.Views.Models;
+using System;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace PlayniteSounds.Views.Layouts
 {
-    public partial class PlayniteSoundsSettingsView : UserControl
+    public partial class PlayniteSoundsSettingsView : UserControl, IDisposable
     {
-        public PlayniteSoundsSettingsView(SoundSettingsView soundSettingsView, MusicSettingsView musicSettingsView)
+        private readonly Action<object> _containerReleaseMethod;
+
+        public PlayniteSoundsSettingsView(Action<object> containerReleaseMethod)
         {
             InitializeComponent();
-            Tabs.Items.Add(new TabItem
-            { 
-                Header = ResourceProvider.GetString("LOC_PLAYNITESOUNDS_Sound"), 
-                Content = soundSettingsView 
-            });
-            Tabs.Items.Add(new TabItem
+            DataContextChanged += SetModeDataContext;
+            _containerReleaseMethod = containerReleaseMethod;
+        }
+
+        public void Dispose()
+        {
+            DataContextChanged -= SetModeDataContext;
+
+            DesktopMusic.Dispose();
+            FullscreenMusic.Dispose();
+            //DisposeStack(DesktopSound);
+            //DisposeStack(FullscreenSound);
+
+            _containerReleaseMethod(this);
+        }
+
+        public void SetModeDataContext(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var settingsModel = DataContext as PlayniteSoundsSettingsViewModel;
+
+            General.DataContext = settingsModel;
+
+            PopulateSoundStack(DesktopSound, settingsModel.DesktopSettingsModel);
+            PopulateSoundStack(FullscreenSound, settingsModel.FullscreenSettingsModel);
+
+            GeneralMusic.DataContext = settingsModel;
+            DesktopMusic.DataContext = settingsModel.DesktopSettingsModel;
+            FullscreenMusic.DataContext = settingsModel.FullscreenSettingsModel;
+        }
+
+        private static void PopulateSoundStack(StackPanel stack, ModeSettingsModel settingsModel)
+        {
+
+            foreach (var stateToModel in settingsModel.UIStatesToSettingsModels)
             {
-                Header = ResourceProvider.GetString("LOC_PLAYNITESOUNDS_Music"),
-                Content = musicSettingsView
-            });
+                var control = new SoundUIStateSettingsControl
+                {
+                    Header = stateToModel.Key,
+                    DataContext = stateToModel.Value
+                };
+                stack.Children.Add(control);
+            }
+        }
+
+        private static void DisposeStack(StackPanel stack)
+        {
+            foreach (var child in stack.Children)
+            {
+                if (child is IDisposable disposable) disposable.Dispose();
+            }
         }
     }
 }

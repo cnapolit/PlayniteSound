@@ -12,8 +12,6 @@ namespace PlayniteSounds.Services.Installers
         public void Install(IWindsorContainer container, IConfigurationStore store)
         {
             var mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2)) { ReadFully = true };
-            // The plugin does not need a direct handle to the wave player,
-            // but the container tracks it to prevent garbage collection and dispose of it
             IWavePlayer wavePlayer = new WaveOutEvent();
             wavePlayer.Init(mixer);
             wavePlayer.Play();

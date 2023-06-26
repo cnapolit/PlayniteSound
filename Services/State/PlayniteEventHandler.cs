@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using Playnite.SDK.Plugins;
+using PlayniteSounds.Files.Download;
 
 namespace PlayniteSounds.Services.State
 {
@@ -24,12 +25,11 @@ namespace PlayniteSounds.Services.State
         private readonly IMusicPlayer           _musicPlayer;
         private readonly ISoundPlayer           _soundPlayer;
         private readonly IAppStateChangeHandler _appStateChangeHandler;
-        private readonly IFileMutationService   _fileMutationService;
+        private readonly IDownloadManager       _downloadManager;
         private readonly IFileManager           _fileManager;
         private readonly IPathingService        _pathingService;
         private readonly PlayniteSoundsSettings _settings;
         private          bool                   _extraMetaDataPluginIsLoaded;
-        private          bool                   _appStartedCompleted;
 
         public PlayniteEventHandler(
             IMainViewAPI mainViewAPI,
@@ -38,7 +38,7 @@ namespace PlayniteSounds.Services.State
             IAppStateChangeHandler appStateChangeHandler,
             IMusicPlayer musicPlayer,
             ISoundPlayer audioPlayer,
-            IFileMutationService fileMutationService,
+            IDownloadManager downloadManager,
             IFileManager fileManager,
             IPathingService pathingService,
             PlayniteSoundsSettings settings)
@@ -48,7 +48,7 @@ namespace PlayniteSounds.Services.State
             _appStateChangeHandler = appStateChangeHandler;
             _musicPlayer = musicPlayer;
             _soundPlayer = audioPlayer;
-            _fileMutationService = fileMutationService;
+            _downloadManager = downloadManager;
             _fileManager = fileManager;
             _pathingService = pathingService;
             _settings = settings;
@@ -67,14 +67,14 @@ namespace PlayniteSounds.Services.State
         #region OnGameInstalled
 
         public void OnGameInstalled()
-            => _soundPlayer.PlayGameInstalled();
+            => _soundPlayer.PlaySound(SoundType.GameInstalled);
 
         #endregion
 
         #region OnGameUninstalled
 
         public void OnGameUninstalled()
-            => _soundPlayer.PlayGameUnInstalled();
+            => _soundPlayer.PlaySound(SoundType.GameUninstalled);
 
         #endregion
 
@@ -82,12 +82,8 @@ namespace PlayniteSounds.Services.State
 
         public void OnGameSelected()
         {
-            _soundPlayer.PlayGameSelected();
-
-            if (_appStartedCompleted)
-            {
-                _musicPlayer.Play(_mainViewAPI.SelectedGames);
-            }
+            _soundPlayer.PlaySound(SoundType.GameSelected);
+            _musicPlayer.Play(_mainViewAPI.SelectedGames);
         }
 
         #endregion
@@ -100,8 +96,8 @@ namespace PlayniteSounds.Services.State
             {
                 _musicPlayer.Pause(true);
             }
-
-            _soundPlayer.PlayGameStarted();
+            
+            _soundPlayer.PlaySound(SoundType.GameStarted);
         }
 
         #endregion
@@ -114,8 +110,9 @@ namespace PlayniteSounds.Services.State
             {
                 _musicPlayer.Pause(true);
             }
-
-            _soundPlayer.PlayGameStarting(game);
+            
+            _soundPlayer.StartingGame = game;
+            _soundPlayer.PlaySound(SoundType.GameStarting);
         }
 
         #endregion
@@ -124,7 +121,7 @@ namespace PlayniteSounds.Services.State
 
         public void OnGameStopped()
         {
-            _soundPlayer.PlayGameStopped();
+            _soundPlayer.PlaySound(SoundType.GameStopped);
             _musicPlayer.Resume(true);
         }
 
@@ -135,8 +132,8 @@ namespace PlayniteSounds.Services.State
         public void OnApplicationStarted(List<Plugin> plugins)
         {
             _fileManager.CopyAudioFiles();
-
-            _soundPlayer.PlayAppStarted(AppStartedEnded);
+            
+            _soundPlayer.PlaySound(SoundType.AppStarted, AppStartedEnded);
 
             _extraMetaDataPluginIsLoaded = plugins.Any(p => p.Id.ToString() is App.ExtraMetaGuid);
 
@@ -146,9 +143,9 @@ namespace PlayniteSounds.Services.State
             Application.Current.Activated += _appStateChangeHandler.OnApplicationActivate;
         }
 
-        private void AppStartedEnded(object _, EventArgs __)
+        private void AppStartedEnded()
         {
-            _appStartedCompleted = true;
+            _musicPlayer.StartSoundFinished = true;
             _musicPlayer.Play(_mainViewAPI.SelectedGames);
         }
 
@@ -167,7 +164,7 @@ namespace PlayniteSounds.Services.State
                 Application.Current.MainWindow.StateChanged -= _appStateChangeHandler.OnWindowStateChanged;
             }
 
-            _soundPlayer.PlayAppStopped();
+            _soundPlayer.PlaySound(SoundType.AppStopped);
         }
 
         #region OnLibraryUpdated
@@ -178,14 +175,14 @@ namespace PlayniteSounds.Services.State
             {
                 var games = _gameDatabaseAPI.Games.Where(
                     x => x.Added != null && x.Added > _settings.LastAutoLibUpdateAssetsDownload);
-                _fileMutationService.CreateDownloadDialogue(games, Source.All);
+                _downloadManager.CreateDownloadDialogue(games, Source.All);
 
                 // Cache time for next update event
                 _settings.LastAutoLibUpdateAssetsDownload = DateTime.Now;
                 saveAction(_settings);
             }
 
-            _soundPlayer.PlayLibraryUpdated();
+            _soundPlayer.PlaySound(SoundType.LibraryUpdated);
         }
 
         #endregion
@@ -197,7 +194,8 @@ namespace PlayniteSounds.Services.State
         public void OnGameDetailsEntered()
         {
             _settings.UIState = UIState.GameDetails;
-            _musicPlayer.UIState = UIState.GameDetails;
+            _musicPlayer.UIStateChanged();
+            _soundPlayer.PlaySound(SoundType.GameSelected);
         }
 
         #endregion
@@ -207,7 +205,8 @@ namespace PlayniteSounds.Services.State
         public void OnMainViewEntered()
         {
             _settings.UIState = UIState.Main;
-            _musicPlayer.UIState = UIState.Main;
+            _musicPlayer.UIStateChanged();
+            _soundPlayer.PlaySound(SoundType.GameSelected);
         }
 
         #endregion
@@ -216,8 +215,9 @@ namespace PlayniteSounds.Services.State
 
         public void OnSettingsEntered()
         {
-            _settings.UIState = UIState.Settings;
-            _musicPlayer.UIState = UIState.Settings;
+            _settings.UIState = UIState.MainMenu;
+            _musicPlayer.UIStateChanged();
+            _soundPlayer.PlaySound(SoundType.GameSelected);
         }
 
         #endregion

@@ -15,20 +15,22 @@ namespace PlayniteSounds.Services.UI
     {
         #region Infrastructure
 
+        private readonly IGameDatabaseAPI         _gameDatabaseApi;
         private readonly IPathingService          _pathingService;
         private readonly ISoundPlayer             _soundPlayer;
         private readonly ISoundManager            _soundManager;
         private readonly Lazy<List<MainMenuItem>> _mainMenuItems;
 
         public MainMenuFactory(
-            IPlayniteAPI api,
+            IMainViewAPI mainViewApi,
+            IGameDatabaseAPI gameDatabaseApi,
             IPathingService pathingService,
-            IFileMutationService fileMutationService,
             IFileManager fileManager,
             IMusicPlayer musicPlayer,
             ISoundPlayer audioPlayer,
-            ISoundManager soundManager) : base(api, fileMutationService, fileManager, musicPlayer)
+            ISoundManager soundManager) : base(mainViewApi, fileManager, musicPlayer)
         {
+            _gameDatabaseApi = gameDatabaseApi;
             _pathingService = pathingService;
             _soundPlayer = audioPlayer;
             _soundManager = soundManager;
@@ -37,10 +39,9 @@ namespace PlayniteSounds.Services.UI
             {
                 ConstructMainMenuItem(Resource.ActionsOpenMusicFolder,     _soundManager.OpenMusicFolder),
                 ConstructMainMenuItem(Resource.ActionsOpenSoundsFolder,    _soundManager.OpenSoundsFolder),
-                ConstructMainMenuItem(Resource.ActionsReloadAudioFiles,    _soundPlayer.Close),
                 ConstructMainMenuItem(Resource.ActionsHelp,                _soundManager.HelpMenu),
                 new MainMenuItem { Description = "-", MenuSection = App.MainMenuName },
-                ConstructMainMenuItem(Resource.ActionsCopySelectMusicFile, _fileMutationService.SelectMusicForDefault, "|" + Resource.ActionsDefault),
+                ConstructMainMenuItem(Resource.ActionsCopySelectMusicFile, _fileManager.SelectMusicForDefault, "|" + Resource.ActionsDefault),
             });
         }
 
@@ -55,16 +56,16 @@ namespace PlayniteSounds.Services.UI
             var mainMenuItems = new List<MainMenuItem>(_mainMenuItems.Value);
 
             mainMenuItems.AddRange(CreateDirectoryMainMenuItems(
-                _api.Database.Platforms,
+                _gameDatabaseApi.Platforms,
                 Resource.ActionsPlatform,
                 _fileManager.CreatePlatformDirectory,
-                _fileMutationService.SelectMusicForPlatform));
+                _fileManager.SelectMusicForPlatform));
 
             mainMenuItems.AddRange(CreateDirectoryMainMenuItems(
-                _api.Database.FilterPresets,
+                _gameDatabaseApi.FilterPresets,
                 Resource.ActionsFilter,
                 _fileManager.CreateFilterDirectory,
-                _fileMutationService.SelectMusicForFilter));
+                _fileManager.SelectMusicForFilter));
 
             var defaultSubMenu = $"|{Resource.ActionsDefault}";
             var defaultFiles = Directory.GetFiles(_pathingService.DefaultMusicPath);

@@ -1,11 +1,13 @@
 ﻿using Playnite.SDK.Models;
+using System.Collections.Generic;
 
 namespace PlayniteSounds.Services.Play
 {
     public interface ITagger
     {
-        void AddMissingTag(Game game);
-        void UpdateMissingTag(Game game, bool fileCreated, string gameDirectory);
-        void AddNormalizedTag(Game game);
+        bool AddTag(Game game, string tagName);
+        bool RemoveTag(Game game, string tagName);
+        void UpdateGames(IEnumerable<Game> games);
+        void UpdateGames(IList<Game> games);
     }
 }

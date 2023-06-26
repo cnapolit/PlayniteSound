@@ -6,40 +6,38 @@ using System.Collections.Generic;
 using System.Linq;
 using PlayniteSounds.Common.Constants;
 using System.Threading;
-using PlayniteSounds.Common.Extensions;
 using PlayniteSounds.Common;
 using PlayniteSounds.Services.Audio;
 using System.IO;
 using PlayniteSounds.Files.Download;
 using PlayniteSounds.Services.Play;
-using PlayniteSounds.Common.Utilities;
 
 namespace PlayniteSounds.Services.Files
 {
-    public class FileMutationService : IFileMutationService
+    public class FileMutationService// : IFileMutationService
     {
         #region Infrastructure
 
         private static readonly ILogger                Logger            = LogManager.GetLogger();
-        private        readonly IMainViewAPI           _mainViewAPI;
         private        readonly IDownloadManager       _downloadManager;
         private        readonly IErrorHandler          _errorHandler;
         private        readonly IFileManager           _fileManager;
         private        readonly IPathingService        _pathingService;
         private        readonly INormalizer            _normalizer;
         private        readonly ITagger                _tagger;
+        private        readonly IMainViewAPI           _mainViewAPI;
         private        readonly IPromptFactory         _promptFactory;
         private        readonly IMusicPlayer           _musicPlayer;
         private        readonly PlayniteSoundsSettings _settings;
 
         public FileMutationService(
-            IMainViewAPI mainViewAPI,
             IDownloadManager downloadManager,
             IErrorHandler errorHandler,
             IFileManager fileManager,
             IPathingService pathingService,
             INormalizer normalizer,
             ITagger tagger,
+            IMainViewAPI mainViewAPI,
             IPromptFactory promptFactory,
             IMusicPlayer musicPlayer,
             PlayniteSoundsSettings settings)
@@ -62,109 +60,26 @@ namespace PlayniteSounds.Services.Files
 
         #region SelectMusicForPlatform
 
-        public void SelectMusicForPlatform(Platform platform)
-        {
-            var playNewMusic =
-                   EnumUtilities.SoundsSettingsToMusicType(_settings) is MusicType.Platform
-                && _mainViewAPI.SingleGame()
-                && _mainViewAPI.SelectedGames.First().Platforms.Contains(platform);
-
-            RestartMusicAfterSelect(
-                () => _fileManager.SelectMusicForPlatform(platform, _promptFactory.PromptForMp3()), playNewMusic);
-        }
-
         #endregion
 
         #region SelectMusicForGames
-
-        public void SelectMusicForGames(IEnumerable<Game> games)
-        {
-            RestartMusicAfterSelect(
-                () => games.Select(
-                    g => _fileManager.SelectMusicForGame(g, _promptFactory.PromptForMp3()).FirstOrDefault()),
-                games.Count() is 1 && EnumUtilities.SoundsSettingsToMusicType(_settings) is MusicType.Game);
-
-            var gamesToNewFiles = games.ToDictionary(
-                g => g, g => _fileManager.SelectMusicForGame(g, _promptFactory.PromptForMp3()));
-
-            foreach (var gameToFiles in gamesToNewFiles)
-            {
-                var hasMusicFiles = gameToFiles.Value.HasNonEmptyItems()
-                    || _pathingService.GetGameMusicFiles(gameToFiles.Key).HasNonEmptyItems();
-                if (hasMusicFiles)
-                {
-                    _tagger.UpdateMissingTag(gameToFiles.Key, true, _fileManager.CreateMusicDirectory(gameToFiles.Key));
-                }
-            }
-        }
-
-        #endregion
-
-        #region SelectStartSoundForGame
-
-        public void SelectStartSoundForGame(Game game)
-        {
-            var filePath = _promptFactory.PromptForAudioFile().FirstOrDefault();
-
-            if (!string.IsNullOrWhiteSpace(filePath))
-            {
-                _fileManager.SelectStartSoundForGame(game, filePath);
-            }
-        }
 
         #endregion
 
         #region SelectMusicForDefault
 
-        public void SelectMusicForDefault()
-            => RestartMusicAfterSelect(
-                () => _fileManager.SelectMusicForDefault(_promptFactory.PromptForMp3()),
-                EnumUtilities.SoundsSettingsToMusicType(_settings) is MusicType.Default);
 
         #endregion
 
         #region SelectMusicForFilter
 
-        public void SelectMusicForFilter(FilterPreset filter)
-        {
-            var playNewMusic = EnumUtilities.SoundsSettingsToMusicType(_settings) is MusicType.Filter
-                && _mainViewAPI.GetActiveFilterPreset() == filter.Id;
-
-            RestartMusicAfterSelect(
-                () => _fileManager.SelectMusicForFilter(filter, _promptFactory.PromptForMp3()), playNewMusic);
-        }
-
         #endregion
 
         #region DeleteMusicDirectories
 
-        public void DeleteMusicDirectories(IEnumerable<Game> games)
-            => PerformDeleteAction(
-                Resource.DialogDeleteMusicDirectory,
-                () => games.ForEach(g => _errorHandler.Try(() => DeleteMusicDirectory(g))));
-
-        private void DeleteMusicDirectory(Game game)
-        {
-            if (_fileManager.DeleteMusicDirectory(game))
-            {
-                _tagger.AddMissingTag(game);
-            }
-        }
-
         #endregion
 
         #region DeleteMusicFile
-
-        public void DeleteMusicFile(string musicFile, string musicFileName, Game game)
-        {
-            var deletePromptMessage = string.Format(Resource.DialogDeleteMusicFile, musicFileName);
-            PerformDeleteAction(deletePromptMessage, () => _fileManager.DeleteMusicFile(musicFile, musicFileName, game));
-
-            if (_settings.TagMissingEntries && game != null)
-            {
-                _tagger.UpdateMissingTag(game, false, _pathingService.GetGameDirectoryPath(game));
-            }
-        }
 
         #endregion
 
@@ -182,8 +97,6 @@ namespace PlayniteSounds.Services.Files
 
             var overwriteSelect = _promptFactory.PromptForApproval(Resource.DialogMessageOverwriteSelect);
 
-            _musicPlayer.Close();
-
             CreateDownloadDialogue(games, source, albumSelect, songSelect, overwriteSelect);
 
             _promptFactory.ShowMessage(Resource.DialogMessageDone);
@@ -194,56 +107,6 @@ namespace PlayniteSounds.Services.Files
         #endregion
 
         #region CreateNormalizationDialogue
-
-        public void CreateNormalizationDialogue()
-        {
-            _musicPlayer.Close();
-            var failedGames = new List<string>();
-
-            _promptFactory.CreateGlobalProgress(Resource.DialogMessageNormalizingFiles,(args, title)
-                => failedGames = NormalizeSelectedGameMusicFiles(args, _mainViewAPI.SelectedGames.ToList(), title));
-
-            if (failedGames.Any())
-            {
-                _promptFactory.ShowError($"The following games had at least one file fail to normalize (see logs for details): {string.Join(", ", failedGames)}");
-            }
-            else
-            {
-                _promptFactory.ShowMessage(Resource.DialogMessageDone);
-            }
-
-            _musicPlayer.Play(_mainViewAPI.SelectedGames);
-        }
-
-        private List<string> NormalizeSelectedGameMusicFiles(
-            GlobalProgressActionArgs args, IList<Game> games, string progressTitle)
-        {
-            var failedGames = new List<string>();
-
-            args.ProgressMaxValue = games.Count;
-            foreach (var game in games.TakeWhile(_ => !args.CancelToken.IsCancellationRequested))
-            {
-                args.Text = GenerateTitle(args, game, progressTitle);
-
-                var musicFiles = _pathingService.GetGameMusicFiles(game);
-                if (musicFiles.IsEmpty())
-                {
-                    continue;
-                }
-
-                var allMusicNormalized = musicFiles.ForAny(f => _normalizer.NormalizeAudioFile(f));
-                if (allMusicNormalized)
-                {
-                    _tagger.AddNormalizedTag(game);
-                }
-                else
-                {
-                    failedGames.Add(game.Name);
-                }
-            }
-
-            return failedGames;
-        }
 
         #endregion
 
@@ -268,8 +131,6 @@ namespace PlayniteSounds.Services.Files
 
         private void RestartMusicAfterSelect(Func<IEnumerable<string>> selectFunc, bool playNewMusic)
         {
-            _musicPlayer.Close();
-
             var newMusic = selectFunc();
             var newMusicFile = newMusic.FirstOrDefault();
 
@@ -286,8 +147,6 @@ namespace PlayniteSounds.Services.Files
         private void PerformDeleteAction(string message, Action deleteAction)
         {
             if (!_promptFactory.PromptForApproval(message)) return;
-
-            _musicPlayer.Close();
 
             deleteAction();
 
@@ -353,6 +212,7 @@ namespace PlayniteSounds.Services.Files
             bool overwrite)
         {
             args.ProgressMaxValue = games.Count;
+            var gamesToUpdateTags = new List<Game>();
             foreach (var game in games.TakeWhile(_ => !args.CancelToken.IsCancellationRequested))
             {
                 args.Text = GenerateTitle(args, game, progressTitle);
@@ -362,17 +222,37 @@ namespace PlayniteSounds.Services.Files
                 var newFilePath =
                     DownloadSongFromGame(source, game.Name, gameDirectory, songSelect, albumSelect, overwrite);
 
+                var addToUpdatedGames = false;
                 var fileDownloaded = newFilePath != null;
+
+                if (fileDownloaded)
+                {
+                    addToUpdatedGames = _tagger.RemoveTag(game, Resource.MissingTag);
+                }
+                else if (!Directory.Exists(gameDirectory) || !Directory.GetFiles(gameDirectory).Any())
+                {
+                    addToUpdatedGames = _tagger.AddTag(game, Resource.MissingTag);
+                }
+
                 if (_settings.NormalizeMusic && fileDownloaded)
                 {
                     args.Text += $" - {Resource.DialogMessageNormalizingFiles}";
                     if (_normalizer.NormalizeAudioFile(newFilePath))
                     {
-                        _tagger.AddNormalizedTag(game);
+                        addToUpdatedGames |= _tagger.AddTag(game, Resource.NormTag);
                     }
                 }
 
-                _tagger.UpdateMissingTag(game, fileDownloaded, gameDirectory);
+                if (addToUpdatedGames)
+                {
+                    gamesToUpdateTags.Add(game);
+                }
+            }
+
+            if (gamesToUpdateTags.Any())
+            {
+                args.Text = progressTitle + "Updating Tags";
+                _tagger.UpdateGames(gamesToUpdateTags);
             }
         }
 

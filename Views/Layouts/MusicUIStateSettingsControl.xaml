@@ -1,0 +1,22 @@
+﻿<UserControl x:Class="PlayniteSounds.Views.Layouts.MusicUIStateSettingsControl"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+            xmlns:Models="clr-namespace:PlayniteSounds.Views.Models"
+            d:DataContext="{d:DesignInstance Type=Models:UIStateSettingsModel}"
+            mc:Ignorable="d"
+          Loaded="LoadSlider_ValueChanged">
+    <Expander x:Name="Expander">
+        <StackPanel>
+            <CheckBox IsChecked="{Binding Settings.MusicMuffled}" Content="Music Muffled"/>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Music Volume" d:LayoutOverrides="VerticalAlignment"/>
+                <Label Content=" "/>
+                <Label Content="{Binding MusicVolumePercent}" />
+                <Label Content="%"/>
+            </StackPanel>
+            <Slider x:Name="Slider" Value="{Binding MusicVolumePercent}"/>
+        </StackPanel>
+    </Expander>
+</UserControl>

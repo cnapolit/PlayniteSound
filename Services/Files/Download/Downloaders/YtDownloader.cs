@@ -18,12 +18,13 @@ namespace PlayniteSounds.Files.Download.Downloaders
         private const           Source                 DlSource        = Source.Youtube;
         private const           string                 baseUrl         = "https://www.youtube.com/embed/";
         private const           string                 PlaylistUrl     = baseUrl + "videoseries?list=";
-        private static readonly ILogger                Logger          = LogManager.GetLogger();
+        private        readonly ILogger                _logger;
         private        readonly YoutubeClient          _youtubeClient;
         private        readonly PlayniteSoundsSettings _settings;
 
-        public YtDownloader(HttpClient httpClient, PlayniteSoundsSettings settings)
+        public YtDownloader(ILogger logger, HttpClient httpClient, PlayniteSoundsSettings settings)
         {
+            _logger = logger;
             _youtubeClient = new YoutubeClient(httpClient);
             _settings = settings;
         }
@@ -149,7 +150,7 @@ namespace PlayniteSounds.Files.Download.Downloaders
             }
             catch (Exception e)
             {
-                Logger.Error(e, $"Something went wrong when attempting to download from Youtube with Id '{song.Id}' and Path '{path}'");
+                _logger.Error(e, $"Something went wrong when attempting to download from Youtube with Id '{song.Id}' and Path '{path}'");
                 return false;
             }
         }
