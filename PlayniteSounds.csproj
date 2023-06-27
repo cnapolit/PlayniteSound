@@ -150,6 +150,7 @@
     <Compile Include="Models\Settings\SoundTypeSettings.cs" />
     <Compile Include="Models\UI\UIState.cs" />
     <Compile Include="Models\Settings\UIStateSettings.cs" />
+    <Compile Include="PlayniteSoundsPlugin.cs" />
     <Compile Include="Services\Installers\Installation.cs" />
     <Compile Include="Services\Installers\MiscInstaller.cs" />
     <Compile Include="Services\Installers\PlayniteInstaller.cs" />
@@ -187,7 +188,6 @@
     <Compile Include="Interfaces\IGameViewControlFactory.cs" />
     <Compile Include="Interfaces\IModelFactory.cs" />
     <Compile Include="Services\UI\Localization.cs" />
-    <Compile Include="PlayniteSounds.cs" />
     <Compile Include="Services\UI\ModelFactory.cs" />
     <Compile Include="Views\Layouts\GeneralSettingsTab.xaml.cs">
       <DependentUpon>GeneralSettingsTab.xaml</DependentUpon>
