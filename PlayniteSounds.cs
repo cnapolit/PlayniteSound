@@ -16,7 +16,7 @@ using System.Text.Json;
 
 namespace PlayniteSounds
 {
-    public class PlayniteSounds : GenericPlugin
+    public class PlayniteSoundsPlugin : GenericPlugin
     {
         #region Infrastructure
 
@@ -36,7 +36,7 @@ namespace PlayniteSounds
         private IGameViewControlFactory GameViewFactory => _gameViewFactory.Value;
 
 
-        public PlayniteSounds(IPlayniteAPI api) : base(api)
+        public PlayniteSoundsPlugin(IPlayniteAPI api) : base(api)
         {
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {

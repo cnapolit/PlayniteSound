@@ -9,7 +9,7 @@ namespace PlayniteSounds.Services.Installers
     internal static class Installation
     {
         internal static IWindsorContainer RegisterInstallers(
-            IPlayniteAPI api, PlayniteSounds plugin, PlayniteSoundsSettings settings) 
+            IPlayniteAPI api, PlayniteSoundsPlugin plugin, PlayniteSoundsSettings settings) 
             => new WindsorContainer().Install(FromAssembly.This(), new PlayniteInstaller(api)).
                                       Register(RegisterInstance(plugin), RegisterInstance(settings));
 

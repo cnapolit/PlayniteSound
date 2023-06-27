@@ -61,14 +61,14 @@ namespace PlayniteSounds.Views.Models
         public RelayCommand<object> NavigateUrlCommand 
             => new RelayCommand<object>(url => Process.Start((url as Uri).AbsoluteUri));
 
-        private readonly PlayniteSounds _plugin;
+        private readonly PlayniteSoundsPlugin _plugin;
         public ModeSettingsModel DesktopSettingsModel { get; private set; }
         public ModeSettingsModel FullscreenSettingsModel { get; private set; }
 
         public PlayniteSoundsSettingsViewModel(
             IModelFactory modelFactory,
             IMusicPlayer musicPlayer,
-            PlayniteSounds plugin, 
+            PlayniteSoundsPlugin plugin, 
             PlayniteSoundsSettings settings,
             Action<object> containerReleaseMethod)
         {
