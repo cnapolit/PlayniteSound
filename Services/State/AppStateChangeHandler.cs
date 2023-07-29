@@ -35,7 +35,7 @@ namespace PlayniteSounds.Services.State
         {
             if (args.Mode is PowerModes.Resume)
             {
-                //_wavePlayer.Play();
+                _wavePlayer.Play();
             }
         }
 
@@ -47,7 +47,7 @@ namespace PlayniteSounds.Services.State
         {
             if (_settings.PauseOnDeactivate)
             {
-                //Pause();
+                Pause();
             }
         }
 
@@ -59,7 +59,7 @@ namespace PlayniteSounds.Services.State
         {
             if (_settings.PauseOnDeactivate)
             {
-                //Resume();
+                Resume();
             }
         }
 
@@ -73,10 +73,10 @@ namespace PlayniteSounds.Services.State
             {
                 case WindowState.Normal:
                 case WindowState.Maximized:
-                    //Resume();
+                    Resume();
                     break;
                 case WindowState.Minimized:
-                    //Pause();
+                    Pause();
                     break;
             }
         }

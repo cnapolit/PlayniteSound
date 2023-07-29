@@ -25,12 +25,10 @@ namespace PlayniteSounds.Services.State
 
         public PlayniteEventHandler(
             IMainViewAPI mainViewAPI,
-            IUriHandlerAPI uriHandlerAPI,
             PlayniteSoundsSettings settings)
         {
             _mainViewAPI = mainViewAPI;
             _settings = settings;
-            uriHandlerAPI.RegisterSource(App.SourceName, HandleUriEvent);
         }
 
         #endregion
@@ -85,25 +83,6 @@ namespace PlayniteSounds.Services.State
         }
 
         #region Helpers
-
-        #region Callback Methods
-
-        // ex: playnite://Sounds/Play/someId
-        // Sounds maintains a list of plugins who want the music paused and will only allow play when
-        // no other plugins have paused.
-        private void HandleUriEvent(PlayniteUriEventArgs args)
-        {
-            var action = args.Arguments[0];
-            var senderId = args.Arguments[1];
-
-            switch (action.ToLower())
-            {
-                //case "play": _musicPlayer.Resume(senderId); break;
-                //case "pause": _musicPlayer.Pause(senderId); break;
-            }
-        }
-
-        #endregion
 
         private void TriggerPlayniteEventOccurred(PlayniteEvent playniteEvent)
             => TriggerPlayniteEventOccurred(playniteEvent, _mainViewAPI.SelectedGames?.FirstOrDefault());

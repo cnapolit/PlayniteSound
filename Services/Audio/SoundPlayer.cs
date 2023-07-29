@@ -20,7 +20,6 @@ namespace PlayniteSounds.Services.Audio
     public class SoundPlayer : BasePlayer, ISoundPlayer, IDisposable
     {
         #region Infrastructure
-        public static bool SkipTick = true;
 
         private readonly IMainViewAPI    _mainViewAPI;
         private readonly IPathingService _pathingService;
@@ -90,9 +89,11 @@ namespace PlayniteSounds.Services.Audio
             if (args.SoundTypeSettings.Enabled) switch (args.Event)
             {
                 case PlayniteEvent.GameSelected:
-                        return;
-                    _currentGame = args.Games.FirstOrDefault();
-                    sampleProvider = GetSelectSoundSampleProvider(args.SoundTypeSettings);
+                    if (_settings.PlayTickOnGameSelect)
+                    {
+                        _currentGame = args.Games.FirstOrDefault();
+                        sampleProvider = GetSelectSoundSampleProvider(args.SoundTypeSettings);
+                    }
                     break;
                 case PlayniteEvent.AppStarted:
                     _playMusicCallback = null;
@@ -120,11 +121,6 @@ namespace PlayniteSounds.Services.Audio
 
         private void UIStateChanged(object sender, UIStateChangedArgs args)
         {
-            if (args.NewState != UIState.MainMenu)
-            {
-                SkipTick = true;
-            }
-
             SoundTypeSettings settings = null;
             _uiStateSettings = args.NewSettings;
 
@@ -187,12 +183,6 @@ namespace PlayniteSounds.Services.Audio
 
         public void Tick()
         {
-            if (false)//SkipTick)
-            {
-                SkipTick = false;
-                return;
-            }
-
             var settings = _uiStateSettings.TickSettings;
             if (settings.Enabled) /* Then */ PlaySound(GetSelectSoundSampleProvider(settings), null);
         }

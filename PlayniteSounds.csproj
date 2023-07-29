@@ -151,6 +151,7 @@
     <Compile Include="Interfaces\IButtonLoadConverter.cs" />
     <Compile Include="Interfaces\IFocusConverter.cs" />
     <Compile Include="Interfaces\IItemCollectionChangedHandler.cs" />
+    <Compile Include="Interfaces\IUriHandler.cs" />
     <Compile Include="Interfaces\IVisiblityConverter.cs" />
     <Compile Include="Models\Audio\SampleProviders\AutoDisposeFileReader.cs" />
     <Compile Include="Models\Audio\CachedSound.cs" />
@@ -207,6 +208,7 @@
     <Compile Include="Services\State\FauxConverters\FocusConverter.cs" />
     <Compile Include="Services\State\FauxConverters\VisiblityConverter.cs" />
     <Compile Include="Services\State\ItemCollectionChangedHandler.cs" />
+    <Compile Include="Services\State\UriHandler.cs" />
     <Compile Include="Services\UI\GameViewControlFactory.cs" />
     <Compile Include="Interfaces\IGameViewControlFactory.cs" />
     <Compile Include="Interfaces\IModelFactory.cs" />

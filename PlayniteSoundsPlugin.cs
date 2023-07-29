@@ -19,6 +19,7 @@ using PlayniteSounds.Services.State.FauxConverters;
 using System.Linq;
 using Microsoft.Win32;
 using System.Windows;
+using PlayniteSounds.Interfaces;
 
 namespace PlayniteSounds
 {
@@ -67,8 +68,8 @@ namespace PlayniteSounds
 
             _container = Installation.RegisterInstallers(api, this, Settings);
 
-            _container.Resolve<IMusicPlayer>();
             _container.Resolve<ISoundPlayer>();
+            _container.Resolve<IUriHandler>();
             _playniteEventHandler = LazyResolve<IPlayniteEventHandler>();
             _gameMenuFactory = LazyResolve<IGameMenuFactory>();
             _mainMenuFactory = LazyResolve<IMainMenuFactory>();

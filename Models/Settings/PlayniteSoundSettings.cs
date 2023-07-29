@@ -14,6 +14,7 @@ namespace PlayniteSounds.Models
         public bool         ManualParallelDownload          { get; set; } = true;
         public bool         NormalizeMusic                  { get; set; } = true;
         public bool         PauseOnDeactivate               { get; set; } = true;
+        public bool         PlayTickOnGameSelect            { get; set; } = true;
         public bool         RandomizeOnMusicEnd             { get; set; } = true;
         public bool         SkipFirstSelectSound            { get; set; } = true;
         public bool         StopMusicOnGameStarting         { get; set; } = true;
