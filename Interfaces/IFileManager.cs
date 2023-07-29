@@ -19,5 +19,6 @@ namespace PlayniteSounds.Services.Files
         void SelectMusicForGames(IEnumerable<Game> games);
         string SelectStartSoundForGame(Game game);
         void DeleteMusicDirectories(IEnumerable<Game> games);
+        void CreateSymLinks();
     }
 }

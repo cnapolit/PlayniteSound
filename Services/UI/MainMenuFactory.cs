@@ -40,6 +40,7 @@ namespace PlayniteSounds.Services.UI
                 ConstructMainMenuItem(Resource.ActionsOpenMusicFolder,     _soundManager.OpenMusicFolder),
                 ConstructMainMenuItem(Resource.ActionsOpenSoundsFolder,    _soundManager.OpenSoundsFolder),
                 ConstructMainMenuItem(Resource.ActionsHelp,                _soundManager.HelpMenu),
+                ConstructMainMenuItem("Create Symbolic Links", _fileManager.CreateSymLinks),
                 new MainMenuItem { Description = "-", MenuSection = App.MainMenuName },
                 ConstructMainMenuItem(Resource.ActionsCopySelectMusicFile, _fileManager.SelectMusicForDefault, "|" + Resource.ActionsDefault),
             });

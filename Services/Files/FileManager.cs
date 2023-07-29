@@ -237,6 +237,48 @@ namespace PlayniteSounds.Services.Files
 
         #endregion
 
+        [DllImport("kernel32.dll")]
+        static extern bool CreateSymbolicLinkA(string lpSymlinkFileName, string lpTargetFileName, SymbolicLink dwFlags);
+
+        enum SymbolicLink
+        {
+            File = 0,
+            Directory = 1,
+            UnPrivileged = 2
+        }
+
+        public void CreateSymLinks()
+        {
+            foreach (var gameDir in Directory.GetDirectories(_pathingService.GameMusicFilePath))
+            {
+                CreateSymLink(gameDir);
+            }
+        }
+
+        public void CreateSymLink(string dir)
+        {
+            var musicDir = Path.Combine(dir, SoundDirectory.Music);
+            if (Directory.Exists(musicDir))
+            {
+                var targetFiles = Directory.GetFiles(musicDir);
+                if (targetFiles.Any())
+                {
+                    var targetFile = targetFiles.First();
+                    var destination = Path.Combine(dir, "Music.mp3");
+
+                    if (Directory.GetFiles(dir).Contains("Music.mp3"))
+                        /* Then */
+                        Logger.Info($"Symlink in directory '{dir}' already exists");
+                    else if (!CreateSymbolicLinkA(destination, targetFile, SymbolicLink.UnPrivileged))
+                    {
+                        Logger.Warn($"Failed to create symbolic link from '{targetFile}' to '{destination}'");
+                    }
+                }
+                else /* Then */ Logger.Info($"Directory '{musicDir}' does not contain music files");
+            }
+            else /* Then */ Logger.Info($"Directory '{musicDir}' does not exist");
+        }
+
         #region Helpers
 
         private static IEnumerable<string> SelectMusicForDirectory(string directory, IEnumerable<string> files)
