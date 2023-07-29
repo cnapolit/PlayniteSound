@@ -12,6 +12,7 @@
             <StackPanel>
                 <CheckBox IsChecked="{Binding Settings.SkipFirstSelectSound}"
                           Content="{DynamicResource LOC_PLAYNITESOUNDS_ChkSkipFirstSelectSound}"/>
+                <CheckBox IsChecked="{Binding Settings.PlayTickOnGameSelect}" Content="Play Sound on GameSelect"/>
             </StackPanel>
         </GroupBox>
         <GroupBox Header="{DynamicResource LOC_PLAYNITESOUNDS_Actions}">
