@@ -1,44 +1,53 @@
-﻿using PlayniteSounds.Common.Constants;
-using PlayniteSounds.Models;
+﻿using PlayniteSounds.Models;
+using PlayniteSounds.Models.UI;
 using PlayniteSounds.Services.Files;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
-using Playnite.SDK.Models;
 using System.Linq;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using PlayniteSounds.Models.Audio.SampleProviders;
 using PlayniteSounds.Models.Audio;
+using PlayniteSounds.Services.State;
+using PlayniteSounds.Models.State;
+using Playnite.SDK.Models;
+using Playnite.SDK;
+using PlayniteSounds.Models.Audio.Sound;
 
 namespace PlayniteSounds.Services.Audio
 {
     public class SoundPlayer : BasePlayer, ISoundPlayer, IDisposable
     {
         #region Infrastructure
+        public static bool SkipTick = true;
 
-        private readonly IErrorHandler   _errorHandler;
+        private readonly IMainViewAPI    _mainViewAPI;
         private readonly IPathingService _pathingService;
         private readonly IList<bool>     _activePlayers = new List<bool>(new bool[9]);
+        private          Game            _currentGame;
         private          CachedSound     _cachedSelectedGameSound;
+        private          UIStateSettings _uiStateSettings;
+        private          Action          _playMusicCallback;
         private          string          _selectedSoundFilePath;
         private          bool            _firstSelectSound = true;
         private          bool            _disposed;
-        private ControllableSampleProvider _gameStartingProvider;
-
-        public Game StartingGame { get; set; }
-
 
         public SoundPlayer(
-            IErrorHandler errorHandler,
+            IMainViewAPI mainViewAPI,
             IPathingService pathingService,
+            IPlayniteEventHandler playniteEventHandler,
+            IMusicPlayer musicPlayer,
             MixingSampleProvider mixer,
             PlayniteSoundsSettings settings) : base(mixer, settings)
         {
-            _errorHandler = errorHandler;
+            _mainViewAPI = mainViewAPI;
             _pathingService = pathingService;
+            _playMusicCallback = musicPlayer.Initialize;
+            playniteEventHandler.UIStateChanged += UIStateChanged;
+            playniteEventHandler.PlayniteEventOccurred += PlayniteEventOccurred;
             _mixer.MixerInputEnded += SoundEnded;
+            _uiStateSettings = settings.ActiveModeSettings.UIStatesToSettings[UIState.Main];
         }
 
         public void Dispose()
@@ -58,7 +67,13 @@ namespace PlayniteSounds.Services.Audio
         {
             if (args.SampleProvider is CallBackSampleProvider callBackSampleProvider)
             {
-                callBackSampleProvider.Callback();
+                var timer = new System.Timers.Timer(300)
+                {
+                    Enabled = true,
+                    AutoReset = false
+                };
+                var callback = callBackSampleProvider.Callback;
+                timer.Elapsed += (_, __) => callback();
             }
         }
 
@@ -66,65 +81,29 @@ namespace PlayniteSounds.Services.Audio
 
         #region Implementation
 
-        #region Preview
-
-        public void Preview(SoundType soundType, bool playDesktop)
-        {
-            if (_settings.ActiveModeSettings.IsDesktop == playDesktop)
-            {
-                PlaySound(soundType);
-                return;
-            }
-
-            var soundSettings = _settings.CurrentUIStateSettings.SoundTypesToSettings[soundType];
-
-            var prefix = playDesktop ? SoundFile.DesktopPrefix : SoundFile.FullScreenPrefix;
-            var baseFileName = SoundTypeToBaseFileName(soundType);
-            var filePath = Path.Combine(
-                _pathingService.ExtraMetaDataFolder, SoundDirectory.Sound, prefix + baseFileName);
-
-            _errorHandler.Try(() => AttemptPlaySound(new AutoDisposeFileReader(filePath, soundSettings.Volume), null));
-        }
-        
-        private static string SoundTypeToBaseFileName(SoundType soundType)
-        {
-            switch (soundType)
-            {
-                case SoundType.AppStarted:      return SoundFile. BaseApplicationStartedSound;
-                case SoundType.AppStopped:      return SoundFile. BaseApplicationStoppedSound;
-                case SoundType.GameStarting:    return SoundFile.       BaseGameStartingSound;
-                case SoundType.GameStarted:     return SoundFile.        BaseGameStartedSound;
-                case SoundType.GameStopped:     return SoundFile.        BaseGameStoppedSound;
-                case SoundType.GameSelected:    return SoundFile.       BaseGameSelectedSound;
-                case SoundType.GameInstalled:   return SoundFile.      BaseGameInstalledSound;
-                case SoundType.GameUninstalled: return SoundFile.    BaseGameUninstalledSound;
-                default:                        return SoundFile.     BaseLibraryUpdatedSound;
-            }
-        }
-
         #region PlaySound
 
-        public void PlaySound(SoundType soundType, Action onSoundEndCallback = null)
+        private void PlayniteEventOccurred(object sender, PlayniteEventOccurredArgs args)
         {
             ISampleProvider sampleProvider = null;
-
-            var soundSettings = _settings.CurrentUIStateSettings.SoundTypesToSettings[soundType];
-            if (soundSettings.Enabled) switch (soundType)
+            Action onSoundEndCallback = _playMusicCallback;
+            if (args.SoundTypeSettings.Enabled) switch (args.Event)
             {
-                case SoundType.GameStarting:
-                    _activePlayers[(int)SoundType.GameStarting] = true;
-                    onSoundEndCallback = () => _activePlayers[(int)SoundType.GameStarting] = false;
-                    sampleProvider = GetStartingSoundSampleProvider(soundSettings);
+                case PlayniteEvent.GameSelected:
+                        return;
+                    _currentGame = args.Games.FirstOrDefault();
+                    sampleProvider = GetSelectSoundSampleProvider(args.SoundTypeSettings);
                     break;
-                case SoundType.GameSelected:
-                    sampleProvider = GetSelectSoundSampleProvider(soundSettings);
-                    break;
-                case SoundType.GameCancelled:
-                    _gameStartingProvider.Stop();
-                    _gameStartingProvider = null;
+                case PlayniteEvent.AppStarted:
+                    _playMusicCallback = null;
+                    goto default;
+                case PlayniteEvent.GameStarting:
+                case PlayniteEvent.AppStopped:
+                        _activePlayers[(int)args.Event] = true;
+                        onSoundEndCallback = () => _activePlayers[(int)args.Event] = false;
                     goto default;
                 default:
-                    sampleProvider = GetSoundSampleProvider(soundType, soundSettings);
+                    sampleProvider = GetSoundSampleProvider(args.SoundTypeSettings, args.Games.FirstOrDefault());
                     break;
             }
 
@@ -134,16 +113,106 @@ namespace PlayniteSounds.Services.Audio
                 return;
             }
 
-            _errorHandler.Try(() => AttemptPlaySound(sampleProvider, onSoundEndCallback));
+            PlaySound(sampleProvider, onSoundEndCallback);
         }
 
         #endregion
 
-        #endregion
+        private void UIStateChanged(object sender, UIStateChangedArgs args)
+        {
+            if (args.NewState != UIState.MainMenu)
+            {
+                SkipTick = true;
+            }
+
+            SoundTypeSettings settings = null;
+            _uiStateSettings = args.NewSettings;
+
+            switch (args.NewState)
+            {
+                case UIState.Settings:
+                case UIState.GameMenu:
+                case UIState.GameMenu_GameDetails:
+                case UIState.Search:
+                case UIState.FilterPresets:
+                case UIState.Filters:
+                    settings = args.NewSettings.EnterSettings;
+                    break;
+            }
+
+            if (settings is null) /* Then */ switch (args.OldState)
+            {
+                case UIState.Settings:
+                case UIState.GameMenu:
+                case UIState.GameMenu_GameDetails:
+                case UIState.Search:
+                case UIState.FilterPresets:
+                case UIState.Filters:
+                    settings = args.NewSettings.EnterSettings;
+                    break;
+            }
+
+            if (settings is null) /* Then */ switch (args.NewState)
+            {
+                case UIState.MainMenu:
+                    settings = args.NewSettings.EnterSettings;
+                    break;
+            }
+
+            if (settings is null)
+            {
+                settings = args.OldState != UIState.Main 
+                    ? args.OldSettings.ExitSettings
+                    : args.NewSettings.EnterSettings;
+            }
+
+            Play(settings, args.Game);
+        }
+
+        public void Preview(SoundTypeSettings settings, bool isDesktop)
+        {
+            var sampler = GetSoundSampleProvider(settings, _currentGame);
+            if (sampler != null)
+            {
+                PlaySound(sampler, null);
+            }
+
+        }
+
+        public void Play(SoundTypeSettings settings, Action callBack = null)
+        {
+            var sampler = settings.Enabled ? GetSoundSampleProvider(settings, _currentGame) : null;
+            PlaySound(sampler, callBack);
+        }
+
+        public void Tick()
+        {
+            if (false)//SkipTick)
+            {
+                SkipTick = false;
+                return;
+            }
+
+            var settings = _uiStateSettings.TickSettings;
+            if (settings.Enabled) /* Then */ PlaySound(GetSelectSoundSampleProvider(settings), null);
+        }
+
+        public void Trigger(SoundType soundType)
+        {
+            var settings = _uiStateSettings.TickSettings;
+            if (settings.Enabled) /* Then */
+            PlaySound(GetSoundSampleProvider(settings.Source, soundType, settings.Volume, _currentGame), null);
+        }
+
+        public void Play(SoundTypeSettings settings, Game game)
+        {
+            if (!settings.Enabled) /* Then */ return;
+            PlaySound(GetSoundSampleProvider(settings, game), null);
+        }
 
         #region Helpers
 
-        private ISampleProvider GetSelectSoundSampleProvider(SoundTypeSettings soundSettings)
+        private ISampleProvider GetSelectSoundSampleProvider(SoundTypeSettings settings)
         {
             if (_firstSelectSound && _settings.SkipFirstSelectSound)
             {
@@ -151,13 +220,30 @@ namespace PlayniteSounds.Services.Audio
                 return null;
             }
 
-            var filePath = GetFilePath(SoundType.GameSelected);
+            if (settings.Source is AudioSource.Game)
+            {
+                // Don't bother caching since the source changes so frequently 
+                return GetSoundSampleProvider(settings, _currentGame);
+            }
+
+            object resource = null;
+            switch (settings.Source)
+            {
+                case AudioSource.Platform:
+                case AudioSource.Game:
+                    resource = _currentGame;
+                    break;
+                case AudioSource.Filter:
+                    resource = _mainViewAPI.GetActiveFilterPreset().ToString();
+                    break;
+            }
+            var filePath = _pathingService.GetSoundTypeFile(settings.Source, settings.SoundType, resource);
             if (filePath is null)
             {
                 return null;
             }
 
-            if (_selectedSoundFilePath != filePath || _cachedSelectedGameSound?.Volume != soundSettings.Volume)
+            if (_selectedSoundFilePath != filePath || _cachedSelectedGameSound?.Volume != settings.Volume)
             {
                 // We must reload the cached sound to inherit the new audio file or update the volume
                 _cachedSelectedGameSound = null;
@@ -166,34 +252,41 @@ namespace PlayniteSounds.Services.Audio
 
             if (_cachedSelectedGameSound is null)
             {
-                _cachedSelectedGameSound = new CachedSound(filePath, soundSettings.Volume);
+                _cachedSelectedGameSound = new CachedSound(filePath, settings.Volume);
             }
 
             return new CachedSoundSampleProvider(_cachedSelectedGameSound);
         }
 
-        private ISampleProvider GetStartingSoundSampleProvider(SoundTypeSettings soundSettings)
-        {
-            var gameStartingSoundFile = _pathingService.GetGameStartSoundFile(StartingGame) 
-                ?? Path.Combine(
-                    _pathingService.ExtraMetaDataFolder,
-                    SoundDirectory.Sound,
-                    SoundTypeToFileName(SoundType.GameStarting));
+        private ISampleProvider GetSoundSampleProvider(SoundTypeSettings settings, Game game)
+            => GetSoundSampleProvider(settings.Source, settings.SoundType, settings.Volume, game);
 
-            return File.Exists(gameStartingSoundFile) 
-                ? new AutoDisposeFileReader(gameStartingSoundFile, soundSettings.Volume) 
-                : null;
+        private ISampleProvider GetSoundSampleProvider(
+            AudioSource source, SoundType soundType, float Volume, Game game)
+        {
+            object resource = null;
+            switch (source)
+            {
+                case AudioSource.Platform:
+                case AudioSource.Game:
+                    resource = game;
+                    break;
+                case AudioSource.Filter:
+                    resource = _mainViewAPI.GetActiveFilterPreset().ToString();
+                    break;
+            }
+            string filePath = _pathingService.GetSoundTypeFile(source, soundType, resource);
+            return filePath is null ? null : new AutoDisposeFileReader(filePath, Volume);
         }
 
-        private ISampleProvider GetSoundSampleProvider(SoundType soundType, SoundTypeSettings soundSettings)
-        {
-            string filePath = GetFilePath(soundType);
-            return filePath is null ? null : new AutoDisposeFileReader(filePath, soundSettings.Volume);
-        }
-
-        private void AttemptPlaySound(ISampleProvider reader, Action callBack)
+        private void PlaySound(ISampleProvider reader, Action callBack)
         {
             reader = ConvertProvider(reader);
+            if (reader is null)
+            {
+                callBack?.Invoke();
+                return;
+            }
 
             if (callBack != null)
             {
@@ -201,30 +294,6 @@ namespace PlayniteSounds.Services.Audio
             }
 
             _mixer.AddMixerInput(reader);
-        }
-
-        private string GetFilePath(SoundType soundType)
-        {
-            var fileName = SoundTypeToFileName(soundType);
-            var filePath = Path.Combine(_pathingService.ExtraMetaDataFolder, SoundDirectory.Sound, fileName);
-            return File.Exists(filePath) ? filePath : null;
-        }
-        
-        private string SoundTypeToFileName(SoundType soundType)
-        {
-            switch (soundType)
-            {
-                case SoundType.AppStarted:      return SoundFile. ApplicationStartedSound;
-                case SoundType.AppStopped:      return SoundFile. ApplicationStoppedSound;
-                case SoundType.GameStarting:    return SoundFile.       GameStartingSound;
-                case SoundType.GameStarted:     return SoundFile.        GameStartedSound;
-                case SoundType.GameCancelled:
-                case SoundType.GameStopped:     return SoundFile.        GameStoppedSound;
-                case SoundType.GameSelected:    return SoundFile.       GameSelectedSound;
-                case SoundType.GameInstalled:   return SoundFile.      GameInstalledSound;
-                case SoundType.GameUninstalled: return SoundFile.    GameUninstalledSound;
-                default:                        return SoundFile.     LibraryUpdatedSound;
-            }
         }
 
         #endregion

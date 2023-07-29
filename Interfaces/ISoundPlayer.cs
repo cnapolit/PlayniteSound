@@ -1,14 +1,14 @@
-﻿using System;
-using Playnite.SDK.Models;
-using PlayniteSounds.Models;
+﻿using PlayniteSounds.Models;
+using PlayniteSounds.Models.Audio.Sound;
+using System;
 
 namespace PlayniteSounds.Services.Audio
 {
     public interface ISoundPlayer
     {
-        Game StartingGame { get; set; }
-
-        void PlaySound(SoundType soundType, Action onSoundEndCallback = null);
-        void Preview(SoundType soundType, bool playDesktop);
+        void Play(SoundTypeSettings settings, Action callBack = null);
+        void Preview(SoundTypeSettings settings, bool isDesktop);
+        void Tick();
+        void Trigger(SoundType soundType);
     }
 }

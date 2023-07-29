@@ -1,4 +1,5 @@
 ﻿using PlayniteSounds.Models;
+using PlayniteSounds.Models.UI;
 using PlayniteSounds.Services.Audio;
 using PlayniteSounds.Views.Models;
 using System;
@@ -20,27 +21,33 @@ namespace PlayniteSounds.Services.UI
         public ModeSettingsModel CreateModeSettingsModel(ModeSettings settings)
             => new ModeSettingsModel(this, settings);
 
+        public SoundTypeSettingsModel CreateSoundTypeSettingsModel(SoundTypeSettings settings, bool isDesktop)
+            => new SoundTypeSettingsModel(_soundPlayer, settings, isDesktop);
+
         public IDictionary<UIState, UIStateSettingsModel> CreateUIStateDictionary(ModeSettings settings)
         {
-            UIStateSettingsModel CreateUIStateSettingsModel(KeyValuePair<UIState, UIStateSettings> pair)
-            {
-                var soundTypeDictionary = ConstructSoundTypeDictionary(pair.Value, settings.IsDesktop);
-                return new UIStateSettingsModel(_musicPlayer, soundTypeDictionary, pair.Value);
-            }
-            return ConstructDictionary(settings.UIStatesToSettings, CreateUIStateSettingsModel);
+            UIStateSettingsModel CreateUIStateSettingsModel(
+                KeyValuePair<UIState, UIStateSettings> pair, bool isDesktop)
+                => new UIStateSettingsModel(isDesktop, this, _musicPlayer, pair.Value);
+            return ConstructDictionary(settings.UIStatesToSettings, CreateUIStateSettingsModel, settings.IsDesktop);
         }
 
-        private IDictionary<SoundType, SoundTypeSettingsModel> ConstructSoundTypeDictionary(
-            UIStateSettings settings, bool isDesktop)
-            => ConstructDictionary(
-                settings.SoundTypesToSettings,
-                p => new SoundTypeSettingsModel(p.Key, _soundPlayer, p.Value, isDesktop));
+        public IDictionary<PlayniteEvent, SoundTypeSettingsModel> CreatePlayniteEventDictionary(ModeSettings settings)
+        {
+            SoundTypeSettingsModel CreateSettingsModel(
+                KeyValuePair<PlayniteEvent, SoundTypeSettings> pair, bool isDesktop)
+                => CreateSoundTypeSettingsModel(pair.Value, isDesktop);
+            return ConstructDictionary(
+                settings.PlayniteEventToSoundTypesSettings, CreateSettingsModel, settings.IsDesktop);
+        }
 
         private IDictionary<TKey, TOValue> ConstructDictionary<TKey, TIValue, TOValue>(
-            IDictionary<TKey, TIValue> settingsDict, Func<KeyValuePair<TKey, TIValue>, TOValue> valueConstructor)
+            IDictionary<TKey, TIValue> settingsDict, 
+            Func<KeyValuePair<TKey, TIValue>, bool, TOValue> valueConstructor,
+            bool isDesktop)
         {
             var dict = new SortedDictionary<TKey, TOValue>();
-            settingsDict.ForEach(p => dict.Add(p.Key, valueConstructor(p)));
+            settingsDict.ForEach(p => dict.Add(p.Key, valueConstructor(p, isDesktop)));
             return dict;
         }
     }

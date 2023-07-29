@@ -1,18 +1,13 @@
-﻿using Microsoft.Win32;
-using Playnite.SDK;
+﻿using Playnite.SDK;
 using PlayniteSounds.Models;
 using System.Linq;
-using PlayniteSounds.Services.Audio;
-using System.Windows;
-using PlayniteSounds.Services.Files;
 using Playnite.SDK.Events;
 using Playnite.SDK.Models;
 using PlayniteSounds.Common.Constants;
 using System.Collections.Generic;
-using System.IO;
 using System;
-using Playnite.SDK.Plugins;
-using PlayniteSounds.Files.Download;
+using PlayniteSounds.Models.State;
+using PlayniteSounds.Models.UI;
 
 namespace PlayniteSounds.Services.State
 {
@@ -21,250 +16,77 @@ namespace PlayniteSounds.Services.State
         #region Infrastructure
 
         private readonly IMainViewAPI           _mainViewAPI;
-        private readonly IGameDatabaseAPI       _gameDatabaseAPI;
-        private readonly IMusicPlayer           _musicPlayer;
-        private readonly ISoundPlayer           _soundPlayer;
-        private readonly IAppStateChangeHandler _appStateChangeHandler;
-        private readonly IDownloadManager       _downloadManager;
-        private readonly IFileManager           _fileManager;
-        private readonly IPathingService        _pathingService;
         private readonly PlayniteSoundsSettings _settings;
-        private          bool                   _extraMetaDataPluginIsLoaded;
+        public  static   UIState                CurrentState = UIState.Main;
+        private static   UIState                _oldState     = UIState.Main;
+
+        public event EventHandler<UIStateChangedArgs>        UIStateChanged;
+        public event EventHandler<PlayniteEventOccurredArgs> PlayniteEventOccurred;
 
         public PlayniteEventHandler(
             IMainViewAPI mainViewAPI,
-            IGameDatabaseAPI gameDatabaseAPI,
             IUriHandlerAPI uriHandlerAPI,
-            IAppStateChangeHandler appStateChangeHandler,
-            IMusicPlayer musicPlayer,
-            ISoundPlayer audioPlayer,
-            IDownloadManager downloadManager,
-            IFileManager fileManager,
-            IPathingService pathingService,
             PlayniteSoundsSettings settings)
         {
             _mainViewAPI = mainViewAPI;
-            _gameDatabaseAPI = gameDatabaseAPI;
-            _appStateChangeHandler = appStateChangeHandler;
-            _musicPlayer = musicPlayer;
-            _soundPlayer = audioPlayer;
-            _downloadManager = downloadManager;
-            _fileManager = fileManager;
-            _pathingService = pathingService;
             _settings = settings;
-
-            _gameDatabaseAPI.Games.ItemCollectionChanged += UpdateGames;
-            _gameDatabaseAPI.Platforms.ItemCollectionChanged += UpdatePlatforms;
-            _gameDatabaseAPI.FilterPresets.ItemCollectionChanged += UpdateFilters;
-
-            uriHandlerAPI.RegisterSource("Sounds", HandleUriEvent);
+            uriHandlerAPI.RegisterSource(App.SourceName, HandleUriEvent);
         }
 
         #endregion
 
         #region Implementation
 
-        #region OnGameInstalled
+        public void OnApplicationStarted() => TriggerPlayniteEventOccurred(PlayniteEvent.AppStarted);
+        public void OnApplicationStopped() => TriggerPlayniteEventOccurred(PlayniteEvent.AppStopped);
+        public void OnLibraryUpdated()  => TriggerPlayniteEventOccurred(PlayniteEvent.LibraryUpdated);
+        public void OnGameDetailsEntered() => TriggerUIStateChanged(UIState.GameDetails);
+        public void OnMainViewEntered() => TriggerUIStateChanged(UIState.Main);
+        public void OnSettingsEntered() => TriggerUIStateChanged(UIState.Settings);
+        public void OnGameInstalled(Game game) => TriggerPlayniteEventOccurred(PlayniteEvent.GameInstalled, game);
+        public void OnGameUninstalled(Game game) => TriggerPlayniteEventOccurred(PlayniteEvent.GameUninstalled, game);
+        public void OnGameStarted(Game game) => TriggerPlayniteEventOccurred(PlayniteEvent.GameStarted, game);
+        public void OnGameStarting(Game game) => TriggerPlayniteEventOccurred(PlayniteEvent.GameStarting, game);
+        public void OnGameStopped(Game game) => TriggerPlayniteEventOccurred(PlayniteEvent.GameStopped, game);
+        public void OnGameSelected(IList<Game> games)
+            => TriggerPlayniteEventOccurred(PlayniteEvent.GameSelected, games ?? new List<Game> { });
 
-        public void OnGameInstalled()
-            => _soundPlayer.PlaySound(SoundType.GameInstalled);
-
-        #endregion
-
-        #region OnGameUninstalled
-
-        public void OnGameUninstalled()
-            => _soundPlayer.PlaySound(SoundType.GameUninstalled);
-
-        #endregion
-
-        #region OnGameSelected
-
-        public void OnGameSelected()
+        public void TriggerUIStateChanged(UIState newState)
         {
-            _soundPlayer.PlaySound(SoundType.GameSelected);
-            _musicPlayer.Play(_mainViewAPI.SelectedGames);
-        }
+            if (newState is UIState.GameMenu) /* Then */ newState |= CurrentState;
 
-        #endregion
+            if (newState == CurrentState) /* Then */ return;
 
-        #region OnGameStarted
-
-        public void OnGameStarted()
-        {
-            if (_settings.StopMusic)
+            _oldState = CurrentState;
+            CurrentState = newState;
+            var args = new UIStateChangedArgs
             {
-                _musicPlayer.Pause(true);
-            }
-            
-            _soundPlayer.PlaySound(SoundType.GameStarted);
+                Game = _mainViewAPI.SelectedGames.FirstOrDefault(),
+                OldState = _oldState,
+                NewState = CurrentState,
+                OldSettings = _settings.ActiveModeSettings.UIStatesToSettings[_oldState],
+                NewSettings = _settings.ActiveModeSettings.UIStatesToSettings[CurrentState]
+            };
+            UIStateChanged(this, args);
         }
 
-        #endregion
-
-        #region OnGameStarting
-
-        public void OnGameStarting(Game game)
+        public void TriggerRevertUIStateChanged()
         {
-            if (!_settings.StopMusic)
+            var args = new UIStateChangedArgs
             {
-                _musicPlayer.Pause(true);
-            }
-            
-            _soundPlayer.StartingGame = game;
-            _soundPlayer.PlaySound(SoundType.GameStarting);
+                Game = _mainViewAPI.SelectedGames.FirstOrDefault(),
+                OldState = CurrentState,
+                NewState = _oldState,
+                OldSettings = _settings.ActiveModeSettings.UIStatesToSettings[CurrentState],
+                NewSettings = _settings.ActiveModeSettings.UIStatesToSettings[_oldState]
+            };
+            CurrentState = _oldState;
+            UIStateChanged(this, args);
         }
-
-        #endregion
-
-        #region OnGameStopped
-
-        public void OnGameStopped()
-        {
-            _soundPlayer.PlaySound(SoundType.GameStopped);
-            _musicPlayer.Resume(true);
-        }
-
-        #endregion
-
-        #region OnApplicationStarted
-
-        public void OnApplicationStarted(List<Plugin> plugins)
-        {
-            _fileManager.CopyAudioFiles();
-            
-            _soundPlayer.PlaySound(SoundType.AppStarted, AppStartedEnded);
-
-            _extraMetaDataPluginIsLoaded = plugins.Any(p => p.Id.ToString() is App.ExtraMetaGuid);
-
-            SystemEvents.PowerModeChanged += _appStateChangeHandler.OnPowerModeChanged;
-            Application.Current.MainWindow.StateChanged += _appStateChangeHandler.OnWindowStateChanged;
-            Application.Current.Deactivated += _appStateChangeHandler.OnApplicationDeactivate;
-            Application.Current.Activated += _appStateChangeHandler.OnApplicationActivate;
-        }
-
-        private void AppStartedEnded()
-        {
-            _musicPlayer.StartSoundFinished = true;
-            _musicPlayer.Play(_mainViewAPI.SelectedGames);
-        }
-
-        #endregion
-
-        #region OnApplicationStopped
-
-        public void OnApplicationStopped()
-        {
-            SystemEvents.PowerModeChanged -= _appStateChangeHandler.OnPowerModeChanged;
-            Application.Current.Deactivated -= _appStateChangeHandler.OnApplicationDeactivate;
-            Application.Current.Activated -= _appStateChangeHandler.OnApplicationActivate;
-
-            if (Application.Current.MainWindow != null)
-            {
-                Application.Current.MainWindow.StateChanged -= _appStateChangeHandler.OnWindowStateChanged;
-            }
-
-            _soundPlayer.PlaySound(SoundType.AppStopped);
-        }
-
-        #region OnLibraryUpdated
-
-        public void OnLibraryUpdated(Action<PlayniteSoundsSettings> saveAction)
-        {
-            if (_settings.AutoDownload)
-            {
-                var games = _gameDatabaseAPI.Games.Where(
-                    x => x.Added != null && x.Added > _settings.LastAutoLibUpdateAssetsDownload);
-                _downloadManager.CreateDownloadDialogue(games, Source.All);
-
-                // Cache time for next update event
-                _settings.LastAutoLibUpdateAssetsDownload = DateTime.Now;
-                saveAction(_settings);
-            }
-
-            _soundPlayer.PlaySound(SoundType.LibraryUpdated);
-        }
-
-        #endregion
-
-        #endregion
-
-        #region OnGameDetailsEntered
-
-        public void OnGameDetailsEntered()
-        {
-            _settings.UIState = UIState.GameDetails;
-            _musicPlayer.UIStateChanged();
-            _soundPlayer.PlaySound(SoundType.GameSelected);
-        }
-
-        #endregion
-
-        #region OnMainViewEntered
-
-        public void OnMainViewEntered()
-        {
-            _settings.UIState = UIState.Main;
-            _musicPlayer.UIStateChanged();
-            _soundPlayer.PlaySound(SoundType.GameSelected);
-        }
-
-        #endregion
-
-        #region OnSettingsEntered
-
-        public void OnSettingsEntered()
-        {
-            _settings.UIState = UIState.MainMenu;
-            _musicPlayer.UIStateChanged();
-            _soundPlayer.PlaySound(SoundType.GameSelected);
-        }
-
-        #endregion
 
         #region Helpers
 
         #region Callback Methods
-
-        private void UpdateGames(object sender, ItemCollectionChangedEventArgs<Game> ItemCollectionChangedArgs)
-        {
-            // Let ExtraMetaDataLoader handle cleanup if it exists
-            if (_extraMetaDataPluginIsLoaded)
-            {
-                return;
-            }
-
-            foreach (var removedItem in ItemCollectionChangedArgs.RemovedItems)
-            {
-                _fileManager.DeleteMusicDirectory(removedItem);
-            }
-        }
-
-        private void UpdatePlatforms(object sender, ItemCollectionChangedEventArgs<Platform> ItemCollectionChangedArgs)
-        {
-            foreach (var addedItem in ItemCollectionChangedArgs.AddedItems)
-            {
-                _fileManager.CreatePlatformDirectory(addedItem);
-            }
-
-            DeleteDirectories(ItemCollectionChangedArgs.RemovedItems, _pathingService.GetPlatformDirectoryPath);
-        }
-
-        private void UpdateFilters(object _, ItemCollectionChangedEventArgs<FilterPreset> ItemCollectionChangedArgs)
-        {
-            foreach (var addedItem in ItemCollectionChangedArgs.AddedItems)
-            {
-                _fileManager.CreateFilterDirectory(addedItem);
-            }
-
-            DeleteDirectories(ItemCollectionChangedArgs.RemovedItems, _pathingService.GetFilterDirectoryPath);
-        }
-
-        private void DeleteDirectories<T>(IEnumerable<T> directoryLinks, Func<T, string> PathConstructor)
-            => directoryLinks.
-                Select(PathConstructor).
-                Where(Directory.Exists).
-                ForEach(f => Directory.Delete(f, true));
 
         // ex: playnite://Sounds/Play/someId
         // Sounds maintains a list of plugins who want the music paused and will only allow play when
@@ -276,12 +98,30 @@ namespace PlayniteSounds.Services.State
 
             switch (action.ToLower())
             {
-                case "play": _musicPlayer.Resume(senderId); break;
-                case "pause": _musicPlayer.Pause(senderId); break;
+                //case "play": _musicPlayer.Resume(senderId); break;
+                //case "pause": _musicPlayer.Pause(senderId); break;
             }
         }
 
         #endregion
+
+        private void TriggerPlayniteEventOccurred(PlayniteEvent playniteEvent)
+            => TriggerPlayniteEventOccurred(playniteEvent, _mainViewAPI.SelectedGames?.FirstOrDefault());
+
+        private void TriggerPlayniteEventOccurred(PlayniteEvent playniteEvent, Game game)
+            => TriggerPlayniteEventOccurred(playniteEvent, game is null ? new Game[] { } : new[] { game });
+
+
+        private void TriggerPlayniteEventOccurred(PlayniteEvent playniteEvent, IList<Game> games)
+        {
+            var args = new PlayniteEventOccurredArgs
+            {
+                Event = playniteEvent,
+                SoundTypeSettings = _settings.ActiveModeSettings.PlayniteEventToSoundTypesSettings[playniteEvent],
+                Games = games
+            };
+            PlayniteEventOccurred.Invoke(this, args);
+        }   
 
         #endregion
 

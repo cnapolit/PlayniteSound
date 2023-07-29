@@ -1,16 +1,24 @@
-﻿namespace PlayniteSounds.Models
+﻿namespace PlayniteSounds.Models.Audio.Sound
 {
     public enum SoundType
     {
-        AppStarted,
-        AppStopped,
-        GameStarting,
-        GameStarted,
-        GameStopped,
-        GameSelected,
-        GameInstalled,
-        GameUninstalled,
-        LibraryUpdated,
-        GameCancelled
+        Tick,
+        Enter,
+        Exit,
+        Start,
+        Pause,
+        Resume,
+        Stop,
+        GameStart,
+        GameStop,
+        Installed,
+        Uninstalled,
+        Updated,
+        Scroll,
+        Notification,
+        Achievement,
+        Message,
+        Loading,
+        Select
     }
 }

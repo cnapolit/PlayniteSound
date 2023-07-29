@@ -1,9 +1,12 @@
-﻿namespace PlayniteSounds.Models
+﻿using PlayniteSounds.Models.Audio.Sound;
+
+namespace PlayniteSounds.Models
 {
     public class SoundTypeSettings
     {
-        public bool Enabled { get; set; }
-        public float Volume { get; set; } = .5f;
-        public AudioSource Source { get; set; }
+        public bool Enabled { get; set; } = true;
+        public float Volume { get; set; } = 1;
+        public AudioSource Source { get; set; } = AudioSource.Filter;
+        public SoundType SoundType { get; set; }
     }
 }

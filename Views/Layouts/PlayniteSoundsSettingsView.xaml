@@ -5,7 +5,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="C:\Users\bandg\Documents\git\PlayniteSound\Views\Layouts\Styling.xaml"/>
+                <ResourceDictionary Source="Styling.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>

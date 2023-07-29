@@ -1,6 +1,6 @@
 ﻿using Playnite.SDK.Models;
-using Playnite.SDK.Plugins;
 using PlayniteSounds.Models;
+using PlayniteSounds.Models.State;
 using System;
 using System.Collections.Generic;
 
@@ -8,17 +8,22 @@ namespace PlayniteSounds.Services.State
 {
     public interface IPlayniteEventHandler
     {
-        void OnApplicationStarted(List<Plugin> plugins);
+        event EventHandler<UIStateChangedArgs> UIStateChanged;
+        event EventHandler<PlayniteEventOccurredArgs> PlayniteEventOccurred;
+
+        void OnApplicationStarted();
         void OnApplicationStopped();
         void OnGameDetailsEntered();
-        void OnGameInstalled();
-        void OnGameSelected();
-        void OnGameStarted();
+        void OnGameInstalled(Game game);
+        void OnGameSelected(IList<Game> games);
+        void OnGameStarted(Game game);
         void OnGameStarting(Game game);
-        void OnGameStopped();
-        void OnGameUninstalled();
-        void OnLibraryUpdated(Action<PlayniteSoundsSettings> saveAction);
+        void OnGameStopped(Game game);
+        void OnGameUninstalled(Game game);
+        void OnLibraryUpdated();
         void OnMainViewEntered();
         void OnSettingsEntered();
+        void TriggerRevertUIStateChanged();
+        void TriggerUIStateChanged(UIState newState);
     }
 }

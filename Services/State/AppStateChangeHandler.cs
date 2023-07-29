@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using NAudio.Wave;
 using PlayniteSounds.Models;
+using PlayniteSounds.Services.Audio;
 using System;
 using System.Windows;
 
@@ -10,14 +11,17 @@ namespace PlayniteSounds.Services.State
     {
         #region Infrastructure
 
-        private readonly PlayniteSoundsSettings _settings;
         private readonly IWavePlayer            _wavePlayer;
+        private readonly ISoundPlayer           _soundPlayer;
+        private readonly PlayniteSoundsSettings _settings;
 
         public AppStateChangeHandler(
             IWavePlayer waveplayer,
+            ISoundPlayer soundPlayer,
             PlayniteSoundsSettings settings)
         {
             _wavePlayer = waveplayer;
+            _soundPlayer = soundPlayer;
             _settings = settings;
         }
 
@@ -31,7 +35,7 @@ namespace PlayniteSounds.Services.State
         {
             if (args.Mode is PowerModes.Resume)
             {
-                _wavePlayer.Play();
+                //_wavePlayer.Play();
             }
         }
 
@@ -43,7 +47,7 @@ namespace PlayniteSounds.Services.State
         {
             if (_settings.PauseOnDeactivate)
             {
-                _wavePlayer.Pause();
+                //Pause();
             }
         }
 
@@ -55,7 +59,7 @@ namespace PlayniteSounds.Services.State
         {
             if (_settings.PauseOnDeactivate)
             {
-                _wavePlayer.Play();
+                //Resume();
             }
         }
 
@@ -65,20 +69,27 @@ namespace PlayniteSounds.Services.State
 
         public void OnWindowStateChanged(object sender, EventArgs e)
         {
-            if (_settings.PauseOnDeactivate)
+            if (_settings.PauseOnDeactivate) /* Then */ switch (Application.Current?.MainWindow?.WindowState)
             {
-                switch (Application.Current?.MainWindow?.WindowState)
-                {
-                    case WindowState.Normal:
-                    case WindowState.Maximized:
-                        _wavePlayer.Play();
-                        break;
-                    case WindowState.Minimized:
-                        _wavePlayer.Pause();
-                        break;
-                }
+                case WindowState.Normal:
+                case WindowState.Maximized:
+                    //Resume();
+                    break;
+                case WindowState.Minimized:
+                    //Pause();
+                    break;
             }
         }
+
+        private void Resume()
+        {
+            _soundPlayer.Play(MainStateSettings().EnterSettings);
+            _wavePlayer.Play();
+        }
+
+        private void Pause() => _soundPlayer.Play(MainStateSettings().ExitSettings, _wavePlayer.Pause);
+
+        private UIStateSettings MainStateSettings() => _settings.ActiveModeSettings.UIStatesToSettings[UIState.Main];
 
         #endregion
 

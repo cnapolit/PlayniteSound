@@ -27,15 +27,9 @@ namespace PlayniteSounds.Views.Layouts
         public void SetDataContext(object sender, DependencyPropertyChangedEventArgs e)
         {
             var settingsModel = DataContext as UIStateSettingsModel;
-            foreach (var soundTypeToModel in settingsModel.SoundTypesToSettingsModels)
-            {
-                var control = new SoundTypeSettingsControl
-                {
-                    Header = soundTypeToModel.Key.ToString(),
-                    DataContext = soundTypeToModel.Value
-                };
-                Stack.Children.Add(control);
-            }
+            Enter.DataContext = settingsModel.EnterSettingsModel;
+            Exit.DataContext = settingsModel.ExitSettingsModel;
+            Tick.DataContext = settingsModel.TickSettingsModel;
         }
     }
 }

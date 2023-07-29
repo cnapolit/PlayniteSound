@@ -1,13 +1,12 @@
 ﻿using PlayniteSounds.Models;
 using PlayniteSounds.Services.Audio;
-using System.Collections.Generic;
+using PlayniteSounds.Services.UI;
 
 namespace PlayniteSounds.Views.Models
 {
     public class UIStateSettingsModel : BaseSettingsModel
     {
         private readonly IMusicPlayer _musicPlayer;
-        public IDictionary<SoundType, SoundTypeSettingsModel> SoundTypesToSettingsModels { get; }
 
         private UIStateSettings _settings;
         public UIStateSettings Settings
@@ -26,14 +25,21 @@ namespace PlayniteSounds.Views.Models
             }
         }
 
+        public SoundTypeSettingsModel EnterSettingsModel { get; }
+        public SoundTypeSettingsModel ExitSettingsModel { get; }
+        public SoundTypeSettingsModel TickSettingsModel { get; }
+
         public UIStateSettingsModel(
+            bool isDesktop,
+            IModelFactory modelFactory,
             IMusicPlayer musicPlayer,
-            IDictionary<SoundType, SoundTypeSettingsModel> soundTypesToSettingsModels,
             UIStateSettings settings)
         {
+            EnterSettingsModel = modelFactory.CreateSoundTypeSettingsModel(settings.EnterSettings, isDesktop);
+            ExitSettingsModel = modelFactory.CreateSoundTypeSettingsModel(settings.ExitSettings, isDesktop);
+            TickSettingsModel = modelFactory.CreateSoundTypeSettingsModel(settings.TickSettings, isDesktop);
             _musicPlayer = musicPlayer;
             _settings = settings;
-            SoundTypesToSettingsModels = soundTypesToSettingsModels;
         }
 
         public void SetMusicVolume(double value)

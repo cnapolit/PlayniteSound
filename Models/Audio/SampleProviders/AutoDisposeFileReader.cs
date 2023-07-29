@@ -23,7 +23,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
             }
 
             var read = _reader.Read(buffer, offset, count);
-            if (read == 0)
+            if (read != count)
             {
                 Dispose();
             }

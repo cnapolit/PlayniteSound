@@ -22,8 +22,6 @@ namespace PlayniteSounds.Views.Layouts
 
             DesktopMusic.Dispose();
             FullscreenMusic.Dispose();
-            //DisposeStack(DesktopSound);
-            //DisposeStack(FullscreenSound);
 
             _containerReleaseMethod(this);
         }
@@ -53,14 +51,6 @@ namespace PlayniteSounds.Views.Layouts
                     DataContext = stateToModel.Value
                 };
                 stack.Children.Add(control);
-            }
-        }
-
-        private static void DisposeStack(StackPanel stack)
-        {
-            foreach (var child in stack.Children)
-            {
-                if (child is IDisposable disposable) disposable.Dispose();
             }
         }
     }

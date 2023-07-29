@@ -12,7 +12,13 @@ using PlayniteSounds.Views.Models;
 using PlayniteSounds.Views.Layouts;
 using PlayniteSounds.Services.State;
 using PlayniteSounds.Services.Installers;
+using System.Windows.Data;
 using System.Text.Json;
+using PlayniteSounds.Services.Audio;
+using PlayniteSounds.Services.State.FauxConverters;
+using System.Linq;
+using Microsoft.Win32;
+using System.Windows;
 
 namespace PlayniteSounds
 {
@@ -35,6 +41,7 @@ namespace PlayniteSounds
         private readonly Lazy<IGameViewControlFactory> _gameViewFactory;
         private IGameViewControlFactory GameViewFactory => _gameViewFactory.Value;
 
+        public PlayniteSoundsSettings Settings;
 
         public PlayniteSoundsPlugin(IPlayniteAPI api) : base(api)
         {
@@ -43,45 +50,77 @@ namespace PlayniteSounds
                 return args.Name.StartsWith("System.Text.Json") ? typeof(JsonSerializer).Assembly : null;
             };
 
+            #region Initialize settings
+
+            Settings = LoadPluginSettings<PlayniteSoundsSettings>() ?? new PlayniteSoundsSettings();
+
+            Settings.DesktopSettings.IsDesktop = true;
+
+            var isDesktop = api.ApplicationInfo.Mode is ApplicationMode.Desktop;
+
+            Settings.ActiveModeSettings = isDesktop ? Settings.DesktopSettings : Settings.FullscreenSettings;
+            Settings.CurrentUIStateSettings = Settings.ActiveModeSettings.UIStatesToSettings[UIState.Main];
+
+            #endregion
+
+            #region Install services
+
+            _container = Installation.RegisterInstallers(api, this, Settings);
+
+            _container.Resolve<IMusicPlayer>();
+            _container.Resolve<ISoundPlayer>();
+            _playniteEventHandler = LazyResolve<IPlayniteEventHandler>();
+            _gameMenuFactory = LazyResolve<IGameMenuFactory>();
+            _mainMenuFactory = LazyResolve<IMainMenuFactory>();
+            _gameViewFactory = LazyResolve<IGameViewControlFactory>();
+
+            #endregion
+
+            #region Initialize plugin
+
             _api = api;
+            SoundFile.CurrentPrefix = isDesktop ? SoundFile.DesktopPrefix : SoundFile.FullScreenPrefix;
 
             Properties = new GenericPluginProperties
             {
                 HasSettings = true
             };
 
-            AddCustomElementSupport(new AddCustomElementSupportArgs
+            var customElementArgs = new AddCustomElementSupportArgs
             {
-                ElementList = new List<string> 
-                { 
+                SourceName = App.SourceName,
+                ElementList = new List<string>
+                {
                     "Handler"
-                },
-                SourceName = App.SourceName
-            });
+                }
+            };
+            AddCustomElementSupport(customElementArgs);
 
-            var settings = LoadPluginSettings<PlayniteSoundsSettings>() ?? new PlayniteSoundsSettings();
+            var settingsArgs = new AddSettingsSupportArgs
+            {
+                SourceName = App.SourceName,
+                SettingsRoot = nameof(Settings)
+            };
+            AddSettingsSupport(settingsArgs);
 
-            // Set the 
-            // Set the Desktop mode settings
-            settings.DesktopSettings.IsDesktop = true;
-
-            var isDesktop = api.ApplicationInfo.Mode is ApplicationMode.Desktop;
-            settings. ActiveModeSettings = isDesktop ? settings.DesktopSettings : settings.FullscreenSettings;
-            SoundFile. CurrentPrefix     = isDesktop ? SoundFile.DesktopPrefix : SoundFile.FullScreenPrefix;
-
-            settings.ActiveModeSettings     = isDesktop ? settings.  DesktopSettings : settings.  FullscreenSettings;
-            settings.CurrentUIStateSettings = settings.ActiveModeSettings.UIStatesToSettings[UIState.Main];
-            SoundFile.CurrentPrefix         = isDesktop ? SoundFile. DesktopPrefix   : SoundFile. FullScreenPrefix;
+            var converterArgs = new AddConvertersSupportArgs
+            {
+                SourceName = App.SourceName,
+                Converters = new List<IValueConverter>
+                {
+                    _container.Resolve<IFocusConverter>(),
+                    _container.Resolve<IButtonConverter>(),
+                    _container.Resolve<ILinkSoundConverter>(),
+                    _container.Resolve<IButtonLoadConverter>(),
+                    _container.Resolve<IVisibilityConverter>(),
+                    _container.Resolve<ILostFocusTickConverter>()
+                }
+            };
+            AddConvertersSupport(converterArgs);
 
             Localization.SetPluginLanguage(api.ApplicationSettings.Language);
 
-            // Install services
-            _container = Installation.RegisterInstallers(api, this, settings);
-
-            _playniteEventHandler = LazyResolve<IPlayniteEventHandler>();
-            _gameMenuFactory = LazyResolve<IGameMenuFactory>();
-            _mainMenuFactory = LazyResolve<IMainMenuFactory>();
-            _gameViewFactory = LazyResolve<IGameViewControlFactory>();
+            #endregion
         }
 
         public override void Dispose() => _container.Dispose();
@@ -101,31 +140,55 @@ namespace PlayniteSounds
             => _container.Resolve<PlayniteSoundsSettingsView>();
 
         public override void OnGameInstalled(OnGameInstalledEventArgs args)
-            => PlayniteEventHandler.OnGameInstalled();
+            => PlayniteEventHandler.OnGameInstalled(args.Game);
 
         public override void OnGameUninstalled(OnGameUninstalledEventArgs args)
-            => PlayniteEventHandler.OnGameUninstalled();
+            => PlayniteEventHandler.OnGameUninstalled(args.Game);
 
         public override void OnGameSelected(OnGameSelectedEventArgs args)
-            => PlayniteEventHandler.OnGameSelected();
-
-        public override void OnGameStarted(OnGameStartedEventArgs args)
-            => PlayniteEventHandler.OnGameStarted();
+            => PlayniteEventHandler.OnGameSelected(args.NewValue);
 
         public override void OnGameStarting(OnGameStartingEventArgs args)
             => PlayniteEventHandler.OnGameStarting(args.Game);
 
+        public override void OnGameStarted(OnGameStartedEventArgs args)
+            => PlayniteEventHandler.OnGameStarted(args.Game);
+
         public override void OnGameStopped(OnGameStoppedEventArgs args)
-            => PlayniteEventHandler.OnGameStopped();
+            => PlayniteEventHandler.OnGameStopped(args.Game);
 
         public override void OnApplicationStarted(OnApplicationStartedEventArgs args)
-            => PlayniteEventHandler.OnApplicationStarted(_api.Addons.Plugins);
+        {
+            var handler = _container.Resolve<IItemCollectionChangedHandler>();
+            handler.ExtraMetaDataPluginIsLoaded = _api.Addons.Plugins.Any(p => p.Id.ToString() is App.ExtraMetaGuid);
+
+            var appStateChangeHandler = _container.Resolve<IAppStateChangeHandler>();
+            SystemEvents.PowerModeChanged += appStateChangeHandler.OnPowerModeChanged;
+            Application.Current.MainWindow.StateChanged += appStateChangeHandler.OnWindowStateChanged;
+            Application.Current.Deactivated += appStateChangeHandler.OnApplicationDeactivate;
+            Application.Current.Activated += appStateChangeHandler.OnApplicationActivate;
+
+            PlayniteEventHandler.OnApplicationStarted();
+        }
 
         public override void OnApplicationStopped(OnApplicationStoppedEventArgs args)
-            => PlayniteEventHandler.OnApplicationStopped();
+        {
+            var appStateChangeHandler = _container.Resolve<IAppStateChangeHandler>();
+
+            SystemEvents.PowerModeChanged -= appStateChangeHandler.OnPowerModeChanged;
+            Application.Current.Deactivated -= appStateChangeHandler.OnApplicationDeactivate;
+            Application.Current.Activated -= appStateChangeHandler.OnApplicationActivate;
+
+            if (Application.Current.MainWindow != null)
+            {
+                Application.Current.MainWindow.StateChanged -= appStateChangeHandler.OnWindowStateChanged;
+            }
+
+            PlayniteEventHandler.OnApplicationStopped();
+        }
 
         public override void OnLibraryUpdated(OnLibraryUpdatedEventArgs args)
-            => PlayniteEventHandler.OnLibraryUpdated(SavePluginSettings);
+            => PlayniteEventHandler.OnLibraryUpdated();
 
         public override IEnumerable<MainMenuItem> GetMainMenuItems(GetMainMenuItemsArgs args)
             => MainMenuFactory.GetMainMenuItems(args);

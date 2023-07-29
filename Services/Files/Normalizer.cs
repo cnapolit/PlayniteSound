@@ -68,8 +68,6 @@ namespace PlayniteSounds.Services.Files
             {
                 _promptFactory.ShowMessage(Resource.DialogMessageDone);
             }
-
-            _musicPlayer.Play(_mainViewAPI.SelectedGames);
         }
 
         private List<string> NormalizeSelectedGameMusicFiles(

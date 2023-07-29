@@ -25,6 +25,27 @@
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusicPlatformGame}"/>
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeFilter}"/>
             </ComboBox>
+            <ComboBox SelectedIndex="{Binding Settings.SoundType, Converter={common:SoundTypeConverter}}"
+                      IsEnabled="{Binding Settings.Enabled}">
+                <ComboBoxItem Content="Tick"/>
+                <ComboBoxItem Content="Enter"/>
+                <ComboBoxItem Content="Exit"/>
+                <ComboBoxItem Content="Start"/>
+                <ComboBoxItem Content="Pause"/>
+                <ComboBoxItem Content="Resume"/>
+                <ComboBoxItem Content="Stop"/>
+                <ComboBoxItem Content="GameStart"/>
+                <ComboBoxItem Content="GameStop"/>
+                <ComboBoxItem Content="Installed"/>
+                <ComboBoxItem Content="Uninstalled"/>
+                <ComboBoxItem Content="Updated"/>
+                <ComboBoxItem Content="Scroll"/>
+                <ComboBoxItem Content="Notification"/>
+                <ComboBoxItem Content="Achievement"/>
+                <ComboBoxItem Content="Message"/>
+                <ComboBoxItem Content="Loading"/>
+                <ComboBoxItem Content="Select"/>
+            </ComboBox>
         </StackPanel>
     </GroupBox>
 </UserControl>

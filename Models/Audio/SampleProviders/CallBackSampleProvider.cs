@@ -1,5 +1,6 @@
 ﻿using NAudio.Wave;
 using System;
+using System.Timers;
 
 namespace PlayniteSounds.Models.Audio.SampleProviders
 {

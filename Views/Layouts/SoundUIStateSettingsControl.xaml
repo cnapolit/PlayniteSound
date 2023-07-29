@@ -4,10 +4,15 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:Models="clr-namespace:PlayniteSounds.Views.Models"
+             xmlns:l="clr-namespace:PlayniteSounds.Views.Layouts"
              d:DataContext="{d:DesignInstance Type=Models:UIStateSettingsModel}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Expander x:Name="Expander" IsExpanded="False">
-        <StackPanel x:Name="Stack"/>
+        <StackPanel>
+            <l:SoundTypeSettingsControl x:Name="Enter" Header="Enter"/>
+            <l:SoundTypeSettingsControl x:Name="Exit" Header="Exit"/>
+            <l:SoundTypeSettingsControl x:Name="Tick" Header="Tick"/>
+        </StackPanel>
     </Expander>
 </UserControl>

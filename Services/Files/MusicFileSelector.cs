@@ -21,7 +21,7 @@ namespace PlayniteSounds.Services.Files
         private static readonly Random RNG = new Random();
         public string SelectFile(string[] files, string previousMusicFile, bool musicEnded)
         {
-            var musicFile = files.FirstOrDefault() ?? string.Empty;
+            var musicFile = files.FirstOrDefault() ?? previousMusicFile;
 
             var shouldRandomize = _settings.RandomizeOnEverySelect || (musicEnded && _settings.RandomizeOnMusicEnd);
             if (files.Length > 1 && shouldRandomize) do

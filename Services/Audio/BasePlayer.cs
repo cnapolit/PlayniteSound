@@ -37,6 +37,8 @@ namespace PlayniteSounds.Services.Audio
 
         protected ISampleProvider ConvertProvider(ISampleProvider input)
         {
+            if (input == null) /* Then */ return null;
+
             if (input.WaveFormat.Channels != _mixer.WaveFormat.Channels) /* Then */
             if (input.WaveFormat.Channels == 1)
             {
@@ -44,7 +46,8 @@ namespace PlayniteSounds.Services.Audio
             }
             else
             {
-                throw new NotImplementedException("Not yet implemented this channel count conversion");
+                //throw new NotImplementedException("Not yet implemented this channel count conversion");
+                return null;
             }
 
             if (input.WaveFormat.SampleRate != _mixer.WaveFormat.SampleRate)

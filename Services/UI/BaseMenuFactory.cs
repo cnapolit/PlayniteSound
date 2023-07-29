@@ -44,7 +44,7 @@ namespace PlayniteSounds.Services.UI
 
                 yield return menuItemConstructor(
                     Resource.ActionsCopyPlayMusicFile,
-                    () => _musicPlayer.CurrentMusicFile = file,
+                    () => _musicPlayer.SetMusicFile(file),
                     songSubMenu);
                 yield return menuItemConstructor(
                     Resource.ActionsCopyDeleteMusicFile,

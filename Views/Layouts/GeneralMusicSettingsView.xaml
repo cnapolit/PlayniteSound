@@ -15,7 +15,7 @@
                 <StackPanel Orientation="Horizontal">
                     <Label Content="{DynamicResource LOC_PLAYNITESOUNDS_StopMusic}"
                            d:LayoutOverrides="VerticalAlignment"/>
-                    <ComboBox SelectedIndex="{Binding Settings.StopMusic}">
+                    <ComboBox SelectedIndex="{Binding Settings.StopMusicOnGameStarting}">
                         <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbStopItemIsStarting}"/>
                         <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbStopItemHasStarted}"/>
                     </ComboBox>

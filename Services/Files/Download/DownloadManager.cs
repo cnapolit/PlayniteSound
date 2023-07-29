@@ -33,7 +33,6 @@ namespace PlayniteSounds.Files.Download
         private        readonly IFileManager           _fileManager;
         private        readonly INormalizer            _normalizer;
         private        readonly IPromptFactory         _promptFactory;
-        private        readonly IMusicPlayer           _musicPlayer;
         private        readonly IDownloader            _khDownloader;
         private        readonly IDownloader            _ytDownloader;
         private        readonly PlayniteSoundsSettings _settings;
@@ -44,7 +43,6 @@ namespace PlayniteSounds.Files.Download
             IFileManager fileManager,
             INormalizer normalizer,
             IPromptFactory promptFactory,
-            IMusicPlayer musicPlayer,
             PlayniteSoundsSettings settings)
         {
             _logger = logger;
@@ -52,7 +50,6 @@ namespace PlayniteSounds.Files.Download
             _fileManager = fileManager;
             _normalizer = normalizer;
             _promptFactory = promptFactory;
-            _musicPlayer = musicPlayer;
             _settings = settings;
             _khDownloader = new KhDownloader(logger, HttpClient, Web);
             _ytDownloader = new YtDownloader(logger, HttpClient, _settings);
@@ -79,8 +76,6 @@ namespace PlayniteSounds.Files.Download
             CreateDownloadDialogue(games, source, albumSelect, songSelect, overwriteSelect);
 
             _promptFactory.ShowMessage(Resource.DialogMessageDone);
-
-            _musicPlayer.Resume(false);
         }
 
         #endregion

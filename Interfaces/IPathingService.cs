@@ -1,4 +1,6 @@
 ﻿using Playnite.SDK.Models;
+using PlayniteSounds.Models;
+using PlayniteSounds.Models.Audio.Sound;
 using System;
 
 namespace PlayniteSounds.Services.Files
@@ -24,7 +26,8 @@ namespace PlayniteSounds.Services.Files
         string[] GetDefaultMusicFiles();
         string[] GeFilterMusicFiles(Guid filterId);
         string GetFilterDirectoryPath(Guid filterId);
-        string GetGameStartSoundFile(Game game);
         string[] GetSoundFiles();
+        string GetSoundTypeFile(AudioSource source, SoundType soundType, object resource = null);
+        string[] GetPlatformMusicFiles(string platform);
     }
 }

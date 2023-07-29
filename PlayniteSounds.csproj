@@ -92,6 +92,11 @@
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime, Version=4.1.1.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Runtime.4.3.1\lib\net462\System.Runtime.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
@@ -142,14 +147,22 @@
     <Compile Include="Common\StringUtilities.cs" />
     <Compile Include="Common\Utilities\CommonUtilties.cs" />
     <Compile Include="Common\Utilities\UIUtilities.cs" />
+    <Compile Include="Interfaces\IButtonConverter.cs" />
+    <Compile Include="Interfaces\IButtonLoadConverter.cs" />
+    <Compile Include="Interfaces\IFocusConverter.cs" />
+    <Compile Include="Interfaces\IItemCollectionChangedHandler.cs" />
+    <Compile Include="Interfaces\IVisiblityConverter.cs" />
     <Compile Include="Models\Audio\SampleProviders\AutoDisposeFileReader.cs" />
     <Compile Include="Models\Audio\CachedSound.cs" />
     <Compile Include="Models\Audio\SampleProviders\CachedSoundSampleProvider.cs" />
     <Compile Include="Models\Audio\SampleProviders\CallBackSampleProvider.cs" />
     <Compile Include="Models\Audio\SampleProviders\ControllableSampleProvider.cs" />
+    <Compile Include="Models\Audio\Sound\SoundType.cs" />
     <Compile Include="Models\Settings\SoundTypeSettings.cs" />
-    <Compile Include="Models\UI\UIState.cs" />
+    <Compile Include="Models\State\PlayniteEventOccurredArgs.cs" />
+    <Compile Include="Models\State\UIState.cs" />
     <Compile Include="Models\Settings\UIStateSettings.cs" />
+    <Compile Include="Models\State\UIStateChangedArgs.cs" />
     <Compile Include="PlayniteSoundsPlugin.cs" />
     <Compile Include="Services\Installers\Installation.cs" />
     <Compile Include="Services\Installers\MiscInstaller.cs" />
@@ -164,7 +177,7 @@
     <Compile Include="Interfaces\IMusicPlayer.cs" />
     <Compile Include="Models\AudioFile.cs" />
     <Compile Include="Models\Settings\ModeSettings.cs" />
-    <Compile Include="Models\Audio\Sound\SoundType.cs" />
+    <Compile Include="Models\State\PlayniteEvent.cs" />
     <Compile Include="Services\Audio\BasePlayer.cs" />
     <Compile Include="Services\Audio\MusicPlayer.cs" />
     <Compile Include="Services\Audio\SoundPlayer.cs" />
@@ -184,6 +197,16 @@
     <Compile Include="Interfaces\IMusicFileSelector.cs" />
     <Compile Include="Services\Files\MusicFileSelector.cs" />
     <Compile Include="Services\Installers\ViewInstaller.cs" />
+    <Compile Include="Services\State\FauxConverters\BaseUIStateFauxConverter.cs" />
+    <Compile Include="Services\State\FauxConverters\ButtonConverter.cs" />
+    <Compile Include="Services\State\FauxConverters\ButtonLoadConverter.cs" />
+    <Compile Include="Services\State\FauxConverters\ILinkSoundConverter.cs" />
+    <Compile Include="Services\State\FauxConverters\ILostFocusTickConverter.cs" />
+    <Compile Include="Services\State\FauxConverters\LinkSoundConverter.cs" />
+    <Compile Include="Services\State\FauxConverters\LostFocusTickConverter.cs" />
+    <Compile Include="Services\State\FauxConverters\FocusConverter.cs" />
+    <Compile Include="Services\State\FauxConverters\VisiblityConverter.cs" />
+    <Compile Include="Services\State\ItemCollectionChangedHandler.cs" />
     <Compile Include="Services\UI\GameViewControlFactory.cs" />
     <Compile Include="Interfaces\IGameViewControlFactory.cs" />
     <Compile Include="Interfaces\IModelFactory.cs" />
@@ -204,12 +227,6 @@
     </Compile>
     <Compile Include="Views\Layouts\MusicModeSettingsView.xaml.cs">
       <DependentUpon>MusicModeSettingsView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\Layouts\MusicSettingsView.xaml.cs">
-      <DependentUpon>MusicSettingsView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\Layouts\SoundSettingsView.xaml.cs">
-      <DependentUpon>SoundSettingsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Layouts\SoundModeSettingsControl.xaml.cs">
       <DependentUpon>SoundModeSettingsControl.xaml</DependentUpon>
@@ -236,7 +253,6 @@
     <Compile Include="Services\State\ErrorHandler.cs" />
     <Compile Include="Services\Files\FileManager.cs" />
     <Compile Include="Interfaces\INormalizer.cs" />
-    <Compile Include="Services\Files\FileMutationService.cs" />
     <Compile Include="Interfaces\IFileMutationService.cs" />
     <Compile Include="Services\Files\Normalizer.cs" />
     <Compile Include="Services\Files\PathingService.cs" />
@@ -486,14 +502,6 @@
     <Page Include="Views\Layouts\MusicModeSettingsView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Views\Layouts\MusicSettingsView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Views\Layouts\SoundSettingsView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Layouts\SoundModeSettingsControl.xaml">
       <SubType>Designer</SubType>

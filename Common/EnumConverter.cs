@@ -1,4 +1,5 @@
 ﻿using PlayniteSounds.Models;
+using PlayniteSounds.Models.Audio.Sound;
 using System;
 using System.Globalization;
 using System.Windows.Data;
@@ -13,6 +14,13 @@ namespace PlayniteSounds.Common
         public override object Convert(object value, Type targetType, object parameter, CultureInfo culture) => (int)value;
 
         public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => (UIState)value;
+    }
+
+    public class SoundTypeConverter : BaseValueConverter<SoundTypeConverter>
+    {
+        public override object Convert(object value, Type targetType, object parameter, CultureInfo culture) => (int)value;
+
+        public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => (SoundType)value;
     }
 
     public class AudioSourceConverter : BaseValueConverter<AudioSourceConverter>

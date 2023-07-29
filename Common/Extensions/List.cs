@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PlayniteSounds.Common.Extensions
 {
@@ -15,6 +16,12 @@ namespace PlayniteSounds.Common.Extensions
             }
 
             return default;
+        }
+
+        public static void ForEach<TItem, TIgnore>(this IList<TItem> list, Func<TItem, TIgnore> methodAction)
+        {
+            void action(TItem i) => methodAction(i);
+            list.ForEach(action);
         }
     }
 }
