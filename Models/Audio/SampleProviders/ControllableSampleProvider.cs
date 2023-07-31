@@ -110,10 +110,10 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 
         public void Stop()
         {
-            lock (_lockObject)
+            if (!Stopped) lock (_lockObject)
             {
                 Stopped = true;
-                End();
+                FadeOut();
             }
         }
 
@@ -121,11 +121,11 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         {
             lock (_lockObject)
             {
-                End();
+                FadeOut();
             }
         }
 
-        private void End()
+        private void FadeOut()
         {
             switch (_volumeState)
             {
