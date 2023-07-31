@@ -190,7 +190,7 @@ namespace PlayniteSounds.Services.Audio
                     {
                         _currentSampleProvider.Resume();
                     }
-                    else if (_currentSampleProvider is null || _currentSampleProvider.Stopped is true)
+                    else
                     {
                         _incomingFilterGuid = _mainView.GetActiveFilterPreset();
                         PlayNextFile();
