@@ -4,7 +4,7 @@
         <Setter Property="Margin" Value="0,5,0,0"/>
     </Style>
     <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
-        <Setter Property="Maximum" Value="100"/>
+        <Setter Property="Maximum" Value="200"/>
         <Setter Property="AutoToolTipPlacement" Value="TopLeft"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
