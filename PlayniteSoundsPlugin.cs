@@ -48,7 +48,11 @@ namespace PlayniteSounds
         {
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {
-                return args.Name.StartsWith("System.Text.Json") ? typeof(JsonSerializer).Assembly : null;
+                if (args.Name.StartsWith("System.Text.Json")) /* Then */ return typeof(JsonSerializer).Assembly;
+                if (args.Name.StartsWith("Microsoft.Bcl.AsyncInterfaces"))
+                    /* Then */ return typeof(IAsyncDisposable).Assembly;
+                if (args.Name.StartsWith("CliWrap")) /* Then */ return typeof(CliWrap.Cli).Assembly;
+                return null;
             };
 
             #region Initialize settings
