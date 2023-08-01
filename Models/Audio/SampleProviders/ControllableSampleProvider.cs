@@ -4,7 +4,7 @@ using System;
 
 namespace PlayniteSounds.Models.Audio.SampleProviders
 {
-    internal class ControllableSampleProvider : ISampleProvider
+    internal class ControllableSampleProvider : ISampleProvider, IDisposable
     {
         private enum AudioState
         {
@@ -19,26 +19,39 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         private const    int             MuffleFadeSampleCount          = (int)(500 * 44100 / 1000.0);
         private const    int             UpperBound                     = 2000;
         private const    int             LowerBound                     = 800;
-        private readonly ISampleProvider _source;
+        private readonly AudioFileReader _source;
+        private readonly ISampleProvider _provider;
         private readonly BiQuadFilter    _filter;
         private readonly object          _lockObject                    = new object();
         private          AudioState      _volumeState                   = AudioState.Enabled;
         private          AudioState      _muffledState;
         private          int             _volumeFadeSamplePosition;
         private          int             _muffleFadeSamplePosition;
-        public WaveFormat WaveFormat => _source.WaveFormat;
+        private          bool            _disposed;
+
+        public WaveFormat WaveFormat => _provider.WaveFormat;
         public bool Stopped { get; private set; }
         public float Volume { get; set; } = 1;
+        public long Position { get => _source.Position; set => _source.Position = value; }
 
-        public ControllableSampleProvider(ISampleProvider source, float volume, bool muffled)
+        public ControllableSampleProvider(
+            ISampleProvider provider, AudioFileReader source, float volume, bool muffled, bool fadeVolumeIn)
         {
+            _provider = provider;
             _source = source;
             Volume = volume;
+            _filter = BiQuadFilter.LowPassFilter(WaveFormat.SampleRate, LowerBound, 1);
+
             if (muffled)
             {
                 _muffledState = AudioState.Enabled;
             }
-            _filter = BiQuadFilter.LowPassFilter(WaveFormat.SampleRate, LowerBound, 1);
+
+            if (fadeVolumeIn)
+            {
+                _volumeFadeSamplePosition = 0;
+                _volumeState = AudioState.FadingIn;
+            }
         }
 
         public int Read(float[] buffer, int offset, int count)
@@ -49,40 +62,34 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 
                 if (_muffledState is AudioState.Enabled && _volumeState is AudioState.Enabled)
                 {
-                    samplesRead = _source.Read(buffer, offset, count);
+                    samplesRead = _provider.Read(buffer, offset, count);
                     for (var i = 0; i < samplesRead; i++)
                     {
                         Scaleform(ref buffer[offset + i]);
                     }
                     return samplesRead;
                 }
-
+                
                 switch (_volumeState)
                 {
                     case AudioState.Enabled:
-                        samplesRead = _source.Read(buffer, offset, count);
+                        samplesRead = _provider.Read(buffer, offset, count);
                         if (Volume != 1) /* Then */ for (var i = 0; i < samplesRead; i++)
                         {
                             buffer[offset + i] *= Volume;
                         }
                         break;
                     case AudioState.Disabled:
-                        if (Stopped)
-                        {
-                            return 0;
-                        }
-                        else
-                        {
-                            // Simulate pausing by returning silence
-                            Array.Copy(new float[count], 0, buffer, offset, count);
-                            return count;
-                        }
+                        if (Stopped) /* Then */ return 0;
+                        // Simulate pausing by returning silence
+                        Array.Copy(new float[count], 0, buffer, offset, count);
+                        return count;
                     case AudioState.FadingOut:
-                        samplesRead = _source.Read(buffer, offset, count);
+                        samplesRead = _provider.Read(buffer, offset, count);
                         samplesRead = FadeVolumeOut(buffer, offset, samplesRead);
                         break;
                     case AudioState.FadingIn:
-                        samplesRead = _source.Read(buffer, offset, count);
+                        samplesRead = _provider.Read(buffer, offset, count);
                         FadeVolumeIn(buffer, offset, samplesRead);
                         break;
                 }
@@ -145,16 +152,14 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
                 switch (_volumeState)
                 {
                     case AudioState.Disabled:
-                        if (Stopped)
-                        {
-                            return;
-                        }
+                        if (Stopped) /* Then */ return;
                         _volumeFadeSamplePosition = 0;
                         break;
                     case AudioState.Enabled:
                         return;
                 }
-
+                
+                Stopped = false;
                 _volumeState = AudioState.FadingIn;
             }
         }
@@ -198,7 +203,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
             while (sampleIndex < sourceSamplesRead)
             {
                 float num2 = Volume * (1f - (float)_volumeFadeSamplePosition / VolumeFadeSampleCount);
-                for (int i = 0; i < _source.WaveFormat.Channels; i++)
+                for (int i = 0; i < _provider.WaveFormat.Channels; i++)
                 {
                     buffer[offset + sampleIndex++] *= num2;
                 }
@@ -207,15 +212,11 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
                 if (_volumeFadeSamplePosition > VolumeFadeSampleCount)
                 {
                     _volumeState = AudioState.Disabled;
-                    if (Stopped)
-                    {
-                        if (_source is IDisposable disposable) /* Then */ disposable.Dispose();
-                    }
-                    else
+                    if (!Stopped)
                     {
                         ClearBuffer(buffer, offset + sampleIndex, sourceSamplesRead - sampleIndex);
                         return sourceSamplesRead;
-                    }    
+                    }
                     break;
                 }
             }
@@ -236,7 +237,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
             while (sampleIndex < sourceSamplesRead)
             {
                 var fade = Volume * _volumeFadeSamplePosition / VolumeFadeSampleCount;
-                for (var i = 0; i < _source.WaveFormat.Channels; i++)
+                for (var i = 0; i < _provider.WaveFormat.Channels; i++)
                 {
                     buffer[offset + sampleIndex++] *= fade;
                 }
@@ -260,9 +261,8 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
             var sampleIndex = 0;
             while (sampleIndex < sourceSamplesRead)
             {
-                //var filter = _filters[_muffleFadeSamplePosition];
                 _filter.SetLowPassFilter(44100, UpperBound - MuffleCutoffFrequencyIncrement * _muffleFadeSamplePosition, 1);
-                for (var i = 0; i < _source.WaveFormat.Channels; i++)
+                for (var i = 0; i < _provider.WaveFormat.Channels; i++)
                 {
                     Transform(ref buffer[offset + sampleIndex++]);
                 }
@@ -288,7 +288,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
             {
                 var fadedCutoff = LowerBound + MuffleCutoffFrequencyIncrement * _muffleFadeSamplePosition;
                 _filter.SetLowPassFilter(44100, fadedCutoff, 1);
-                for (var i = 0; i < _source.WaveFormat.Channels; i++)
+                for (var i = 0; i < _provider.WaveFormat.Channels; i++)
                 {
                     Transform(ref buffer[offset + sampleIndex++]);
                 }
@@ -305,5 +305,13 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         private void Transform(ref float value) => value = _filter.Transform(value);
 
         private void Scaleform(ref float value) => value = _filter.Transform(value) * Volume;
+        public void Dispose()
+        {
+            if (_disposed) /* Then */ return;
+            _disposed = true;
+
+           if (_provider is  IDisposable disposable) /* Then */ disposable.Dispose();
+           _source.Dispose();
+        }
     }
 }

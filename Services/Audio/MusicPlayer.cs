@@ -11,6 +11,7 @@ using PlayniteSounds.Services.State;
 using PlayniteSounds.Models.State;
 using PlayniteSounds.Models.UI;
 using PlayniteSounds.Common.Extensions;
+using NAudio.Wave;
 
 namespace PlayniteSounds.Services.Audio
 {
@@ -30,8 +31,11 @@ namespace PlayniteSounds.Services.Audio
         private          UIStateSettings            _uiStateSettings;
         private          Guid                       _currentFilterGuid;
         private          Guid                       _incomingFilterGuid;
-        private          AudioSource                _lastPlayedType;
+        private          UIState                    _currentUIState;
+        private          AudioSource                _lastPlayedAudioSource;
         private          string                     _currentMusicFileName;
+        private          string                     _mainFileName;
+        private          long                       _mainPosition = 0;
         private          uint                       _gamesRunning;
         private          bool                       _startSoundFinished;
         private          bool                       _playing = true;
@@ -58,6 +62,8 @@ namespace PlayniteSounds.Services.Audio
         #endregion
 
         #region Implementation
+
+        #region Public
 
         public void Resume(bool gameStopped)
         {
@@ -102,7 +108,7 @@ namespace PlayniteSounds.Services.Audio
             var soundFile = _pathingService.GetSoundFiles().FirstOrDefault();
             if (soundFile != null)
             {
-                _errorHandler.Try(() =>Play(soundFile));
+                _errorHandler.Try(() => Play(soundFile));
             }
         }
 
@@ -122,17 +128,26 @@ namespace PlayniteSounds.Services.Audio
                 var oldProvider = _currentSampleProvider;
                 _errorHandler.Try(() => Play(filePath));
                 oldProvider?.Stop();
+                oldProvider.Dispose();
             }
         }
 
+        #endregion
+
         #region Event Handlers
 
-        public void UIStateChanged(object sender, UIStateChangedArgs args)
+        private void UIStateChanged(object sender, UIStateChangedArgs args)
         {
+            _currentUIState = args.NewState;
             _uiStateSettings = args.NewSettings;
 
-            lock (_gameLock) /* Then */ if (_uiStateSettings.MusicSource != _lastPlayedType)
+            lock (_gameLock) /* Then */ if (_uiStateSettings.MusicSource != _lastPlayedAudioSource)
             {
+                if (args.OldState is UIState.Main)
+                { 
+                    _mainPosition = _currentSampleProvider?.Position ?? _mainPosition;
+                    _mainFileName = _currentMusicFileName;
+                }
                 PlayNextFile();
             }
             else if (_currentSampleProvider != null)
@@ -203,7 +218,7 @@ namespace PlayniteSounds.Services.Audio
         private string[] GetMusicFilesForStateChange()
         {
             string[] files;
-            _lastPlayedType = _uiStateSettings.MusicSource;
+            _lastPlayedAudioSource = _uiStateSettings.MusicSource;
             switch (_uiStateSettings.MusicSource)
             {
                 case AudioSource.Game:
@@ -220,7 +235,7 @@ namespace PlayniteSounds.Services.Audio
 
             if (files.IsEmpty() && _settings.BackupMusicEnabled)
             {
-                (files, _lastPlayedType) = _musicFileSelector.GetBackupFiles();
+                (files, _lastPlayedAudioSource) = _musicFileSelector.GetBackupFiles();
             }
 
             return files;
@@ -231,6 +246,7 @@ namespace PlayniteSounds.Services.Audio
         {
             // Mixer is shared with the SoundPlayer, so we must check if the finished sample is from the MusicPlayer
             if (_playing && args.SampleProvider == _currentSampleProvider)
+            /* Then */ lock (_gameLock)
             /* Then */ if (!_settings.RandomizeOnMusicEnd && !_currentSampleProvider.Stopped)
             {
                 _mixer.AddMixerInput(_currentSampleProvider);
@@ -252,19 +268,41 @@ namespace PlayniteSounds.Services.Audio
                 return false;
             }
 
-            var baseProvider = ConvertProvider(new AutoDisposeFileReader(musicFile, 1));
+            var source = new AudioFileReader(musicFile) {  Volume = 1 };
+            var baseProvider = ConvertProvider(source);
             if (baseProvider is null)
             {
+                source.Dispose();
                 return false;
             }
+
+            _currentSampleProvider?.Dispose();
 
             _currentGame = _incomingGame;
             _currentFilterGuid = _incomingFilterGuid;
             _currentMusicFileName = musicFile;
 
+            var currentIsMain = _currentUIState is UIState.Main;
+            var mainFileIsTheSame = _mainFileName == _currentMusicFileName;
             _currentSampleProvider = new ControllableSampleProvider(
-                baseProvider, _uiStateSettings.MusicVolume, _uiStateSettings.MusicMuffled);
+                baseProvider,
+                source,
+                _uiStateSettings.MusicVolume,
+                _uiStateSettings.MusicMuffled,
+                currentIsMain && mainFileIsTheSame);
+
+            if (currentIsMain) /* Then */ if (mainFileIsTheSame)
+            {
+                _currentSampleProvider.Position = _mainPosition;
+            }
+            else
+            {
+                _mainPosition = 0;
+                _mainFileName = _currentMusicFileName;
+            }
+
             _mixer.AddMixerInput(_currentSampleProvider);
+
             return true;
         }
 
@@ -278,10 +316,10 @@ namespace PlayniteSounds.Services.Audio
         {
             var files = GetFiles(_uiStateSettings.MusicSource);
 
-            var lastPlayedType = _uiStateSettings.MusicSource;
+            var newAudioSource = _uiStateSettings.MusicSource;
             if (_settings.BackupMusicEnabled && files.IsEmpty())
             {
-                (files, lastPlayedType) = _musicFileSelector.GetBackupFiles();
+                (files, newAudioSource) = _musicFileSelector.GetBackupFiles();
             }
 
             var noSampleProvider = _currentSampleProvider is null;
@@ -291,12 +329,11 @@ namespace PlayniteSounds.Services.Audio
             var file = _musicFileSelector.SelectFile(files, _currentMusicFileName, musicEnded);
             if (ShouldPlayMusic()) /* Then */ if (noMusicIsPlaying)
             {
-                if (Play(file)) /* Then */ _lastPlayedType = lastPlayedType;
+                if (Play(file)) /* Then */ _lastPlayedAudioSource = newAudioSource;
             }
             else if (_currentMusicFileName != file && ShouldPlayMusic())
             {
-                // stopping the current sample should trigger the relevant mixer event
-                _lastPlayedType = lastPlayedType;
+                _lastPlayedAudioSource = newAudioSource;
                 _currentMusicFileName = file;
                 _currentSampleProvider.Stop();
             }
@@ -328,7 +365,7 @@ namespace PlayniteSounds.Services.Audio
                     }
                     break;
                 default:
-                    if (_lastPlayedType != AudioSource.Default || string.IsNullOrWhiteSpace(_currentMusicFileName))
+                    if (_lastPlayedAudioSource != AudioSource.Default || string.IsNullOrWhiteSpace(_currentMusicFileName))
                     {
                         return _pathingService.GetDefaultMusicFiles();
                     }
@@ -339,7 +376,7 @@ namespace PlayniteSounds.Services.Audio
         }
 
         private bool NewMusicSource<T>(T expected, T actual, AudioSource desiredMusicType)
-            => _lastPlayedType != desiredMusicType
+            => _lastPlayedAudioSource != desiredMusicType
             || !Equals(expected, actual)
             || string.IsNullOrWhiteSpace(_currentMusicFileName);
 
