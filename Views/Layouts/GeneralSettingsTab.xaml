@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:xc="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:common="clr-namespace:PlayniteSounds.Common"
              xmlns:Models="clr-namespace:PlayniteSounds.Views.Models"
              d:DataContext="{d:DesignInstance Type=Models:PlayniteSoundsSettingsViewModel}"
              mc:Ignorable="d" 
@@ -41,6 +43,72 @@
                             Command="{Binding ButImportSounds_Click }"/>
                     <Button Content="{DynamicResource LOC_PLAYNITESOUNDS_ManagerOpenManagerFolder}"
                             Command="{Binding ButOpenSoundManagerFolder_Click }"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox x:Name="Parent" Header="Advanced">
+            <StackPanel>
+                <ComboBox SelectedIndex="{Binding Settings.AudioOutput, Converter={common:EnumConverter}}">
+                    <ComboBoxItem Content="WaveOut"/>
+                    <ComboBoxItem Content="WASAPI"/>
+                    <ComboBoxItem Content="DirectSound"/>
+                    <ComboBoxItem Content="ASIO"/>
+                </ComboBox>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Muffle Filter Bandwidth:" d:LayoutOverrides="VerticalAlignment"/>
+                    <Label Content=" "/>
+                    <Label Content="{Binding Settings.MuffledFilterBandwidth}" />
+                </StackPanel>
+                <Slider Value="{Binding Settings.MuffledFilterBandwidth}" Minimum="0" Maximum="10"/>
+                <StackPanel Orientation="Horizontal">
+                    <xc:UIntegerUpDown Value="{Binding Settings.MuffledFadeUpperBound}"
+                                       Maximum="20000"
+                                       Minimum="1"
+                                       Width="60px"
+                                       Background="{Binding ElementName=Parent, Path=Background}"
+                                       Foreground="{Binding ElementName=Parent, Path=Foreground}"
+                                       BorderBrush="{Binding ElementName=Parent, Path=BorderBrush}"
+                                       BorderThickness="{Binding ElementName=Parent, Path=BorderThickness}"
+                                       x:Name="NameForGeneratedCodeToReferenceAssembly"/>
+                    <Label Content="Muffle Fade Upperbound" HorizontalAlignment="Left"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <xc:UIntegerUpDown Value="{Binding Settings.MuffledFadeLowerBound}"
+                                       Maximum="20000"
+                                       Minimum="1"
+                                       Width="60px"
+                                       Background="{Binding ElementName=Parent, Path=Background}"
+                                       Foreground="{Binding ElementName=Parent, Path=Foreground}"
+                                       BorderBrush="{Binding ElementName=Parent, Path=BorderBrush}"
+                                       BorderThickness="{Binding ElementName=Parent, Path=BorderThickness}"/>
+                    <Label Content="Muffle Fade Lowerbound" HorizontalAlignment="Left"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <xc:UIntegerUpDown Value="{Binding Settings.MuffledFadeTimeMs}"
+                                       Width="60px"
+                                       Background="{Binding ElementName=Parent, Path=Background}"
+                                       Foreground="{Binding ElementName=Parent, Path=Foreground}"
+                                       BorderBrush="{Binding ElementName=Parent, Path=BorderBrush}"
+                                       BorderThickness="{Binding ElementName=Parent, Path=BorderThickness}"/>
+                    <Label Content="Muffle Fade Length" HorizontalAlignment="Left"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <xc:UIntegerUpDown Value="{Binding Settings.AudioChannels}"
+                                       Width="60px"
+                                       Background="{Binding ElementName=Parent, Path=Background}"
+                                       Foreground="{Binding ElementName=Parent, Path=Foreground}"
+                                       BorderBrush="{Binding ElementName=Parent, Path=BorderBrush}"
+                                       BorderThickness="{Binding ElementName=Parent, Path=BorderThickness}"/>
+                    <Label Content="Audio Channels" HorizontalAlignment="Left"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <xc:UIntegerUpDown Value="{Binding Settings.VolumeFadeTimeMs}"
+                                       Width="60px"
+                                       Background="{Binding ElementName=Parent, Path=Background}"
+                                       Foreground="{Binding ElementName=Parent, Path=Foreground}"
+                                       BorderBrush="{Binding ElementName=Parent, Path=BorderBrush}"
+                                       BorderThickness="{Binding ElementName=Parent, Path=BorderThickness}"/>
+                    <Label Content="Volume Fade Length" HorizontalAlignment="Left"/>
                 </StackPanel>
             </StackPanel>
         </GroupBox>

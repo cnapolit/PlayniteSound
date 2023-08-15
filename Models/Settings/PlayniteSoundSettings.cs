@@ -2,6 +2,7 @@
 using AngleSharp.Dom;
 using Newtonsoft.Json.Linq;
 using Playnite.SDK.Data;
+using PlayniteSounds.Models.Audio;
 using PlayniteSounds.Models.Audio.Sound;
 using PlayniteSounds.Models.UI;
 using System;
@@ -11,26 +12,37 @@ namespace PlayniteSounds.Models
 {
     public class PlayniteSoundsSettings : ObservableObject
     {
-        public bool         ManualParallelDownload          { get; set; } = true;
-        public bool         NormalizeMusic                  { get; set; } = true;
-        public bool         PauseOnDeactivate               { get; set; } = true;
-        public bool         PlayTickOnGameSelect            { get; set; } = true;
-        public bool         RandomizeOnMusicEnd             { get; set; } = true;
-        public bool         SkipFirstSelectSound            { get; set; } = true;
-        public bool         StopMusicOnGameStarting         { get; set; } = true;
-        public bool         YtPlaylists                     { get; set; } = true;
-        public bool         AutoDownload                    { get; set; }
-        public bool         AutoParallelDownload            { get; set; }
-        public bool         BackupMusicEnabled              { get; set; }
-        public bool         BackupSoundEnabled              { get; set; }
-        public bool         RandomizeOnEverySelect          { get; set; }
-        public bool         TagMissingEntries               { get; set; }
-        public bool         TagNormalizedGames              { get; set; }
-        public string       FFmpegNormalizeArgs             { get; set; }
-        public string       FFmpegNormalizePath             { get; set; }
-        public string       FFmpegPath                      { get; set; }
-        public DateTime     LastAutoLibUpdateAssetsDownload { get; set; } = DateTime.Now;
-        public ISet<Source> Downloaders                     { get; set; } = new HashSet<Source> { Source.Youtube };
+        public bool        BackupSoundEnabled      { get; set; } = true;
+        public bool        ManualParallelDownload  { get; set; } = true;
+        public bool        NormalizeMusic          { get; set; } = true;
+        public bool        PauseOnDeactivate       { get; set; } = true;
+        public bool        PlayTickOnGameSelect    { get; set; } = true;
+        public bool        RandomizeOnMusicEnd     { get; set; } = true;
+        public bool        SkipFirstSelectSound    { get; set; } = true;
+        public bool        StopMusicOnGameStarting { get; set; } = true;
+        public bool        YtPlaylists             { get; set; } = true;
+        public bool        AutoDownload            { get; set; }
+        public bool        AutoParallelDownload    { get; set; }
+        public bool        BackupMusicEnabled      { get; set; }
+        public bool        RandomizeOnEverySelect  { get; set; }
+        public bool        TagMissingEntries       { get; set; }
+        public bool        TagNormalizedGames      { get; set; }
+        public int         AudioSampleRate         { get; set; } = 44100;
+        public int         AudioChannels           { get; set; } = 2;
+        public int         MuffledFadeLowerBound   { get; set; } = 800;
+        public int         MuffledFadeUpperBound   { get; set; } = 2000;
+        public int         MuffledFadeTimeMs       { get; set; } = 500;
+        public int         VolumeFadeTimeMs        { get; set; } = 500;
+        public float       MuffledFilterBandwidth  { get; set; } = 1;
+        public AudioOutput AudioOutput             { get; set; }
+        public string      FFmpegNormalizeArgs     { get; set; }
+        public string      FFmpegNormalizePath     { get; set; }
+        public string      FFmpegPath              { get; set; }
+
+        public ISet<Source> Downloaders { get; set; } = new HashSet<Source> 
+        {
+            Source.KHInsider, Source.Youtube
+        };
 
         public ModeSettings DesktopSettings { get; set; } = new ModeSettings 
         {

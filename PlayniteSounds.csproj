@@ -126,6 +126,21 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
+    <Reference Include="Xceed.Wpf.AvalonDock, Version=4.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>packages\Extended.Wpf.Toolkit.4.5.0\lib\net40\Xceed.Wpf.AvalonDock.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.Aero, Version=4.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>packages\Extended.Wpf.Toolkit.4.5.0\lib\net40\Xceed.Wpf.AvalonDock.Themes.Aero.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.Metro, Version=4.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>packages\Extended.Wpf.Toolkit.4.5.0\lib\net40\Xceed.Wpf.AvalonDock.Themes.Metro.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.VS2010, Version=4.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>packages\Extended.Wpf.Toolkit.4.5.0\lib\net40\Xceed.Wpf.AvalonDock.Themes.VS2010.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.Toolkit, Version=4.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>packages\Extended.Wpf.Toolkit.4.5.0\lib\net40\Xceed.Wpf.Toolkit.dll</HintPath>
+    </Reference>
     <Reference Include="YoutubeExplode, Version=6.2.14.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\YoutubeExplode.6.2.14\lib\net461\YoutubeExplode.dll</HintPath>
     </Reference>
@@ -153,6 +168,7 @@
     <Compile Include="Interfaces\IItemCollectionChangedHandler.cs" />
     <Compile Include="Interfaces\IUriHandler.cs" />
     <Compile Include="Interfaces\IVisiblityConverter.cs" />
+    <Compile Include="Models\Audio\AudioOutput.cs" />
     <Compile Include="Models\Audio\SampleProviders\AutoDisposeFileReader.cs" />
     <Compile Include="Models\Audio\CachedSound.cs" />
     <Compile Include="Models\Audio\SampleProviders\CachedSoundSampleProvider.cs" />
@@ -166,7 +182,7 @@
     <Compile Include="Models\State\UIStateChangedArgs.cs" />
     <Compile Include="PlayniteSoundsPlugin.cs" />
     <Compile Include="Services\Installers\Installation.cs" />
-    <Compile Include="Services\Installers\MiscInstaller.cs" />
+    <Compile Include="Services\Installers\AudioInstaller.cs" />
     <Compile Include="Services\Installers\PlayniteInstaller.cs" />
     <Compile Include="Services\Installers\ServiceInstaller.cs" />
     <Compile Include="Interfaces\ISoundPlayer.cs" />

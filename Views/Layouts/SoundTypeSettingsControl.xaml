@@ -18,14 +18,14 @@
                 <Label Content="%"/>
             </StackPanel>
             <Slider x:Name="Slider" Value="{Binding VolumePercent}" IsEnabled="{Binding Settings.Enabled}"/>
-            <ComboBox SelectedIndex="{Binding Settings.Source, Converter={common:AudioSourceConverter}}"
+            <ComboBox SelectedIndex="{Binding Settings.Source, Converter={common:EnumConverter}}"
                       IsEnabled="{Binding Settings.Enabled}">
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusic}"/>
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusicPlatform}"/>
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusicPlatformGame}"/>
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeFilter}"/>
             </ComboBox>
-            <ComboBox SelectedIndex="{Binding Settings.SoundType, Converter={common:SoundTypeConverter}}"
+            <ComboBox SelectedIndex="{Binding Settings.SoundType, Converter={common:EnumConverter}}"
                       IsEnabled="{Binding Settings.Enabled}">
                 <ComboBoxItem Content="Tick"/>
                 <ComboBoxItem Content="Enter"/>

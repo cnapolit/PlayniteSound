@@ -12,7 +12,7 @@
     <Expander x:Name="Expander">
         <StackPanel>
             <CheckBox IsChecked="{Binding Settings.MusicMuffled}" Content="Music Muffled"/>
-            <ComboBox SelectedIndex="{Binding Settings.MusicSource, Converter={common:AudioSourceConverter}}">
+            <ComboBox SelectedIndex="{Binding Settings.MusicSource, Converter={common:EnumConverter}}">
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusic}"/>
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusicPlatform}"/>
                 <ComboBoxItem Content="{DynamicResource LOC_PLAYNITESOUNDS_CmbMusicTypeOneMusicPlatformGame}"/>

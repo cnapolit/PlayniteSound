@@ -288,6 +288,11 @@ namespace PlayniteSounds.Services.Audio
                 baseProvider,
                 source,
                 _uiStateSettings.MusicVolume,
+                _settings.MuffledFilterBandwidth,
+                _settings.MuffledFadeUpperBound,
+                _settings.MuffledFadeLowerBound,
+                _settings.MuffledFadeTimeMs,
+                _settings.VolumeFadeTimeMs,
                 _uiStateSettings.MusicMuffled,
                 currentIsMain && mainFileIsTheSame);
 

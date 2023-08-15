@@ -11,7 +11,9 @@
     </UserControl.Resources>
     <TabControl>
         <TabItem Header="General">
-            <l:GeneralSettingsTab x:Name="General"/>
+            <ScrollViewer>
+                <l:GeneralSettingsTab x:Name="General"/>
+            </ScrollViewer>
         </TabItem>
         <TabItem Header="Sound">
             <TabControl>

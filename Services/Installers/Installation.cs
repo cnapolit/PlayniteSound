@@ -10,8 +10,9 @@ namespace PlayniteSounds.Services.Installers
     {
         internal static IWindsorContainer RegisterInstallers(
             IPlayniteAPI api, PlayniteSoundsPlugin plugin, PlayniteSoundsSettings settings) 
-            => new WindsorContainer().Install(FromAssembly.This(), new PlayniteInstaller(api)).
-                                      Register(RegisterInstance(plugin), RegisterInstance(settings));
+            => new WindsorContainer().Register(
+                                        RegisterInstance(api), RegisterInstance(plugin), RegisterInstance(settings))
+                                     .Install(FromAssembly.This());
 
         internal static IRegistration RegisterInstance<T>(T instance) where T : class
             => Component.For<T>().Instance(instance);
