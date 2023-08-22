@@ -33,6 +33,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         public bool Stopped { get; private set; }
         public float Volume { get; set; } = 1;
         public long Position { get => _source.Position; set => _source.Position = value; }
+        public string FileName => _source.FileName;
 
         public ControllableSampleProvider(
             ISampleProvider provider,

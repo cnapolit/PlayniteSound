@@ -247,8 +247,10 @@ namespace PlayniteSounds.Services.Audio
             // Mixer is shared with the SoundPlayer, so we must check if the finished sample is from the MusicPlayer
             if (_playing && args.SampleProvider == _currentSampleProvider)
             /* Then */ lock (_gameLock)
-            /* Then */ if (!_settings.RandomizeOnMusicEnd && !_currentSampleProvider.Stopped)
+            /* Then */ if ((!_settings.RandomizeOnMusicEnd && !_currentSampleProvider.Stopped)
+                           || _currentMusicFileName == _currentSampleProvider.FileName)
             {
+                _currentSampleProvider.Position = 0;
                 _mixer.AddMixerInput(_currentSampleProvider);
             }
             else
