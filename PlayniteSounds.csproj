@@ -162,6 +162,7 @@
     <Compile Include="Common\StringUtilities.cs" />
     <Compile Include="Common\Utilities\CommonUtilties.cs" />
     <Compile Include="Common\Utilities\UIUtilities.cs" />
+    <Compile Include="Interfaces\IAssemblyResolver.cs" />
     <Compile Include="Interfaces\IButtonConverter.cs" />
     <Compile Include="Interfaces\IButtonLoadConverter.cs" />
     <Compile Include="Interfaces\IFocusConverter.cs" />
@@ -214,6 +215,7 @@
     <Compile Include="Interfaces\IMusicFileSelector.cs" />
     <Compile Include="Services\Files\MusicFileSelector.cs" />
     <Compile Include="Services\Installers\ViewInstaller.cs" />
+    <Compile Include="Services\State\AssemblyResolver.cs" />
     <Compile Include="Services\State\FauxConverters\BaseUIStateFauxConverter.cs" />
     <Compile Include="Services\State\FauxConverters\ButtonConverter.cs" />
     <Compile Include="Services\State\FauxConverters\ButtonLoadConverter.cs" />

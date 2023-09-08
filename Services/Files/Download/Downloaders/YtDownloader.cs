@@ -1,3 +1,4 @@
+﻿using PlayniteSounds.Services.State;
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using Playnite.SDK;
 using PlayniteSounds.Models;
 using YoutubeExplode;
+using YoutubeExplode.Common;
 using YoutubeExplode.Converter;
 using YoutubeExplode.Search;
 
@@ -15,16 +17,22 @@ namespace PlayniteSounds.Files.Download.Downloaders
     {
         #region Infrastructure
 
-        private const           Source                 DlSource        = Source.Youtube;
-        private const           string                 baseUrl         = "https://www.youtube.com/embed/";
-        private const           string                 PlaylistUrl     = baseUrl + "videoseries?list=";
-        private        readonly ILogger                _logger;
-        private        readonly YoutubeClient          _youtubeClient;
-        private        readonly PlayniteSoundsSettings _settings;
+        private const           Source                 DlSource    = Source.Youtube;
+        private const           string                 baseUrl     = "https://www.youtube.com/embed/";
+        private const           string                 PlaylistUrl = baseUrl + "videoseries?list=";
+        private       readonly ILogger                _logger;
+        private       readonly IAssemblyResolver      _assemblyResolver;
+        private       readonly YoutubeClient          _youtubeClient;
+        private       readonly PlayniteSoundsSettings _settings;
+        private                bool                   _getAlbumHandled;
+        private                bool                   _getSongHandled;
+        private                bool                   _downloadSongHandled;
 
-        public YtDownloader(ILogger logger, HttpClient httpClient, PlayniteSoundsSettings settings)
+        public YtDownloader(
+            ILogger logger, IAssemblyResolver assemblyResolver, HttpClient httpClient, PlayniteSoundsSettings settings)
         {
             _logger = logger;
+            _assemblyResolver = assemblyResolver;
             _youtubeClient = new YoutubeClient(httpClient);
             _settings = settings;
         }
@@ -54,9 +62,18 @@ namespace PlayniteSounds.Files.Download.Downloaders
         #region GetAlbums
 
         public IEnumerable<Album> GetAlbumsForGame(string gameName, bool auto = false)
-            => GetAlbumsFromExplodeApiAsync(gameName, auto).Result;
+        {
+            if (_getAlbumHandled) /* Then */ return GetAlbumsFromExplodeApiAsync(gameName, auto).Result;
+            _getAlbumHandled = true;
 
-        private async Task<List<Album>> GetAlbumsFromExplodeApiAsync(string gameName, bool auto)
+            var jsonAssembly = typeof(System.Text.Json.JsonSerializer).Assembly;
+            using (_assemblyResolver.HandleAssembly("System.Text.Json", jsonAssembly))
+        {
+                return GetAlbumsFromExplodeApiAsync(gameName, auto).Result;
+        }
+        }
+
+        public async Task<IEnumerable<Album>> GetAlbumsFromExplodeApiAsync(string gameName, bool auto = false)
         {
             if (auto)
             {
@@ -123,23 +140,42 @@ namespace PlayniteSounds.Files.Download.Downloaders
         #region GetSongs
 
         public IEnumerable<Song> GetSongsFromAlbum(Album album)
-            => album.Songs ?? GetSongsFromExplodeApiAsync(album).ToEnumerable();
+        {
+            if (album.Songs != null) /* Then */ return album.Songs;
+            if (_getSongHandled)     /* Then */ return GetSongsFromExplodeApi(album);
 
-        private IAsyncEnumerable<Song> GetSongsFromExplodeApiAsync(Album album)
+            _getSongHandled = true;
+
+            var asyncAssembly = typeof(IAsyncDisposable).Assembly;
+            using (_assemblyResolver.HandleAssembly("Microsoft.Bcl.AsyncInterfaces", asyncAssembly))
+                /* Then */ return GetSongsFromExplodeApi(album);
+        }
+
+        private IEnumerable<Song> GetSongsFromExplodeApi(Album album)
             => _youtubeClient.Playlists.GetVideosAsync(album.Id).Select(video => new Song
             {
                 Name = video.Title,
                 Id = video.Id,
                 Length = video.Duration,
                 Source = DlSource,
-                IconUrl= video.Thumbnails.FirstOrDefault()?.Url
-            });
+                IconUrl = video.Thumbnails.FirstOrDefault()?.Url
+            }).ToEnumerable();
 
         #endregion
 
         #region DownloadSong
 
-        public bool DownloadSong(Song song, string path) => DownloadSongExplodeAsync(song, path).Result;
+        public bool DownloadSong(Song song, string path)
+        {
+            if (_downloadSongHandled) /* Then */ return DownloadSongExplodeAsync(song, path).Result;
+            _downloadSongHandled = true;
+
+            var cliAssembly = typeof(CliWrap.Cli).Assembly;
+            using (_assemblyResolver.HandleAssembly("CliWrap", cliAssembly))
+            {
+                return DownloadSongExplodeAsync(song, path).Result;
+            }
+        }
 
         private async Task<bool> DownloadSongExplodeAsync(Song song, string path)
         {
