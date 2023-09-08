@@ -37,6 +37,8 @@ namespace PlayniteSounds.Services.UI
 
             _gameMenuItems = new Lazy<List<GameMenuItem>>(() => new List<GameMenuItem>
             {
+                ConstructGameMenuItem("All",                               _ => DownloadMusicForSelectedGames(Source.All), "|" + Resource.Actions_Download),
+                ConstructGameMenuItem("KHInsider",                         _ => DownloadMusicForSelectedGames(Source.KHInsider), "|" + Resource.Actions_Download),
                 ConstructGameMenuItem(Resource.Youtube,                    SelectedAction(DownloadMusicFromYouTube), "|" + Resource.Actions_Download),
                 //ConstructGameMenuItem("Test Download",                     CreateDialog,                             "|" + Resource.Actions_Download),
                 ConstructGameMenuItem(Resource.ActionsCopySelectMusicFile, SelectedAction(_fileManager.SelectMusicForGames)),
@@ -54,17 +56,6 @@ namespace PlayniteSounds.Services.UI
 
         public IEnumerable<GameMenuItem> GetGameMenuItems(GetGameMenuItemsArgs __)
         {
-            if (_settings.Downloaders.Contains(Source.KHInsider))
-            {
-                yield return ConstructGameMenuItem(
-                    "All", _ => DownloadMusicForSelectedGames(Source.All), 
-                    "|" + Resource.Actions_Download);
-                yield return ConstructGameMenuItem(
-                    "KHInsider",
-                    _ => DownloadMusicForSelectedGames(Source.KHInsider),
-                    "|" + Resource.Actions_Download);
-            }
-
             foreach (var item in _gameMenuItems.Value) yield return item;
 
             if (_mainViewApi.SingleGame())
