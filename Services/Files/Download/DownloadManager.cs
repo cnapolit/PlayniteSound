@@ -15,7 +15,7 @@ using PlayniteSounds.Models;
 using PlayniteSounds.Services.Play;
 using PlayniteSounds.Services.Files;
 using PlayniteSounds.Services;
-using PlayniteSounds.Services.Audio;
+using PlayniteSounds.Services.State;
 
 namespace PlayniteSounds.Files.Download
 {
@@ -43,6 +43,7 @@ namespace PlayniteSounds.Files.Download
             IFileManager fileManager,
             INormalizer normalizer,
             IPromptFactory promptFactory,
+            IAssemblyResolver assemblyResolver,
             PlayniteSoundsSettings settings)
         {
             _logger = logger;
@@ -52,7 +53,7 @@ namespace PlayniteSounds.Files.Download
             _promptFactory = promptFactory;
             _settings = settings;
             _khDownloader = new KhDownloader(logger, HttpClient, Web);
-            _ytDownloader = new YtDownloader(logger, HttpClient, _settings);
+            _ytDownloader = new YtDownloader(logger, assemblyResolver, HttpClient, _settings);
         }
 
         #endregion

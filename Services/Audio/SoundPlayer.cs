@@ -191,7 +191,7 @@ namespace PlayniteSounds.Services.Audio
         {
             var settings = _uiStateSettings.TickSettings;
             if (settings.Enabled) /* Then */
-            PlaySound(GetSoundSampleProvider(settings.Source, soundType, settings.Volume, _currentGame), null);
+                PlaySound(GetSoundSampleProvider(settings.Source, soundType, settings.Volume, _currentGame), null);
         }
 
         public void Play(SoundTypeSettings settings, Game game)
@@ -242,7 +242,7 @@ namespace PlayniteSounds.Services.Audio
 
             if (_cachedSelectedGameSound is null)
             {
-                _cachedSelectedGameSound = new CachedSound(filePath, settings.Volume);
+                _cachedSelectedGameSound = new CachedSound(filePath, settings.Volume * _settings.ActiveModeSettings.SoundMasterVolume);
             }
 
             return new CachedSoundSampleProvider(_cachedSelectedGameSound);
@@ -252,7 +252,7 @@ namespace PlayniteSounds.Services.Audio
             => GetSoundSampleProvider(settings.Source, settings.SoundType, settings.Volume, game);
 
         private ISampleProvider GetSoundSampleProvider(
-            AudioSource source, SoundType soundType, float Volume, Game game)
+            AudioSource source, SoundType soundType, float volume, Game game)
         {
             object resource = null;
             switch (source)
@@ -265,8 +265,10 @@ namespace PlayniteSounds.Services.Audio
                     resource = _mainViewAPI.GetActiveFilterPreset().ToString();
                     break;
             }
-            string filePath = _pathingService.GetSoundTypeFile(source, soundType, resource);
-            return filePath is null ? null : new AutoDisposeFileReader(filePath, Volume);
+            var filePath = _pathingService.GetSoundTypeFile(source, soundType, resource);
+            return filePath is null 
+                ? null 
+                : new AutoDisposeFileReader(filePath, volume * _settings.ActiveModeSettings.SoundMasterVolume);
         }
 
         private void PlaySound(ISampleProvider reader, Action callBack)

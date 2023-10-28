@@ -17,6 +17,26 @@ namespace PlayniteSounds.Views.Models
             set => UpdateSettings(ref _settings, value);
         }
 
+        public int MusicMasterVolumePercent
+        {
+            get => ConvertFromVolume(_settings.MusicMasterVolume);
+            set
+            {
+                _settings.MusicMasterVolume = ConvertToVolume(value);
+                OnPropertyChanged();
+            }
+        }
+
+        public int SoundMasterVolumePercent
+        {
+            get => ConvertFromVolume(_settings.SoundMasterVolume);
+            set
+            {
+                _settings.SoundMasterVolume = ConvertToVolume(value);
+                OnPropertyChanged();
+            }
+        }
+
         public ModeSettingsModel(IModelFactory modelFactory, ModeSettings settings)
         {
             UIStatesToSettingsModels = modelFactory.CreateUIStateDictionary(settings);

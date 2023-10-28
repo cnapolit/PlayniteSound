@@ -18,21 +18,19 @@
         <TabItem Header="Sound">
             <TabControl>
                 <TabItem Header="Desktop">
-                    <ScrollViewer>
-                        <StackPanel x:Name="DesktopSound"/>
-                    </ScrollViewer>
+                    <l:SoundModeSettingsControl x:Name="DesktopSound"/>
                 </TabItem>
                 <TabItem Header="Fullscreen">
-                    <ScrollViewer>
-                        <StackPanel x:Name="FullscreenSound"/>
-                    </ScrollViewer>
+                    <l:SoundModeSettingsControl x:Name="FullscreenSound"/>
                 </TabItem>
             </TabControl>
         </TabItem>
         <TabItem Header="Music">
             <TabControl>
                 <TabItem Header="General">
-                    <l:GeneralMusicSettingsView x:Name="GeneralMusic"/>
+                    <ScrollViewer>
+                        <l:GeneralMusicSettingsView x:Name="GeneralMusic"/>
+                    </ScrollViewer>
                 </TabItem>
                 <TabItem Header="Desktop">
                     <l:MusicModeSettingsView x:Name="DesktopMusic"/>

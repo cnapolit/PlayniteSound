@@ -84,7 +84,8 @@ namespace PlayniteSounds.Services.Audio
         {
             if (_currentSampleProvider != null)
             { 
-                _currentSampleProvider.Volume = volume ?? _uiStateSettings.MusicVolume;
+                var subVolume = volume ?? _uiStateSettings.MusicVolume;
+                _currentSampleProvider.Volume = subVolume * _settings.ActiveModeSettings.MusicMasterVolume;
             }
         }
 
@@ -152,7 +153,8 @@ namespace PlayniteSounds.Services.Audio
             }
             else if (_currentSampleProvider != null)
             {
-                _currentSampleProvider.Volume = _uiStateSettings.MusicVolume;
+                var volume = _uiStateSettings.MusicVolume * _settings.ActiveModeSettings.MusicMasterVolume;
+                _currentSampleProvider.Volume = volume;
                 if (_uiStateSettings.MusicMuffled)
                 {
                     _currentSampleProvider.Muffle();
@@ -289,7 +291,7 @@ namespace PlayniteSounds.Services.Audio
             _currentSampleProvider = new ControllableSampleProvider(
                 baseProvider,
                 source,
-                _uiStateSettings.MusicVolume,
+                _uiStateSettings.MusicVolume * _settings.ActiveModeSettings.MusicMasterVolume,
                 _settings.MuffledFilterBandwidth,
                 _settings.MuffledFadeUpperBound,
                 _settings.MuffledFadeLowerBound,

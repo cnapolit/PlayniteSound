@@ -31,27 +31,11 @@ namespace PlayniteSounds.Views.Layouts
             var settingsModel = DataContext as PlayniteSoundsSettingsViewModel;
 
             General.DataContext = settingsModel;
-
-            PopulateSoundStack(DesktopSound, settingsModel.DesktopSettingsModel);
-            PopulateSoundStack(FullscreenSound, settingsModel.FullscreenSettingsModel);
-
             GeneralMusic.DataContext = settingsModel;
+            DesktopSound.DataContext = settingsModel.DesktopSettingsModel;
+            FullscreenSound.DataContext = settingsModel.FullscreenSettingsModel;
             DesktopMusic.DataContext = settingsModel.DesktopSettingsModel;
             FullscreenMusic.DataContext = settingsModel.FullscreenSettingsModel;
-        }
-
-        private static void PopulateSoundStack(StackPanel stack, ModeSettingsModel settingsModel)
-        {
-
-            foreach (var stateToModel in settingsModel.UIStatesToSettingsModels)
-            {
-                var control = new SoundUIStateSettingsControl
-                {
-                    Header = stateToModel.Key,
-                    DataContext = stateToModel.Value
-                };
-                stack.Children.Add(control);
-            }
         }
     }
 }

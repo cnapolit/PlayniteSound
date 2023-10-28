@@ -25,7 +25,7 @@ namespace PlayniteSounds.Views.Layouts
                     Header = stateToModel.Key,
                     DataContext = stateToModel.Value
                 };
-                AddChild(control);
+                Stack.Children.Add(control);
             }
         }
     }

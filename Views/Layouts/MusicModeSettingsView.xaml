@@ -9,6 +9,15 @@
     <ScrollViewer>
         <StackPanel x:Name="Stack">
             <CheckBox IsChecked="{Binding Settings.MusicEnabled}" Content="Enable music"/>
+            <StackPanel Orientation="Horizontal" IsEnabled="{Binding Settings.MusicEnabled}">
+                <Label Content="Master Volume" d:LayoutOverrides="VerticalAlignment"/>
+                <Label Content=" "/>
+                <Label Content="{Binding MusicMasterVolumePercent}" />
+                <Label Content="%"/>
+            </StackPanel>
+            <Slider x:Name="Slider"
+                    Value="{Binding MusicMasterVolumePercent}"
+                    IsEnabled="{Binding Settings.MusicEnabled}"/>
         </StackPanel>
     </ScrollViewer>
 </UserControl>
