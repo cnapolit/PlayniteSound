@@ -6,7 +6,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 {
     internal class ControllableSampleProvider : ISampleProvider, IDisposable
     {
-        private enum AudioState
+        public enum AudioState
         {
             Disabled,
             FadingIn,
@@ -23,7 +23,6 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         private readonly int             _muffleFadeSampleCount;
         private readonly int             _upperBound;
         private readonly int             _lowerBound;
-        private          AudioState      _volumeState = AudioState.Enabled;
         private          AudioState      _muffledState;
         private          int             _volumeFadeSamplePosition;
         private          int             _muffleFadeSamplePosition;
@@ -31,6 +30,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 
         public WaveFormat WaveFormat => _provider.WaveFormat;
         public bool Stopped { get; private set; }
+        public AudioState VolumeState { get; private set; } = AudioState.Enabled;
         public float Volume { get; set; } = 1;
         public long Position { get => _source.Position; set => _source.Position = value; }
         public string FileName => _source.FileName;
@@ -63,23 +63,24 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 
             if (muffled) /* Then */ _muffledState = AudioState.Enabled;
 
-            if (fadeVolumeIn) /* Then */ _volumeState = AudioState.FadingIn;
+            if (fadeVolumeIn) /* Then */ VolumeState = AudioState.FadingIn;
         }
 
         public int Read(float[] buffer, int offset, int count)
         {
+            if (_disposed) /* Then */ return 0;
             lock (_lockObject)
             {
                 var samplesRead = 0;
 
-                if (_muffledState is AudioState.Enabled && _volumeState is AudioState.Enabled)
+                if (_muffledState is AudioState.Enabled && VolumeState is AudioState.Enabled)
                 {
                     samplesRead = _provider.Read(buffer, offset, count);
                     ApplyAcrossBuffer(Scaleform, buffer, offset, samplesRead);
                     return samplesRead;
                 }
                 
-                switch (_volumeState)
+                switch (VolumeState)
                 {
                     case AudioState.Enabled:
                         samplesRead = _provider.Read(buffer, offset, count);
@@ -123,7 +124,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 
         public void Stop()
         {
-            if (!Stopped) lock (_lockObject)
+            lock (_lockObject) /* Then */ if (!Stopped) 
             {
                 Stopped = true;
                 FadeOut();
@@ -140,7 +141,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 
         private void FadeOut()
         {
-            switch (_volumeState)
+            switch (VolumeState)
             {
                 case AudioState.Disabled:
                     return;
@@ -148,14 +149,14 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
                     _volumeFadeSamplePosition = 0;
                     break;
             }
-            _volumeState = AudioState.FadingOut;
+            VolumeState = AudioState.FadingOut;
         }
 
         public void Resume()
         {
             lock (_lockObject)
             {
-                switch (_volumeState)
+                switch (VolumeState)
                 {
                     case AudioState.Disabled:
                         if (Stopped) /* Then */ return;
@@ -166,7 +167,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
                 }
                 
                 Stopped = false;
-                _volumeState = AudioState.FadingIn;
+                VolumeState = AudioState.FadingIn;
             }
         }
 
@@ -217,7 +218,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
                 _volumeFadeSamplePosition++;
                 if (_volumeFadeSamplePosition > _volumeFadeSampleCount)
                 {
-                    _volumeState = AudioState.Disabled;
+                    VolumeState = AudioState.Disabled;
                     if (!Stopped)
                     {
                         ClearBuffer(buffer, offset + sampleIndex, sourceSamplesRead - sampleIndex);
@@ -231,7 +232,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 
         private static void ClearBuffer(float[] buffer, int offset, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 buffer[i + offset] = 0f;
             }
@@ -251,7 +252,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
                 _volumeFadeSamplePosition++;
                 if (_volumeFadeSamplePosition > _volumeFadeSampleCount)
                 {
-                    _volumeState = AudioState.Enabled;
+                    VolumeState = AudioState.Enabled;
                     break;
                 }
             }
@@ -298,7 +299,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
             }
         }
 
-        delegate void Mutate(ref float value, BiQuadFilter filter);
+        private delegate void Mutate(ref float value, BiQuadFilter filter);
 
         private void ApplyAcrossBuffer(
              Mutate valueMutator, float[] buffer, int offset, int samplesRead, int sampleIndex = 0)
@@ -324,10 +325,14 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         public void Dispose()
         {
             if (_disposed) /* Then */ return;
+
+            lock (_lockObject)
+            {
             _disposed = true;
 
-           if (_provider is  IDisposable disposable) /* Then */ disposable.Dispose();
+                if (_provider is IDisposable disposable) /* Then */ disposable.Dispose();
            _source.Dispose();
         }
     }
+}
 }

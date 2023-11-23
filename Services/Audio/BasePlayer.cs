@@ -13,11 +13,11 @@ namespace PlayniteSounds.Services.Audio
         #region Infrastructure
 
         protected readonly PlayniteSoundsSettings _settings;
-        protected readonly MixingSampleProvider _mixer;
+        protected readonly IWavePlayerManager _WavePlayerManager;
 
-        public BasePlayer(MixingSampleProvider mixer, PlayniteSoundsSettings settings)
+        public BasePlayer(IWavePlayerManager wavePlayerManager, PlayniteSoundsSettings settings)
         {
-            _mixer = mixer;
+            _WavePlayerManager = wavePlayerManager;
             _settings = settings;
         }
 
@@ -39,7 +39,7 @@ namespace PlayniteSounds.Services.Audio
         {
             if (input == null) /* Then */ return null;
 
-            if (input.WaveFormat.Channels != _mixer.WaveFormat.Channels) /* Then */
+            if (input.WaveFormat.Channels != _WavePlayerManager.Mixer.WaveFormat.Channels) /* Then */
             if (input.WaveFormat.Channels == 1)
             {
                 input = new MonoToStereoSampleProvider(input);
@@ -50,9 +50,9 @@ namespace PlayniteSounds.Services.Audio
                 return null;
             }
 
-            if (input.WaveFormat.SampleRate != _mixer.WaveFormat.SampleRate)
+            if (input.WaveFormat.SampleRate != _WavePlayerManager.Mixer.WaveFormat.SampleRate)
             {
-                using (var resampler = new MediaFoundationResampler(input.ToWaveProvider(), _mixer.WaveFormat))
+                using (var resampler = new MediaFoundationResampler(input.ToWaveProvider(), _WavePlayerManager.Mixer.WaveFormat))
                 {
                     input = resampler.ToSampleProvider();
                 }

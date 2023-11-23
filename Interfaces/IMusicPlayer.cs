@@ -13,5 +13,7 @@ namespace PlayniteSounds.Services.Audio
         void Resume(string pauser);
         void SetVolume(float? volume = null);
         void SetMusicFile(string filePath);
+        void Resume();
+        void Pause();
     }
 }

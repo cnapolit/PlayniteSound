@@ -182,8 +182,9 @@
     <Compile Include="Models\Settings\UIStateSettings.cs" />
     <Compile Include="Models\State\UIStateChangedArgs.cs" />
     <Compile Include="PlayniteSoundsPlugin.cs" />
+    <Compile Include="Interfaces\IWavePlayerManager.cs" />
+    <Compile Include="Services\Audio\WavePlayerManager.cs" />
     <Compile Include="Services\Installers\Installation.cs" />
-    <Compile Include="Services\Installers\AudioInstaller.cs" />
     <Compile Include="Services\Installers\PlayniteInstaller.cs" />
     <Compile Include="Services\Installers\ServiceInstaller.cs" />
     <Compile Include="Interfaces\ISoundPlayer.cs" />

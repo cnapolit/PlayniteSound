@@ -37,7 +37,7 @@ namespace PlayniteSounds.Services.Audio
             IPathingService pathingService,
             IPlayniteEventHandler playniteEventHandler,
             IMusicPlayer musicPlayer,
-            MixingSampleProvider mixer,
+            IWavePlayerManager mixer,
             PlayniteSoundsSettings settings) : base(mixer, settings)
         {
             _mainViewAPI = mainViewAPI;
@@ -45,7 +45,7 @@ namespace PlayniteSounds.Services.Audio
             _playMusicCallback = musicPlayer.Initialize;
             playniteEventHandler.UIStateChanged += UIStateChanged;
             playniteEventHandler.PlayniteEventOccurred += PlayniteEventOccurred;
-            _mixer.MixerInputEnded += SoundEnded;
+            _WavePlayerManager.Mixer.MixerInputEnded += SoundEnded;
             _uiStateSettings = settings.ActiveModeSettings.UIStatesToSettings[UIState.Main];
         }
 
@@ -285,7 +285,7 @@ namespace PlayniteSounds.Services.Audio
                 reader = new CallBackSampleProvider(reader, callBack);
             }
 
-            _mixer.AddMixerInput(reader);
+            _WavePlayerManager.Mixer.AddMixerInput(reader);
         }
 
         #endregion

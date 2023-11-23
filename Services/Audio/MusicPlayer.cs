@@ -46,8 +46,8 @@ namespace PlayniteSounds.Services.Audio
             IMainViewAPI mainView,
             IPlayniteEventHandler playniteEventHandler,
             IMusicFileSelector musicFileSelector,
-            MixingSampleProvider mixer,
-            PlayniteSoundsSettings settings) : base(mixer, settings)
+            IWavePlayerManager wavePlayerManager,
+            PlayniteSoundsSettings settings) : base(wavePlayerManager, settings)
         {
             _errorHandler = errorHandler;
             _pathingService = pathingService;
@@ -56,7 +56,7 @@ namespace PlayniteSounds.Services.Audio
             _uiStateSettings = settings.CurrentUIStateSettings;
             playniteEventHandler.UIStateChanged += UIStateChanged;
             playniteEventHandler.PlayniteEventOccurred += PlayniteEventOccurred;
-            mixer.MixerInputEnded += MusicEnded;
+            wavePlayerManager.Mixer.MixerInputEnded += MusicEnded;
         }
 
         #endregion
@@ -71,13 +71,22 @@ namespace PlayniteSounds.Services.Audio
             {
                 _gamesRunning--;
             }
-            Start();
+            Resume();
         }
 
         public void Resume(string pauser)
         {
             _pausers.Remove(pauser);
-            Start();
+            Resume();
+        }
+
+        public void Resume()
+        {
+            lock (_gameLock) /* Then */ if (ShouldPlayMusic() && _currentSampleProvider != null)
+            {
+                _currentSampleProvider.Resume();
+                _playing = true;
+            }
         }
 
         public void SetVolume(float? volume = null)
@@ -102,6 +111,15 @@ namespace PlayniteSounds.Services.Audio
         {
             _pausers.Add(pauser);
             Pause();
+        }
+
+        public void Pause()
+        {
+            if (_currentSampleProvider != null) /* Then */ lock (_gameLock)
+            {
+                _currentSampleProvider.Pause();
+                _playing = false;
+            }
         }
 
         public void Preview()
@@ -253,7 +271,7 @@ namespace PlayniteSounds.Services.Audio
                            || _currentMusicFileName == _currentSampleProvider.FileName)
             {
                 _currentSampleProvider.Position = 0;
-                _mixer.AddMixerInput(_currentSampleProvider);
+                _WavePlayerManager.Mixer.AddMixerInput(_currentSampleProvider);
             }
             else
             {
@@ -310,7 +328,10 @@ namespace PlayniteSounds.Services.Audio
                 _mainFileName = _currentMusicFileName;
             }
 
-            _mixer.AddMixerInput(_currentSampleProvider);
+
+
+            _WavePlayerManager.Mixer.AddMixerInput(_currentSampleProvider);
+            _playing = true;
 
             return true;
         }
@@ -389,20 +410,12 @@ namespace PlayniteSounds.Services.Audio
             || !Equals(expected, actual)
             || string.IsNullOrWhiteSpace(_currentMusicFileName);
 
-        private void Pause()
-        {
-            if (_currentSampleProvider is null) return;
-            lock(_gameLock)
-            {
-                _currentSampleProvider.Pause();
-            }
-        }
-
         private void Start()
         {
-            if (ShouldPlayMusic() && _currentSampleProvider != null)  lock (_gameLock)
+            if (ShouldPlayMusic() && _currentSampleProvider != null) /* Then */  lock (_gameLock)
             {
                 _currentSampleProvider.Resume();
+                _playing = true;
             }
         }
 

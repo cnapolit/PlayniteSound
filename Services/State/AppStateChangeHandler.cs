@@ -1,5 +1,4 @@
 ﻿using Microsoft.Win32;
-using NAudio.Wave;
 using PlayniteSounds.Models;
 using PlayniteSounds.Services.Audio;
 using System;
@@ -11,17 +10,20 @@ namespace PlayniteSounds.Services.State
     {
         #region Infrastructure
 
-        private readonly IWavePlayer            _wavePlayer;
+        private readonly IWavePlayerManager     _wavePlayerManager;
         private readonly ISoundPlayer           _soundPlayer;
+        private readonly IMusicPlayer           _musicPlayer;
         private readonly PlayniteSoundsSettings _settings;
 
         public AppStateChangeHandler(
-            IWavePlayer waveplayer,
+            IWavePlayerManager wavePlayerManager,
             ISoundPlayer soundPlayer,
+            IMusicPlayer musicPlayer,
             PlayniteSoundsSettings settings)
         {
-            _wavePlayer = waveplayer;
+            _wavePlayerManager = wavePlayerManager;
             _soundPlayer = soundPlayer;
+            _musicPlayer = musicPlayer;
             _settings = settings;
         }
 
@@ -35,7 +37,7 @@ namespace PlayniteSounds.Services.State
         {
             if (args.Mode is PowerModes.Resume)
             {
-                _wavePlayer.Play();
+                _wavePlayerManager.Init();
             }
         }
 
@@ -83,11 +85,15 @@ namespace PlayniteSounds.Services.State
 
         private void Resume()
         {
-            _soundPlayer.Play(MainStateSettings().EnterSettings);
-            _wavePlayer.Play();
+            _wavePlayerManager.Init();
+            _soundPlayer.Play(MainStateSettings().EnterSettings, _musicPlayer.Resume);
         }
 
-        private void Pause() => _soundPlayer.Play(MainStateSettings().ExitSettings, _wavePlayer.Pause);
+        private void Pause()
+        {
+            _musicPlayer.Pause();
+            _soundPlayer.Play(MainStateSettings().ExitSettings, _wavePlayerManager.WavePlayer.Pause);
+        }
 
         private UIStateSettings MainStateSettings() => _settings.ActiveModeSettings.UIStatesToSettings[UIState.Main];
 
