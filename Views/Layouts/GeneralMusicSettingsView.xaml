@@ -8,8 +8,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel>
-        <!--<CheckBox Name="ChkAutoSearchOrder" Grid.Row="0" Grid.ColumnSpan="2" IsChecked="{Binding Settings.AutoParallelDownload}" Content="{DynamicResource LOC_PLAYNITESOUNDS_AutoParDown}" ToolTip="Determine whether results are retrieved for each source or for the first source with results."/>
-                    <CheckBox Name="ChkManualSearchOrder" Grid.Row="2" Grid.ColumnSpan="2" IsChecked="{Binding Settings.ManualParallelDownload}" Content="{DynamicResource LOC_PLAYNITESOUNDS_ManParDown}" ToolTip="Determine whether results are retrieved for each source or for the first source with results."/>-->
         <GroupBox Header="{DynamicResource LOC_PLAYNITESOUNDS_Settings}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
@@ -32,6 +30,12 @@
                           Content="{DynamicResource LOC_PLAYNITESOUNDS_ChkTagMissing}"/>
                 <CheckBox IsChecked="{Binding Settings.TagNormalizedGames}"
                           Content="{DynamicResource LOC_PLAYNITESOUNDS_Normalize_Tag}"/>
+                <CheckBox IsChecked="{Binding Settings.AutoParallelDownload}"
+                          Content="{DynamicResource LOC_PLAYNITESOUNDS_AutoParDown}"
+                          ToolTip="Determine whether results are retrieved for each source or for the first source with results."/>
+                <CheckBox IsChecked="{Binding Settings.ManualParallelDownload}"
+                          Content="{DynamicResource LOC_PLAYNITESOUNDS_ManParDown}"
+                          ToolTip="Determine whether results are retrieved for each source or for the first source with results."/>
                 <DockPanel Margin="0,0,0,10">
                     <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center"
                                Text="{DynamicResource LOC_PLAYNITESOUNDS_FF_Path}"
@@ -76,6 +80,7 @@
                           Content="{DynamicResource LOC_PLAYNITESOUNDS_Normalize}"/>
                 <CheckBox IsChecked="{Binding Settings.YtPlaylists}" 
                           Content="{DynamicResource LOC_PLAYNITESOUNDS_YtPlaylists}"/>
+                <ListBox x:Name="Downloaders"/>
             </StackPanel>
         </GroupBox>
     </StackPanel>
