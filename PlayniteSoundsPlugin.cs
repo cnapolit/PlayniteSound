@@ -46,15 +46,6 @@ namespace PlayniteSounds
 
         public PlayniteSoundsPlugin(IPlayniteAPI api) : base(api)
         {
-            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
-            {
-                if (args.Name.StartsWith("System.Text.Json")) /* Then */ return typeof(JsonSerializer).Assembly;
-                if (args.Name.StartsWith("Microsoft.Bcl.AsyncInterfaces"))
-                    /* Then */ return typeof(IAsyncDisposable).Assembly;
-                if (args.Name.StartsWith("CliWrap")) /* Then */ return typeof(CliWrap.Cli).Assembly;
-                return null;
-            };
-
             #region Initialize settings
 
             Settings = LoadPluginSettings<PlayniteSoundsSettings>() ?? new PlayniteSoundsSettings();
