@@ -184,20 +184,6 @@ namespace PlayniteSounds.Models
         private static SoundTypeSettings DefaultExitSettings()
             => new SoundTypeSettings { Enabled = true, SoundType = SoundType.Exit };
 
-        private UIState _uiState;
-        [DontSerialize] public UIState UIState
-        {
-            get => _uiState; 
-            set
-            {
-                if (_uiState != value)
-                {
-                    CurrentUIStateSettings = ActiveModeSettings.UIStatesToSettings[value];
-                    _uiState = value;
-                }
-            }
-        }
-
         [DontSerialize] public UIStateSettings CurrentUIStateSettings { get; set; }
         [DontSerialize] public ModeSettings ActiveModeSettings { get; set; }
     }

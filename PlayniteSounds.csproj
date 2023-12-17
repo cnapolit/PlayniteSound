@@ -178,6 +178,7 @@
     <Compile Include="Models\Audio\Sound\SoundType.cs" />
     <Compile Include="Models\Settings\SoundTypeSettings.cs" />
     <Compile Include="Models\State\PlayniteEventOccurredArgs.cs" />
+    <Compile Include="Models\State\PlayniteState.cs" />
     <Compile Include="Models\State\UIState.cs" />
     <Compile Include="Models\Settings\UIStateSettings.cs" />
     <Compile Include="Models\State\UIStateChangedArgs.cs" />
