@@ -23,6 +23,7 @@ namespace PlayniteSounds.Services.Audio
 
         private readonly IMainViewAPI    _mainViewAPI;
         private readonly IPathingService _pathingService;
+        private readonly IMusicFileSelector _fileSelector;
         private readonly IList<bool>     _activePlayers = new List<bool>(new bool[9]);
         private          Game            _currentGame;
         private          CachedSound     _cachedSelectedGameSound;
@@ -35,6 +36,7 @@ namespace PlayniteSounds.Services.Audio
         public SoundPlayer(
             IMainViewAPI mainViewAPI,
             IPathingService pathingService,
+            IMusicFileSelector fileSelector,
             IPlayniteEventHandler playniteEventHandler,
             IMusicPlayer musicPlayer,
             IWavePlayerManager mixer,
@@ -42,6 +44,7 @@ namespace PlayniteSounds.Services.Audio
         {
             _mainViewAPI = mainViewAPI;
             _pathingService = pathingService;
+            _fileSelector = fileSelector;
             _playMusicCallback = musicPlayer.Initialize;
             playniteEventHandler.UIStateChanged += UIStateChanged;
             playniteEventHandler.PlayniteEventOccurred += PlayniteEventOccurred;
@@ -228,6 +231,10 @@ namespace PlayniteSounds.Services.Audio
                     break;
             }
             var filePath = _pathingService.GetSoundTypeFile(settings.Source, settings.SoundType, resource);
+
+            if (_settings.BackupSoundEnabled && filePath is null)
+                /* Then */ filePath = _fileSelector.GetBackupFiles(settings.Source, settings.SoundType, resource);
+            
             if (filePath is null)
             {
                 return null;
@@ -266,6 +273,11 @@ namespace PlayniteSounds.Services.Audio
                     break;
             }
             var filePath = _pathingService.GetSoundTypeFile(source, soundType, resource);
+
+            if (_settings.BackupSoundEnabled && filePath is null)
+                /* Then */ filePath = _fileSelector.GetBackupFiles(
+                               source, soundType, _mainViewAPI.GetActiveFilterPreset().ToString());
+
             return filePath is null 
                 ? null 
                 : new AutoDisposeFileReader(filePath, volume * _settings.ActiveModeSettings.SoundMasterVolume);

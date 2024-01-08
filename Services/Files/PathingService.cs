@@ -103,7 +103,7 @@ namespace PlayniteSounds.Services.Files
                     break;
                 case AudioSource.Game:
                     var game = resource as Game;
-                    path.Add(SoundDirectory.Game);
+                    path.Add(SoundDirectory.GamesFolder);
                     path.Add(game.Id.ToString());
                     break;
             }
