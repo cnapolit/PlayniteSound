@@ -18,6 +18,7 @@ namespace PlayniteSounds.Services.Installers
                         RegisterInstance(api.MainView),
                         RegisterInstance(api.Paths),
                         RegisterInstance(api.UriHandler),
+                        RegisterInstance(api.WebViews),
                         RegisterInstance(LogManager.GetLogger()));
         }
     }

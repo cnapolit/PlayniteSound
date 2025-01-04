@@ -2,7 +2,6 @@
 using NAudio.Wave;
 using PlayniteSounds.Common.Imports;
 using PlayniteSounds.Models;
-using System;
 using System.Diagnostics;
 using System.Linq;
 
@@ -46,7 +45,6 @@ namespace PlayniteSounds.Services.Audio
             }
             else
             {
-                //throw new NotImplementedException("Not yet implemented this channel count conversion");
                 return null;
             }
 

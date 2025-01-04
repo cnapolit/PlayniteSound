@@ -81,11 +81,11 @@ namespace PlayniteSounds.Services.UI
 
         public void CreateGlobalProgress(string progressSubTitle, Action<GlobalProgressActionArgs, string> action)
         {
-
             var progressTitle = $"{App.AppName} - {progressSubTitle}";
             var progressOptions = new GlobalProgressOptions(progressTitle, true) { IsIndeterminate = false };
 
-            _dialogs.ActivateGlobalProgress(a => _errorHandler.TryWithPrompt(() => action(a, progressTitle)), progressOptions);
+            _dialogs.ActivateGlobalProgress(
+                a => _errorHandler.TryWithPrompt(() => action(a, progressTitle)), progressOptions);
         }
 
         #endregion

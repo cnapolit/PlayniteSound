@@ -1,11 +1,7 @@
-﻿using AngleSharp.Common;
-using AngleSharp.Dom;
-using Newtonsoft.Json.Linq;
-using Playnite.SDK.Data;
+﻿using Playnite.SDK.Data;
 using PlayniteSounds.Models.Audio;
 using PlayniteSounds.Models.Audio.Sound;
 using PlayniteSounds.Models.UI;
-using System;
 using System.Collections.Generic;
 
 namespace PlayniteSounds.Models
@@ -39,7 +35,7 @@ namespace PlayniteSounds.Models
         public string      FFmpegNormalizePath     { get; set; }
         public string      FFmpegPath              { get; set; }
 
-        public ISet<Source> Downloaders { get; set; } = new HashSet<Source> 
+        public ISet<Source> Downloaders { get; set; } = new HashSet<Source>
         {
             Source.KHInsider, Source.Youtube
         };

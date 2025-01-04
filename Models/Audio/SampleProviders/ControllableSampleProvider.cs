@@ -15,7 +15,7 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         }
 
         private readonly ISampleProvider _provider;
-        private readonly AudioFileReader _source;
+        private readonly IStreamReader   _source;
         private readonly BiQuadFilter[]  _filters;
         private readonly object          _lockObject  = new object();
         private readonly float           _muffleCutOffFrequencyIncrement;
@@ -34,11 +34,12 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         public AudioState VolumeState { get; private set; } = AudioState.Enabled;
         public float Volume { get; set; } = 1;
         public long Position { get => _source.Position; set => _source.Position = value; }
+        public long Length => _source.Length;
         public string FileName => _source.FileName;
 
         public ControllableSampleProvider(
             ISampleProvider provider,
-            AudioFileReader source,
+            IStreamReader source,
             float volume,
             float muffledBandwidth,
             int muffledUpperBound,
@@ -328,11 +329,11 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
 
             lock (_lockObject)
             {
-            _disposed = true;
+                _disposed = true;
 
                 if (_provider is IDisposable disposable) /* Then */ disposable.Dispose();
-           _source.Dispose();
+                _source.Dispose();
+            }
         }
     }
-}
 }

@@ -1,5 +1,4 @@
 ﻿using Playnite.SDK;
-using PlayniteSounds.Common.Constants;
 using PlayniteSounds.Models;
 using PlayniteSounds.Models.Audio.Sound;
 using System;

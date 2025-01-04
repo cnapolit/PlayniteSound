@@ -1,9 +1,7 @@
 ﻿using Playnite.SDK;
 using PlayniteSounds.Models;
 using System.Linq;
-using Playnite.SDK.Events;
 using Playnite.SDK.Models;
-using PlayniteSounds.Common.Constants;
 using System.Collections.Generic;
 using System;
 using PlayniteSounds.Models.State;
@@ -17,8 +15,6 @@ namespace PlayniteSounds.Services.State
 
         private readonly IMainViewAPI           _mainViewAPI;
         private readonly PlayniteSoundsSettings _settings;
-        public  static   UIState                CurrentState = UIState.Main;
-        private static   UIState                _oldState     = UIState.Main;
         private readonly PlayniteState _playniteState;
         private readonly object _stateLock = new object();
 
@@ -49,14 +45,15 @@ namespace PlayniteSounds.Services.State
 
         public void OnGameStarting(Game game)
         {
-            lock (_stateLock) /* Then */ _playniteState.GamesPlaying += 1;
-            TriggerPlayniteEventOccurred(PlayniteEvent.GameStarting, game);
+            // Only trigger if another plugin has not already informed of starting event
+            if (_playniteState.GameIsStarting(game.Id)) /* Then */
+                TriggerPlayniteEventOccurred(PlayniteEvent.GameStarting, game);
         }
 
         public void OnGameStopped(Game game)
         {
-            lock (_stateLock) /* Then */ _playniteState.GamesPlaying -= 1;
-            TriggerPlayniteEventOccurred(PlayniteEvent.GameStopped, game);
+            if (_playniteState.GameHasEnded(game.Id)) /* Then */
+                TriggerPlayniteEventOccurred(PlayniteEvent.GameStopped, game);
         }
 
         public void OnGameSelected(IList<Game> games)
@@ -64,49 +61,43 @@ namespace PlayniteSounds.Services.State
 
         public void TriggerUIStateChanged(UIState newState)
         {
-            if (newState is UIState.GameMenu) /* Then */ newState |= CurrentState;
+            if (newState is UIState.GameMenu) /* Then */ newState |= _playniteState.CurrentUIState;
 
-            if (newState == CurrentState) /* Then */ return;
+            if (newState == _playniteState.CurrentUIState) /* Then */ return;
 
+            UIStateChangedArgs args;
             lock (_stateLock)
             {
                 _playniteState.PreviousUIState = _playniteState.CurrentUIState;
                 _playniteState.CurrentUIState = newState;
+                args = CreateUIStateChangedArgs();
             }
-
-            _oldState = CurrentState;
-            CurrentState = newState;
-            var args = new UIStateChangedArgs
-            {
-                Game = _mainViewAPI.SelectedGames.FirstOrDefault(),
-                OldState = _oldState,
-                NewState = CurrentState,
-                OldSettings = _settings.ActiveModeSettings.UIStatesToSettings[_oldState],
-                NewSettings = _settings.ActiveModeSettings.UIStatesToSettings[CurrentState]
-            };
             UIStateChanged(this, args);
         }
 
         public void TriggerRevertUIStateChanged()
         {
-            // Swap
-            lock (_stateLock) /* Then */ (_playniteState.CurrentUIState, _playniteState.PreviousUIState)
-                                       = (_playniteState.PreviousUIState, _playniteState.CurrentUIState);
-
-            var args = new UIStateChangedArgs
+            UIStateChangedArgs args;
+            lock (_stateLock)
             {
-                Game = _mainViewAPI.SelectedGames.FirstOrDefault(),
-                OldState = CurrentState,
-                NewState = _oldState,
-                OldSettings = _settings.ActiveModeSettings.UIStatesToSettings[CurrentState],
-                NewSettings = _settings.ActiveModeSettings.UIStatesToSettings[_oldState]
-            };
-            CurrentState = _oldState;
-            _oldState = args.OldState;
+                // Swap
+                (_playniteState.CurrentUIState, _playniteState.PreviousUIState)
+                                       = (_playniteState.PreviousUIState, _playniteState.CurrentUIState);
+                args = CreateUIStateChangedArgs();
+            }
             UIStateChanged(this, args);
         }
 
         #region Helpers
+
+        private UIStateChangedArgs CreateUIStateChangedArgs() => new UIStateChangedArgs
+        {
+            Game = _mainViewAPI.SelectedGames.FirstOrDefault(),
+            OldState = _playniteState.PreviousUIState,
+            NewState = _playniteState.CurrentUIState,
+            OldSettings = _settings.ActiveModeSettings.UIStatesToSettings[_playniteState.PreviousUIState],
+            NewSettings = _settings.ActiveModeSettings.UIStatesToSettings[_playniteState.CurrentUIState]
+        };
 
         private void TriggerPlayniteEventOccurred(PlayniteEvent playniteEvent)
             => TriggerPlayniteEventOccurred(playniteEvent, _mainViewAPI.SelectedGames?.FirstOrDefault());
@@ -117,13 +108,18 @@ namespace PlayniteSounds.Services.State
 
         private void TriggerPlayniteEventOccurred(PlayniteEvent playniteEvent, IList<Game> games)
         {
-            lock (_stateLock) /* Then */ _playniteState.CurrentGame = games.FirstOrDefault();
-            var args = new PlayniteEventOccurredArgs
+            PlayniteEventOccurredArgs args;
+            lock (_stateLock)
             {
-                Event = playniteEvent,
-                SoundTypeSettings = _settings.ActiveModeSettings.PlayniteEventToSoundTypesSettings[playniteEvent],
-                Games = games
-            };
+                _playniteState.PreviousGame = _playniteState.CurrentGame;
+                _playniteState.CurrentGame = games.FirstOrDefault();
+                args = new PlayniteEventOccurredArgs
+                {
+                    Event = playniteEvent,
+                    SoundTypeSettings = _settings.ActiveModeSettings.PlayniteEventToSoundTypesSettings[playniteEvent],
+                    Games = games
+                };
+            }
             PlayniteEventOccurred.Invoke(this, args);
         }   
 

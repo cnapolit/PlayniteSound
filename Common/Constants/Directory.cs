@@ -7,7 +7,6 @@ namespace PlayniteSounds.Common.Constants
     {
         public const string NoPlatform = "No Platform";
         public const string Music = "Music Files";
-        public const string Game = "Game";
         public const string Platform = "Platform";
         public const string Filter = "Filter";
         public const string Default = "Default";
@@ -17,6 +16,7 @@ namespace PlayniteSounds.Common.Constants
         public const string Orphans = "Orphans";
         public const string ExtraMetaData = "ExtraMetadata";
         public const string GamesFolder = "Games";
+
 
         public const string SoundsFolder = "Sounds";
 
@@ -28,5 +28,6 @@ namespace PlayniteSounds.Common.Constants
 
         public static readonly string PluginFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         public static readonly string IconPath = Path.Combine(PluginFolder, "icon.png");
+        public static readonly string ResourceFolder = Path.Combine(PluginFolder, "Resources");
     }
 }

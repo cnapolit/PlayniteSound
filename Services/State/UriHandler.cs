@@ -4,21 +4,25 @@ using PlayniteSounds.Common.Constants;
 using PlayniteSounds.Interfaces;
 using PlayniteSounds.Services.Audio;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PlayniteSounds.Services.State
 {
     public class UriHandler : IUriHandler
     {
-        private readonly IMusicPlayer _musicPlayer;
+        private readonly IMusicPlayer          _musicPlayer;
+        private readonly IPlayniteEventHandler _playniteEventHandler;
+        private readonly IGameDatabaseAPI      _gameDatabaseAPI;
 
-        public UriHandler(IUriHandlerAPI uriHandlerAPI, IMusicPlayer musicPlayer)
+        public UriHandler(
+            IUriHandlerAPI uriHandlerAPI,
+            IMusicPlayer musicPlayer,
+            IPlayniteEventHandler playniteEventHandler,
+            IGameDatabaseAPI gameDatabaseAPI)
         {
             uriHandlerAPI.RegisterSource(App.SourceName, HandleUriEvent);
             _musicPlayer = musicPlayer;
+            _playniteEventHandler = playniteEventHandler;
+            _gameDatabaseAPI = gameDatabaseAPI;
         }
 
         // ex: playnite://Sounds/Play/someId
@@ -33,6 +37,9 @@ namespace PlayniteSounds.Services.State
             {
                 case "play": _musicPlayer.Resume(senderId); break;
                 case "pause": _musicPlayer.Pause(senderId); break;
+                case "GameStarting":
+                    _playniteEventHandler.OnGameStarting(_gameDatabaseAPI.Games.Get(Guid.Parse(senderId)));
+                    break;
             }
         }
     }

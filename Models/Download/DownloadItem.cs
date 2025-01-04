@@ -1,45 +1,30 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 namespace PlayniteSounds.Models
 {
-    public abstract class DownloadItem
+    public abstract class DownloadItem : BaseItem
     {
-        public string Name { get; set; }
-        public string Id { get; set; }
-        public string IconUrl { get; set; }
-        public Source Source { get; set; }
+        public ICollection<string> Developers { get; set; }
+        public ICollection<string> Publishers { get; set; }
+        public string              Uploader   { get; set; }
 
-
-        protected abstract IEnumerable<PropertyInfo> Properties { get; }
-
-        protected static readonly IEnumerable<string> IgnoredFields = new[]
+        private static readonly List<string> Properties = new List<string>
         {
-            // Ignored Types
-            "Name",
-            "Url",
-            "Songs",
-            "IconUrl",
-            // Needs Custom Handling
-            "Id",
-            "Platforms"
+            nameof(Developers),
+            nameof(Publishers),
+            nameof(Uploader)
         };
 
-        public override string ToString()
+        protected override IList<string> GetProperties()
         {
-            var strings =
-                from property in Properties
-                let propertyValue = property.GetValue(this)
-                where IsValidField(property, propertyValue)
-                select $"{property.Name}: {propertyValue}";
-
-            return string.Join("\n", strings);
+            var properties = new List<string>(base.GetProperties());
+            properties.AddRange(Properties);
+            return properties;
         }
 
-        private static bool IsValidField(PropertyInfo property, object propertyValue)
-            => propertyValue != null
-            && !IgnoredFields.ContainsString(property.Name)
-            && !(propertyValue is string propertyString && string.IsNullOrWhiteSpace(propertyString));
+        public override string ToString() => JoinWithBase(PropertiesToStrings(Properties));
+
+        protected string JoinWithBase(IEnumerable<string> strs)
+            => JoinProperties(new[] { base.ToString(), JoinProperties(strs) });
     }
 }

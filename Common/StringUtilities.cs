@@ -35,7 +35,7 @@ namespace PlayniteSounds.Common
 
         public static TimeSpan? GetTimeSpan(string time)
         {
-            if (string.IsNullOrEmpty(time)) return null;
+            if (string.IsNullOrWhiteSpace(time)) return null;
 
             var times = time.Split(':').ToList();
 

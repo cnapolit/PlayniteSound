@@ -5,12 +5,12 @@ namespace PlayniteSounds.Views.Models.GameViewControls
 {
     public class HandlerControlModel
     {
-        private readonly IPlayniteEventHandler _playniteEventHandler;
+        public readonly IPlayniteEventHandler PlayniteEventHandler;
         private readonly IMusicPlayer _musicPlayer;
 
         public HandlerControlModel(IPlayniteEventHandler playniteEventHandler, IMusicPlayer musicPlayer)
         {
-            _playniteEventHandler = playniteEventHandler;
+            PlayniteEventHandler = playniteEventHandler;
             _musicPlayer = musicPlayer;
         }
 

@@ -1,9 +1,7 @@
 ﻿using Playnite.SDK;
 using PlayniteSounds.Models;
 using PlayniteSounds.Services.Audio;
-using System;
 using System.Collections.Generic;
-using System.Media;
 using System.Windows.Controls;
 
 namespace PlayniteSounds.Services.State.FauxConverters

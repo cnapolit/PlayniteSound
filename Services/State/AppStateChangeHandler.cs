@@ -53,6 +53,7 @@ namespace PlayniteSounds.Services.State
         {
             if (_settings.PauseOnDeactivate)
             {
+                _playniteState.HasFocus = false;
                 Pause();
             }
         }
@@ -63,8 +64,9 @@ namespace PlayniteSounds.Services.State
 
         public void OnApplicationActivate(object sender, EventArgs e)
         {
-            if (_settings.PauseOnDeactivate)
+            if (_settings.PauseOnDeactivate && !_playniteState.HasFocus)
             {
+                _playniteState.HasFocus = true;
                 Resume();
             }
         }
@@ -79,19 +81,28 @@ namespace PlayniteSounds.Services.State
             {
                 case WindowState.Normal:
                 case WindowState.Maximized:
-                    Resume();
+                    if (!_playniteState.HasFocus)
+                    {
+                        _playniteState.HasFocus = true;
+                        Resume();
+                    }
                     break;
                 case WindowState.Minimized:
+                    _playniteState.HasFocus = false;
                     Pause();
                     break;
             }
         }
 
+        #endregion
+
+        #region Helpers
+
         private void Resume()
         {
             _wavePlayerManager.Init();
-            if (_playniteState.GamesPlaying is 0) /* Then */
-                _soundPlayer.Play(MainStateSettings().EnterSettings, _musicPlayer.Resume);
+            if (_playniteState.GamesPlaying is 0)
+                 /* Then */ _soundPlayer.Play(MainStateSettings().EnterSettings, _musicPlayer.Resume);
             else /* Then */ _musicPlayer.Resume();
         }
 

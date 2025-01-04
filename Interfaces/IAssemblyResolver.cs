@@ -6,8 +6,7 @@ namespace PlayniteSounds.Services.State
 {
     public interface IAssemblyResolver : IDisposable
     {
-        bool IsResolvingAssembles { get; }
-        IDisposable HandleAssembly(string assemblyName, Assembly assembly);
-        IDisposable HandleAssemblies(IDictionary<string, Assembly> assemblies);
+        IDisposable HandleAssemblies(params Assembly[] assemblies);
+        IDisposable HandleAssemblies(ICollection<Assembly> assemblies);
     }
 }

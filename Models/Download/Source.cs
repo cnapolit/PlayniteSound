@@ -4,6 +4,7 @@
     {
         All,
         KHInsider,
-        Youtube
+        Youtube,
+        Local
     }
 }

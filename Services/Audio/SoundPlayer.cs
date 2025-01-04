@@ -25,7 +25,7 @@ namespace PlayniteSounds.Services.Audio
         private readonly IPathingService _pathingService;
         private readonly IMusicFileSelector _fileSelector;
         private readonly IList<bool>     _activePlayers = new List<bool>(new bool[9]);
-        private          Game            _currentGame;
+        private readonly PlayniteState   _playniteState;
         private          CachedSound     _cachedSelectedGameSound;
         private          UIStateSettings _uiStateSettings;
         private          Action          _playMusicCallback;
@@ -40,11 +40,13 @@ namespace PlayniteSounds.Services.Audio
             IPlayniteEventHandler playniteEventHandler,
             IMusicPlayer musicPlayer,
             IWavePlayerManager mixer,
+            PlayniteState playniteState,
             PlayniteSoundsSettings settings) : base(mixer, settings)
         {
             _mainViewAPI = mainViewAPI;
             _pathingService = pathingService;
             _fileSelector = fileSelector;
+            _playniteState = playniteState;
             _playMusicCallback = musicPlayer.Initialize;
             playniteEventHandler.UIStateChanged += UIStateChanged;
             playniteEventHandler.PlayniteEventOccurred += PlayniteEventOccurred;
@@ -69,7 +71,8 @@ namespace PlayniteSounds.Services.Audio
         {
             if (args.SampleProvider is CallBackSampleProvider callBackSampleProvider)
             {
-                var timer = new System.Timers.Timer(300)
+                // allow time for last chunk of sound to play
+                var timer = new System.Timers.Timer(1000)
                 {
                     Enabled = true,
                     AutoReset = false
@@ -94,7 +97,6 @@ namespace PlayniteSounds.Services.Audio
                 case PlayniteEvent.GameSelected:
                     if (_settings.PlayTickOnGameSelect)
                     {
-                        _currentGame = args.Games.FirstOrDefault();
                         sampleProvider = GetSelectSoundSampleProvider(args.SoundTypeSettings);
                     }
                     break;
@@ -170,7 +172,7 @@ namespace PlayniteSounds.Services.Audio
 
         public void Preview(SoundTypeSettings settings, bool isDesktop)
         {
-            var sampler = GetSoundSampleProvider(settings, _currentGame);
+            var sampler = GetSoundSampleProvider(settings, _playniteState.CurrentGame);
             if (sampler != null)
             {
                 PlaySound(sampler, null);
@@ -180,30 +182,34 @@ namespace PlayniteSounds.Services.Audio
 
         public void Play(SoundTypeSettings settings, Action callBack = null)
         {
-            var sampler = settings.Enabled ? GetSoundSampleProvider(settings, _currentGame) : null;
+            var sampler = ShouldPlaySound(settings)
+                ? GetSoundSampleProvider(settings, _playniteState.CurrentGame) 
+                : null;
             PlaySound(sampler, callBack);
         }
 
         public void Tick()
         {
             var settings = _uiStateSettings.TickSettings;
-            if (settings.Enabled) /* Then */ PlaySound(GetSelectSoundSampleProvider(settings), null);
+            if (ShouldPlaySound(settings)) /* Then */
+                PlaySound(GetSelectSoundSampleProvider(settings), null);
         }
 
         public void Trigger(SoundType soundType)
         {
             var settings = _uiStateSettings.TickSettings;
-            if (settings.Enabled) /* Then */
-                PlaySound(GetSoundSampleProvider(settings.Source, soundType, settings.Volume, _currentGame), null);
+            if (ShouldPlaySound(settings)) /* Then */
+                PlaySound(GetSoundSampleProvider(settings.Source, soundType, settings.Volume, _playniteState.CurrentGame), null);
         }
 
         public void Play(SoundTypeSettings settings, Game game)
         {
-            if (!settings.Enabled) /* Then */ return;
-            PlaySound(GetSoundSampleProvider(settings, game), null);
+            if (ShouldPlaySound(settings)) /* Then */ PlaySound(GetSoundSampleProvider(settings, game), null);
         }
 
         #region Helpers
+
+        private bool ShouldPlaySound(SoundTypeSettings settings) => settings.Enabled && _playniteState.HasFocus;
 
         private ISampleProvider GetSelectSoundSampleProvider(SoundTypeSettings settings)
         {
@@ -216,7 +222,7 @@ namespace PlayniteSounds.Services.Audio
             if (settings.Source is AudioSource.Game)
             {
                 // Don't bother caching since the source changes so frequently 
-                return GetSoundSampleProvider(settings, _currentGame);
+                return GetSoundSampleProvider(settings, _playniteState.CurrentGame);
             }
 
             object resource = null;
@@ -224,7 +230,7 @@ namespace PlayniteSounds.Services.Audio
             {
                 case AudioSource.Platform:
                 case AudioSource.Game:
-                    resource = _currentGame;
+                    resource = _playniteState.CurrentGame;
                     break;
                 case AudioSource.Filter:
                     resource = _mainViewAPI.GetActiveFilterPreset().ToString();

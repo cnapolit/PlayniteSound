@@ -1,5 +1,4 @@
 ﻿using Playnite.SDK;
-using Playnite.SDK.Controls;
 using PlayniteSounds.Views.Models.GameViewControls;
 using System;
 using System.ComponentModel;
@@ -7,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace PlayniteSounds.Views.Layouts.GameViewControls
 {
-    public partial class PlayerControl : PluginUserControl, INotifyPropertyChanged
+    public partial class PlayerControl : INotifyPropertyChanged
     {
         public PlayerControl()
         {

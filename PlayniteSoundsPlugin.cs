@@ -13,7 +13,6 @@ using PlayniteSounds.Views.Layouts;
 using PlayniteSounds.Services.State;
 using PlayniteSounds.Services.Installers;
 using System.Windows.Data;
-using System.Text.Json;
 using PlayniteSounds.Services.Audio;
 using PlayniteSounds.Services.State.FauxConverters;
 using System.Linq;

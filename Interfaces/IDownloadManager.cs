@@ -1,20 +1,24 @@
-﻿using System.Collections.Generic;
-using Playnite.SDK;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Playnite.SDK.Models;
 using PlayniteSounds.Models;
+using PlayniteSounds.Models.Download;
 
 namespace PlayniteSounds.Files.Download
 {
-    public interface IDownloadManager
+    public interface IDownloadManager : IDownloadBase
     {
-        Album BestAlbumPick(IEnumerable<Album> albums, string gameName, string regexGameName);
-        Song BestSongPick(IEnumerable<Song> songs, string regexGameName);
-        void CreateDownloadDialogue(IEnumerable<Game> games, Source source, bool albumSelect = false, bool songSelect = false, bool overwriteSelect = false);
-        void DownloadMusicForGames(Source source, IList<Game> games);
-        bool DownloadSong(Song song, string path);
-        IEnumerable<Album> GetAlbumsForGame(string gameName, Source source, bool auto = false);
-        string GetItemUrl(DownloadItem item);
-        IEnumerable<Song> GetSongsFromAlbum(Album album);
-        void StartDownload(GlobalProgressActionArgs args, List<Game> games, Source source, string progressTitle, bool albumSelect, bool songSelect, bool overwrite);
+        string                  GetSourceIcon(Source source);
+        string                  GetSourceLogo(Source source);
+        IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm, Source source, bool auto = false, CancellationToken? token = null);
+        IAsyncEnumerable<Song>  SearchSongsAsync(Game game, string searchTerm, Source source, CancellationToken? token = null);
+        DownloadCapabilities    GetCapabilities(Source source);
+        Task<bool>              DownloadAsync(Game game, DownloadItem item, string path, IProgress<double> progress, CancellationToken token);
+        Task<DownloadStatus>    DownloadAsync(Game game, CancellationToken token);
+
+        IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(
+            Game game, string searchTerm, Source source, bool auto = false, CancellationToken? token = null);
     }
 }

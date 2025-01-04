@@ -7,21 +7,26 @@ using PlayniteSounds.Files.Download;
 using PlayniteSounds.Models;
 using PlayniteSounds.Services.Audio;
 using PlayniteSounds.Services.Files;
+using PlayniteSounds.Views.Layouts;
+using PlayniteSounds.Views.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Windows;
 
 namespace PlayniteSounds.Services.UI
 {
     public class GameMenuFactory : BaseMenuFactory, IGameMenuFactory
     {
         #region Infrastructure
-
-        private readonly Lazy<List<GameMenuItem>> _gameMenuItems;
-        private readonly PlayniteSoundsSettings   _settings;
+        
         private readonly IDownloadManager         _downloadManager;
         private readonly INormalizer              _normalizer;
+        private readonly IDialogsFactory          _dialogsFactory;
+        private readonly IFactoryExecutor<DownloadPromptModel> _factoryExecutor;
+        private readonly Lazy<List<GameMenuItem>> _gameMenuItems;
+        private readonly PlayniteSoundsSettings   _settings;
 
         public GameMenuFactory(
             IMainViewAPI mainViewApi,
@@ -29,10 +34,14 @@ namespace PlayniteSounds.Services.UI
             IFileManager fileManager,
             IDownloadManager downloadManager,
             INormalizer normalizer,
+            IDialogsFactory dialogsFactory,
+            IFactoryExecutor<DownloadPromptModel> factoryExecutor,
             PlayniteSoundsSettings settings) : base(mainViewApi, fileManager, musicPlayer)
         {
             _downloadManager = downloadManager;
             _normalizer = normalizer;
+            _dialogsFactory = dialogsFactory;
+            _factoryExecutor = factoryExecutor;
             _settings = settings;
 
             _gameMenuItems = new Lazy<List<GameMenuItem>>(() => new List<GameMenuItem>
@@ -40,7 +49,9 @@ namespace PlayniteSounds.Services.UI
                 ConstructGameMenuItem("All",                               _ => DownloadMusicForSelectedGames(Source.All), "|" + Resource.Actions_Download),
                 ConstructGameMenuItem("KHInsider",                         _ => DownloadMusicForSelectedGames(Source.KHInsider), "|" + Resource.Actions_Download),
                 ConstructGameMenuItem(Resource.Youtube,                    SelectedAction(DownloadMusicFromYouTube), "|" + Resource.Actions_Download),
-                //ConstructGameMenuItem("Test Download",                     CreateDialog,                             "|" + Resource.Actions_Download),
+                ConstructGameMenuItem("Test Download",                     CreateDialog,                             "|" + Resource.Actions_Download),
+                ConstructGameMenuItem("Test Start Audio Selection",        CreateStartTest),
+                ConstructGameMenuItem("Test End Audio Selection",          CreateEndTest),
                 ConstructGameMenuItem(Resource.ActionsCopySelectMusicFile, SelectedAction(_fileManager.SelectMusicForGames)),
                 ConstructGameMenuItem(Resource.ActionsOpenSelected,        SelectedAction(_fileManager.OpenGameDirectories)),
                 ConstructGameMenuItem(Resource.ActionsDeleteSelected,      SelectedAction(_fileManager.DeleteMusicDirectories)),
@@ -93,32 +104,48 @@ namespace PlayniteSounds.Services.UI
         };
 
         private void DownloadMusicFromYouTube(IEnumerable<Game> games)
-            => _downloadManager.DownloadMusicForGames(Source.Youtube, games.ToList());
+        { }
+        //=> _downloadManager.DownloadMusicForGamesAsync(Source.Youtube, games.ToList());
 
         private void DownloadMusicForSelectedGames(Source source)
-            => _downloadManager.DownloadMusicForGames(source, _mainViewApi.SelectedGames.ToList());
+        { }
+        //=> _downloadManager.DownloadMusicForGamesAsync(source, _mainViewApi.SelectedGames.ToList());
 
-        private void CreateDialog()
+        private void CreateStartTest()
         {
-            //var window = _mainViewApi.Dialogs.CreateWindow(new WindowCreationOptions
-            //{
-            //    ShowMinimizeButton = false
-            //});
+            var selector = new StartSoundSelector();
+            var (start, end) = selector.SelectStartSound(@"C:\Users\bandg\Downloads\1-14. Run the Table.flac", StartSoundSelector.SelectStartAlgorithm.StartTrimSilence);
+            _dialogsFactory.ShowMessage($"Start: {start}, End: {end}");
+        }
+        private void CreateEndTest()
+        {
+            var selector = new StartSoundSelector();
+            var (start, end) = selector.SelectStartSound(@"C:\Users\bandg\Downloads\1-14. Run the Table.flac", StartSoundSelector.SelectStartAlgorithm.EndTrimSilence);
+            _dialogsFactory.ShowMessage($"Start: {start}, End: {end}");
+        }
 
-            //window.Height = 600;
-            //window.Width = 840;
-            //window.Title = "Download Dialog";
-            //window.Content = new DownloadPrompt();
-            //window.DataContext = new DownloadPromptModel(_mainViewApi, _downloadManager, _fileManager) 
-            //{ 
-            //    PromptForAlbum = true, 
-            //    PromptForSong = true,
-            //    Window = window
-            //};
-            //window.Owner = _mainViewApi.Dialogs.GetCurrentAppWindow();
-            //window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        private void CreateDialog() => _factoryExecutor.Execute(CreateDownloadPrompt);
 
-            //window.ShowDialog();
+        private void CreateDownloadPrompt(DownloadPromptModel model)
+        {
+            var window = _dialogsFactory.CreateWindow(new WindowCreationOptions
+            {
+                ShowMinimizeButton = false
+            });
+
+            window.Height = 600;
+            window.Width = 1000;
+            window.Title = "Download Dialog";
+            window.Content = new DownloadPrompt();
+
+
+            window.DataContext = model;
+            model.Dispatcher = window.Dispatcher;
+
+            window.Owner = _dialogsFactory.GetCurrentAppWindow();
+            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            window.ShowDialog();
         }
 
         #endregion

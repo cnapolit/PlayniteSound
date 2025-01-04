@@ -9,5 +9,7 @@ namespace PlayniteSounds.Services.Play
         bool RemoveTag(Game game, string tagName);
         void UpdateGames(IEnumerable<Game> games);
         void UpdateGames(IList<Game> games);
+        void AddTag(IEnumerable<Game> games, string tagName);
+        void RemoveTag(IEnumerable<Game> games, string tagName);
     }
 }

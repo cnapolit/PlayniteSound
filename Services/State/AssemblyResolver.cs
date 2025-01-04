@@ -9,44 +9,49 @@ namespace PlayniteSounds.Services.State
     public class AssemblyResolver : IAssemblyResolver
     {
         private readonly ILogger                              _logger;
-        private readonly IDictionary<string, (int, Assembly)> _assemblies = new Dictionary<string, (int, Assembly)>();
+        private readonly IDictionary<string, (int, Assembly)> _assemblies   = new Dictionary<string, (int, Assembly)>();
         private readonly object                               _assemblyLock = new object();
-        private bool                                          _disposed;
-
-        public bool IsResolvingAssembles => _assemblies.Count > 0;
+        private          bool                                 _disposed;
 
         public AssemblyResolver(ILogger logger) => _logger = logger;
 
-        public IDisposable HandleAssembly(string assemblyName, Assembly assembly)
-            => HandleAssemblies(new Dictionary<string, Assembly> { [assemblyName] = assembly });
+        public IDisposable HandleAssemblies(params Assembly[] assemblies)
+            => HandleAssemblies((ICollection <Assembly>)assemblies);
 
-        public IDisposable HandleAssemblies(IDictionary<string, Assembly> assemblies)
+        public IDisposable HandleAssemblies(ICollection<Assembly> assemblies)
         {
             lock (_assemblyLock)
             {
-                var initialAssemblyCount = _assemblies.Count;
-
+                var newAssembly = false;
+                var newAssemblies = new Dictionary<string, Assembly>();
                 foreach (var assembly in assemblies)
                 {
-                    if (_assemblies.TryGetValue(assembly.Key, out var assemblyState))
+                    var assemblyName = assembly.GetName().Name;
+                    if (_assemblies.TryGetValue(assemblyName, out var assemblyState))
                     {
-                        _logger.Info($"Incrementing count '{assemblyState.Item1++}' for assembly {assembly.Key}");
+                        if (assemblyState.Item1 is 0)
+                        {
+                            _logger.Info($"Assembly '{assemblyName}' was already handled");
+                            continue;
+                        }
+
+                        _logger.Info($"Incrementing count '{assemblyState.Item1++}' for assembly {assemblyName}");
                     }
                     else
                     {
-                        _logger.Info($"Adding assembly {assembly.Key}");
-                        _assemblies[assembly.Key] = (1, assembly.Value);
+                        _logger.Info($"Adding assembly {assemblyName}");
+                        _assemblies[assemblyName] = (1, assembly);
+                        newAssembly = true;
                     }
+                    newAssemblies[assemblyName] = assembly;
                 }
 
-                // Only Add handler upon successful assembly addition
-                if (initialAssemblyCount is 0)
-                {
-                    _logger.Info($"Adding handler with assemblies '{string.Join(", ", assemblies.Select(p => p.Key))}'");
-                    AppDomain.CurrentDomain.AssemblyResolve += ResolveAssembly;
-                }
+                if (newAssemblies.Count is 0) /* Then */ return new DoNothingDisposable();
 
-                return new AssemblyResolverHandle(this, assemblies);
+                if (newAssembly) /* Then */ AppDomain.CurrentDomain.AssemblyResolve += ResolveAssembly;
+
+                return new AssemblyResolverHandle(this, newAssemblies);
+
             }
         }
 
@@ -70,39 +75,15 @@ namespace PlayniteSounds.Services.State
         {
             lock (_assemblyLock)
             {
-                var assemblieswasNotEmpty = _assemblies.Count > 0;
-
-                if (!assemblieswasNotEmpty) /* Then */ return;
-
-                var currentAssembly = string.Empty;
-                try
+                foreach (var assembly in assemblies)
+                /* Then */ if (_assemblies.TryGetValue(assembly.Key, out var assemblyState))
                 {
-                    foreach (var assembly in assemblies)
-                    {
-                        currentAssembly = assembly.Key;
-                        if (_assemblies.TryGetValue(assembly.Key, out var assemblyState))
-                        {
-                            assemblyState.Item1--;
-                            if (assemblyState.Item1 < 1)
-                            {
-                                _assemblies.Remove(assembly.Key);
-                            }
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.Error(e, $"Failed to remove assembly '{currentAssembly}'. Dumping all assemblies & removing handler.");
-                    if (assemblieswasNotEmpty)
-                    {
-                        AppDomain.CurrentDomain.AssemblyResolve -= ResolveAssembly;
-                    }
-                    _assemblies.Clear();
-                    throw e;
+                    --assemblyState.Item1;
                 }
 
-                if (assemblieswasNotEmpty && _assemblies.Count is 0)
+                if (_assemblies.Count(a => a.Value.Item1 > 0) is 0)
                 {
+                    _logger.Info("No more assemblies to handle");
                     AppDomain.CurrentDomain.AssemblyResolve -= ResolveAssembly;
                 }
             }
@@ -113,11 +94,13 @@ namespace PlayniteSounds.Services.State
             if (_disposed) /* Then */ return;
             _disposed = true;
 
-            if (_assemblies.Count != 0)
+            if (_assemblies.Count(a => a.Value.Item1 > 0) != 0)
             {
                 AppDomain.CurrentDomain.AssemblyResolve -= ResolveAssembly;
             }
         }
+
+        private class DoNothingDisposable : IDisposable { public void Dispose() { } }
 
         private class AssemblyResolverHandle : IDisposable
         {

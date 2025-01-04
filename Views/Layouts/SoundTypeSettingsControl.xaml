@@ -7,7 +7,7 @@
             xmlns:common="clr-namespace:PlayniteSounds.Common"
             d:DataContext="{d:DesignInstance Type=Models:SoundTypeSettingsModel}"
             mc:Ignorable="d"
-          Loaded="LoadSlider_ValueChanged">
+            Loaded="LoadSlider_ValueChanged">
     <GroupBox x:Name="Group">
         <StackPanel>
             <CheckBox IsChecked="{Binding Settings.Enabled}" Content="Enable"/>
@@ -45,6 +45,7 @@
                 <ComboBoxItem Content="Message"/>
                 <ComboBoxItem Content="Loading"/>
                 <ComboBoxItem Content="Select"/>
+                <ComboBoxItem Content="Error"/>
             </ComboBox>
         </StackPanel>
     </GroupBox>

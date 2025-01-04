@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using PlayniteSounds.Common.Extensions;
 
 namespace PlayniteSounds.Services.Files
 {
@@ -14,6 +16,7 @@ namespace PlayniteSounds.Services.Files
     {
         #region Infrastructure
 
+        public string LibraryFileFolder         { get; }
         public string ExtraMetaDataFolder       { get; }
         public string MusicFilesDataPath        { get; }
         public string SoundFilesDataPath        { get; }
@@ -25,6 +28,7 @@ namespace PlayniteSounds.Services.Files
 
         public PathingService(IPlaynitePathsAPI pathsApi)
         {
+            LibraryFileFolder         = Path.Combine(pathsApi.ConfigurationPath, "library", "files");
             ExtraMetaDataFolder       = Path.Combine(pathsApi.ConfigurationPath, SoundDirectory.ExtraMetaData);
             MusicFilesDataPath        = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.Music);
             SoundFilesDataPath        = Path.Combine(       ExtraMetaDataFolder, SoundDirectory.Sound);
@@ -38,6 +42,12 @@ namespace PlayniteSounds.Services.Files
         #endregion
 
         #region Implementation
+
+        public string GetResourceFile(string fileName)
+            => Path.Combine(SoundDirectory.ResourceFolder, fileName);
+
+        public string GetLibraryFile(string fileSubpath) 
+            => Path.Combine(LibraryFileFolder, fileSubpath);
 
         public string GetFilterDirectoryPath(FilterPreset filter)
             => Path.Combine(FilterMusicFilePath, filter.Id.ToString());
@@ -63,12 +73,63 @@ namespace PlayniteSounds.Services.Files
         public string[] GetGameMusicFiles(Game game)
             => game is null ? new string[] { } : GetDirectoryFiles(GetGameDirectoryPath(game));
 
-        public string GetGameStartSoundFile(Game game)
+        public IEnumerable<SongFile> GetMusicFiles(Game game)
+            => GetMusicFiles(GetGameMusicFiles(game));
+
+        public IEnumerable<SongFile> GetAllMusicFiles(string dir)
+            => GetMusicFiles(Directory.EnumerateFiles("C:\\path", "*", SearchOption.AllDirectories)
+                                      .Where(f => f.EndsWithAny(".mp3", ".wav")));
+
+        private static IEnumerable<SongFile> GetMusicFiles(IEnumerable<string> files)
         {
-            var gameStartSoundFileDirectory = Path.Combine(
-                GetGameDirectoryPath(game), SoundDirectory.StartingSoundFolder);
-            
-            return Directory.GetFiles(gameStartSoundFileDirectory).FirstOrDefault();
+            foreach (var file in files)
+            {
+                var fileInfo = new FileInfo(file);
+                using (var fileTags = TagLib.File.Create(file))
+                {
+                    var artists = new List<string>();
+
+                    artists.AddRange(fileTags.Tag.Performers);
+                    artists.AddRange(fileTags.Tag.Composers);
+
+                    if (!string.IsNullOrWhiteSpace(fileTags.Tag.RemixedBy))
+                    /* Then */ artists.Add(fileTags.Tag.RemixedBy);
+
+                    if (!string.IsNullOrWhiteSpace(fileTags.Tag.Conductor))
+                    /* Then */ artists.Add(fileTags.Tag.Conductor);
+
+                    TimeSpan? length = null;
+                    if (fileTags.Tag.Length != null) /* Then */ length = TimeSpan.Parse(fileTags.Tag.Length);
+
+                    var pictures = fileTags.Tag.Pictures.OrderBy(p => p.Data.Count).ToList();
+
+                    var type = fileInfo.Extension.Substring(1);
+                    yield return new SongFile
+                    {
+                        Id = file,
+                        IconUri = pictures.FirstOrDefault()?.Filename,
+                        CoverUri = pictures.LastOrDefault()?.Filename,
+                        Source = Source.Local,
+                        Name = string.IsNullOrWhiteSpace(fileTags.Tag.Title)
+                            ? fileInfo.Name
+                            : fileTags.Tag.Title,
+                        FileName = fileTags.Name,
+                        Album = fileTags.Tag.Album,
+                        StreamFunc = t => Task.FromResult<Stream>(File.Create(file)),
+                        StreamUri = file,
+                        Artists = artists,
+                        CreationDate = fileTags.Tag.Year is 0 ? null : fileTags.Tag.Year.ToString(),
+                        Description = fileTags.Tag.Description,
+                        Length = length,
+                        Types = new List<string> { type },
+                        FileCreationDate = fileInfo.CreationTime.ToString(),
+                        Sizes = new Dictionary<string, string>
+                        {
+                            [type] = (fileInfo.Length / 1048576.0).ToString()
+                        }
+                    };
+                }
+            }
         }
 
         public string[] GetPlatformMusicFiles(Platform platform)

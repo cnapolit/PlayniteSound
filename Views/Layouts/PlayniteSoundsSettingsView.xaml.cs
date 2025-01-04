@@ -1,11 +1,10 @@
 ﻿using PlayniteSounds.Views.Models;
 using System;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace PlayniteSounds.Views.Layouts
 {
-    public partial class PlayniteSoundsSettingsView : UserControl, IDisposable
+    public partial class PlayniteSoundsSettingsView : IDisposable
     {
         private readonly Action<object> _containerReleaseMethod;
 

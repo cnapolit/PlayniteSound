@@ -1,5 +1,6 @@
 ﻿using Playnite.SDK.Models;
 using System.Collections.Generic;
+using PlayniteSounds.Models;
 
 namespace PlayniteSounds.Services.Files
 {
@@ -20,5 +21,6 @@ namespace PlayniteSounds.Services.Files
         string SelectStartSoundForGame(Game game);
         void DeleteMusicDirectories(IEnumerable<Game> games);
         void CreateSymLinks();
+        void ApplyTags(Game game, Song song, string filePath);
     }
 }

@@ -3,48 +3,306 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:models="clr-namespace:PlayniteSounds.Views.Models"
+             xmlns:common="clr-namespace:PlayniteSounds.Common"
+             xmlns:w="clr-namespace:TheArtOfDev.HtmlRenderer.WPF;assembly=HtmlRenderer.WPF"
              d:DataContext="{d:DesignInstance Type=models:DownloadPromptModel}"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="800">
-    <StackPanel>
-        <TextBlock Name="Title"></TextBlock>
-        <TextBlock Name="ProgressText"></TextBlock>
-        <ProgressBar Name="ProgressBar"></ProgressBar>
-        <ListBox x:Name="DownloadItems" Height="400" Width="600" 
-                 ItemsSource="{Binding SearchItems}" 
-                 SelectedItem="{Binding SelectedItem}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styling.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <DockPanel.Resources>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}"/>
+        </DockPanel.Resources>
+
+        <TextBlock Name="ProgressText" DockPanel.Dock="Top"/>
+        <Grid DockPanel.Dock="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Name="DownloadText" Grid.Column="1" TextAlignment="Center" Margin="5 0 5 0"
+                       Text="{Binding DownloadText}"/>
+            <Button Name="Cancel" Grid.Column="2" Content="Cancel" ToolTip="Cancel Download"
+                    IsEnabled="{Binding NoCancelingInProgress, Converter={common:InverseBoolConverter}}"
+                    Command="{Binding CancelDownloadCommand}"/>
+        </Grid>
+        <ProgressBar Name="ProgressBar" DockPanel.Dock="Top"/>
+        <DockPanel DockPanel.Dock="Bottom">
+            <Button Content="Back"
+                    DockPanel.Dock="Left"
+                    Command="{Binding ReturnCommand}"
+                    IsEnabled="{Binding HasPreviousGame}"
+                    ToolTip="{Binding PreviousGameStr}"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    Margin="5,0,5,0"/>
+
+            <Button Content="Next"
+                    DockPanel.Dock="Right"
+                    Command="{Binding SkipCommand}"
+                    IsEnabled="{Binding HasNextGame}"
+                    ToolTip="{Binding NextGameStr}"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Right"
+                    Margin="5,0,5,0"/>
+
+            <!-- Music Player -->
+            <Border Margin="5" CornerRadius="5"
+                    BorderBrush="{Binding ElementName=Files, Path=BorderBrush}"
+                    BorderThickness="{Binding ElementName=Files, Path=BorderThickness}">
+                <DockPanel Margin="5">
+                    <TextBlock Text="{Binding PlayingMusicName}" DockPanel.Dock="Top" HorizontalAlignment="Center"/>
+                    <Separator DockPanel.Dock="Top" Margin="1" VerticalAlignment="Top"/>
+                    <Button Name="PlayButton" Margin="20,5,20,5" DockPanel.Dock="Left"
+                            Command="{Binding TogglePlayPreviewCommand}">
+                        <Image MaxWidth="15" MaxHeight="15" Source="/PlayniteSounds;component/Resources/playicon.png"/>
+                    </Button>
+                    <TextBlock x:Name="MusicPositionDisplay" DockPanel.Dock="Left" VerticalAlignment="Center"
+                                 Text="{Binding PlayingMusicPositionDisplay}">
+                            <i:Interaction.Behaviors>
+                                <common:PeriodicBindingUpdateBehavior Interval="00:00:00.1"
+                                                                      Property="{x:Static TextBlock.TextProperty}"
+                                                                      Mode="UpdateTarget"/>
+                            </i:Interaction.Behaviors>
+                    </TextBlock>
+                    <Slider Width="100" Minimum="0" Maximum="200" DockPanel.Dock="Right" AutoToolTipPrecision="0"
+                            Value="{Binding Path=Volume}"/>
+                    <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0 0 5 0">
+                        <TextBlock.Text>
+                            <Binding Path="PlayingMusicLengthDisplay">
+                                <Binding.TargetNullValue>-:-</Binding.TargetNullValue>
+                            </Binding>
+                        </TextBlock.Text>
+
+                    </TextBlock>
+                    <Slider x:Name="PreviewSlider" AutoToolTipPlacement="None" Minimum="0"
+                              Maximum="{Binding PlayingMusicLength, Mode=OneWay}"
+                              Value="{Binding PlayingMusicPosition}"
+                              Thumb.DragStarted="PreviewSlider_DragStarted"
+                              Thumb.DragCompleted="PreviewSlider_DragCompleted">
+                        <i:Interaction.Behaviors>
+                            <common:PeriodicBindingUpdateBehavior Interval="00:00:00.1"
+                                                                  Property="{x:Static Slider.ValueProperty}"
+                                                                  Mode="UpdateTarget"/>
+                        </i:Interaction.Behaviors>
+                    </Slider>
+                </DockPanel>
+            </Border>
+        </DockPanel>
+        
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="20*"/>
+                <RowDefinition Height="2*"/>
+            </Grid.RowDefinitions>
+
+            <!-- CurrentGame -->
+            <TextBlock Text="Game" Margin="1 0 0 0"/>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="2*"/>
+                </Grid.RowDefinitions>
+                
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                    <w:HtmlPanel Text="{Binding CurrentGame.Description}" Margin="3"/>
+                </ScrollViewer>
+                <Image Margin="3" VerticalAlignment="Top">
+                    <Image.Source>
+                        <Binding Path="GameCoverImagePath">
+                            <Binding.TargetNullValue>
+                                <ImageSource>C:\Users\bandg\OneDrive\Documents\Playnite\Themes\Desktop\Default\Images\custom_cover_background.png</ImageSource>
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </Image.Source>
+                </Image>
+
+                <GridSplitter Grid.Row="1" Grid.Column="1" Width="3" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+
+                <ListBox x:Name="Files" Margin="3" Grid.Column="2" Grid.RowSpan="2" MinWidth="120" SelectionMode="Single"
+                         ItemsSource="{Binding Files}"
+                         SelectedItem="{Binding SelectedItem, Mode=OneWayToSource}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="5,0,0,0">
+                                <DockPanel.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Play" Click="MenuItem_OnClick_Play"
+                                                  IsEnabled="{Binding ElementName=ProgressBar,
+                                                                      Path=Visibility,
+                                                                      Converter={common:VisToBoolConverter}}"/>
+                                        <MenuItem Header="Preview" Click="MenuItem_OnClick_Preview" />
+                                        <MenuItem Header="Delete"  Click="MenuItem_OnClick_Delete" />
+                                    </ContextMenu>
+                                </DockPanel.ContextMenu>
+                                <ProgressBar x:Name="ProgressBar" Margin="3" Maximum="100" DockPanel.Dock="Right"
+                                             Visibility="{Binding DownloadProgress,
+                                                                  Converter={common:ObjToVisConverter}}" 
+                                             Value="{Binding DownloadProgress}"/>
+                                <TextBlock Margin="3" DockPanel.Dock="Top"
+                                           Text="{Binding Song.Name}"
+                                           ToolTip="{Binding Song.Name}"/>
+                                <TextBlock Margin="3" DockPanel.Dock="Bottom"
+                                           Text="{Binding Song.Length}"
+                                           ToolTip="{Binding Song.Length}"/>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+
+            <GridSplitter Grid.Row="1" Grid.Column="1" Width="3" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+
+            <!-- Albums -->
+            <TextBlock Grid.Column="2" Text="Albums"  Margin="1 0 0 0"/>
+            <ListBox x:Name="DownloadItems" Grid.Column="2" Grid.Row="1"
+                     ItemsSource="{Binding AlbumSearchItems, IsAsync=True}"
+                     SelectedItem="{Binding SelectedItem, Mode=OneWayToSource, IsAsync=True}"
+                     ScrollViewer.CanContentScroll="True"
+                     ScrollViewer.ScrollChanged="SearchAlbums_ScrollChanged"
+                     SelectionMode="Single">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel>
+                            <DockPanel.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Preview" Click="MenuItem_OnClick_Preview"/>
+                                    <MenuItem Header="Download" Click="MenuItem_OnClick_Download"/>
+                                </ContextMenu>
+                            </DockPanel.ContextMenu>
+                            <Image Margin="0" Height="40" Width="71" Stretch="Uniform">
+                                <Image.Source>
+                                    <PriorityBinding TargetNullValue="C:\Users\bandg\OneDrive\Documents\Playnite\Themes\Desktop\Default\Images\applogo_dark.png">
+                                        <Binding Path="IconUri" IsAsync="True"/>
+                                        <Binding Path="CoverUri" IsAsync="True"/>
+                                    </PriorityBinding>
+                                </Image.Source>
+                            </Image>
+                            <StackPanel Margin="0">
+                                <TextBlock Margin="0" Text="{Binding Name}" ToolTip="{Binding Name}"/>
+                                <TextBlock Margin="0" Text="{Binding Artists}" ToolTip="{Binding Artists}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <DockPanel Grid.ColumnSpan="3" Grid.Row="2" Margin="5">
+                <ComboBox x:Name="Combo" DockPanel.Dock="Right"
+                          ItemsSource="{Binding Sources}"
+                          SelectedIndex="{Binding SearchSource, Converter={common:EnumConverter}}"
+                          Height="{Binding ElementName=AlbumSearchText, Path=Height}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <Image Height="15" Width="15" HorizontalAlignment="Left"
+                                   ToolTip="{Binding Item1}" Source="{Binding Item2}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBox x:Name="AlbumSearchText" MaxLines="1" Margin="150 0 0 0"
+                         Text="{Binding AlbumSearchTerm}"
+                         ToolTip="Album Search"
+                         KeyDown="WatermarkAlbumTextBox_KeyDown"/>
+            </DockPanel>
+
+            <GridSplitter Grid.Row="1" Grid.Column="3" Width="3" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+
+            <!-- Songs -->
+            <TextBlock Grid.Column="4" Text="Songs" Margin="5 0 0 0"/>
+            <ListBox x:Name="Songs" Grid.Column="4" Grid.Row="1" SelectionMode="Single"  Margin="5 0 0 0"
+                     ItemsSource="{Binding SongSearchItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                     SelectedItem="{Binding SelectedItem, Mode=OneWayToSource}"
+                     ScrollViewer.ScrollChanged="SearchSongs_ScrollChanged"
+                     ScrollViewer.CanContentScroll="True">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel>
+                            <DockPanel.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Play" Click="MenuItem_OnClick_Stream"/>
+                                    <MenuItem Header="Preview" Click="MenuItem_OnClick_Preview"/>
+                                    <MenuItem Header="Download" Click="MenuItem_OnClick_Download"/>
+                                </ContextMenu>
+                            </DockPanel.ContextMenu>
+                            <Image Height="40" Width="71" Stretch="Uniform">
+                                <Image.Source>
+                                    <PriorityBinding TargetNullValue="C:\Users\bandg\OneDrive\Documents\Playnite\Themes\Desktop\Default\Images\applogo_dark.png">
+                                        <Binding Path="CoverUri" IsAsync="True"/>
+                                        <Binding Path="IconUri" IsAsync="True"/>
+                                    </PriorityBinding>
+                                </Image.Source>
+                            </Image>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" ToolTip="{Binding Name}"/>
+                                <TextBlock Text="{Binding Artists}" ToolTip="{Binding Artists}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <DockPanel Grid.Column="4" Grid.ColumnSpan="3" Grid.Row="2" Margin="5">
+                <TextBox Text="{Binding SongSearchTerm}" MaxLines="1" KeyDown="WatermarkSongTextBox_KeyDown"  Margin="0 0 150 0"/>
+            </DockPanel>
+
+            <GridSplitter Grid.Row="1" Grid.Column="5" Width="3" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+
+            <!-- SelectedItem -->
+            <TextBlock Grid.Column="6" Text="Selected Item" Margin="5 0 0 0"/>
+            <StackPanel Grid.Column="6" Grid.Row="1" Visibility="{Binding SelectedItem, Converter={common:ObjToVisConverter}}">
+                <Image Margin="3" Height="80" Width="142" Stretch="Uniform">
+                    <Image.Source>
+                        <PriorityBinding TargetNullValue="C:\Users\bandg\OneDrive\Documents\Playnite\Themes\Desktop\Default\Images\applogo_dark.png">
+                            <Binding Path="SelectedItem.CoverUri"/>
+                            <Binding Path="SelectedItem.IconUri"/>
+                        </PriorityBinding>
+                    </Image.Source>
+                </Image>
+                <ScrollViewer>
                     <DockPanel>
-                        <Image Margin="3" Height="80" Source="{Binding IconUrl, IsAsync=True}"/>
-                        <StackPanel Margin="5,0,0,0">
-                            <TextBlock x:Name="Name" Margin="3" Text="{Binding Name}"/>
-                            <TextBlock x:Name="Description" Margin="0" Text="{Binding this}"/>
-                        </StackPanel>
-                        <DockPanel.InputBindings>
-                            <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding SelectCommand}"/>
-                        </DockPanel.InputBindings>
+                        <TextBlock DockPanel.Dock="Bottom" TextWrapping="WrapWithOverflow"
+                                   ScrollViewer.CanContentScroll="True"
+                                   Text="{Binding SelectedItem.Description}"/>
+                        <ListBox DockPanel.Dock="Left" ItemsSource="{Binding SelectedItem.PropertiesToValues}" Focusable="False">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock DockPanel.Dock="Left" Text="{Binding Item1}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <ListBox ItemsSource="{Binding SelectedItem.PropertiesToValues}" Focusable="False">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Item2}" ToolTip="{Binding Item2}" Focusable="False"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </DockPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        <DockPanel>
-            <Button Content="Search" Command="{Binding SearchCommand}"
-                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
-            <TextBox VerticalAlignment="Center" Text="SomeSearch"/>
-        </DockPanel>
-        <DockPanel>
-            <Button Content="Return To Albums" IsEnabled="{Binding PromptForAlbum}" Command="{Binding ReturnCommand}"
-                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
-            <Button Content="Select" IsEnabled="{Binding IsItemSelected}" Command="{Binding SelectCommand}"
-                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
-            <Button Content="Preview" IsEnabled="{Binding IsItemSelected}" Command="{Binding PreviewCommand}"
-                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
-            <Button Content="Skip" Command="{Binding SkipCommand}"
-                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
-            <Button Content="Cancel" Command="{Binding CancelCommand}"
-                        Margin="0 0 10 0" IsDefault="True" VerticalAlignment="Center"/>
-        </DockPanel>
-    </StackPanel>
+                </ScrollViewer>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
 </UserControl>

@@ -23,19 +23,21 @@ namespace PlayniteSounds.Services.Play
 
         #region Implementation
 
-        public bool AddTag(Game game, string tagName)
+        public bool AddTag(Game game, string tagName) => AddTag(game, _databaseApi.Tags.Add(tagName));
+
+        private bool AddTag(Game game, Tag tag)
         {
-            var tag = _databaseApi.Tags.Add(tagName);
             if (game.Tags is null)
             {
                 game.TagIds = new List<Guid> { tag.Id };
-                LogAdd(game, tagName);
+                LogAdd(game, tag.Name);
                 return true;
             }
-            else if (!game.TagIds.Contains(tag.Id))
+
+            if (!game.TagIds.Contains(tag.Id))
             {
                 game.TagIds.Add(tag.Id);
-                LogAdd(game, tagName);
+                LogAdd(game, tag.Name);
                 return true;
             }
 
@@ -45,12 +47,13 @@ namespace PlayniteSounds.Services.Play
         private void LogAdd(Game game, string tagName) 
             => _logger.Info($"Added tag '{tagName}' to game '{game.Name}'");
 
-        public bool RemoveTag(Game game, string tagName)
+        public bool RemoveTag(Game game, string tagName) => RemoveTag(game, _databaseApi.Tags.Add(tagName));
+
+        private bool RemoveTag(Game game, Tag tag)
         {
-            var tag = _databaseApi.Tags.Add(tagName);
             if (game.Tags != null && game.TagIds.Remove(tag.Id))
             {
-                _logger.Info($"Removed tag '{tagName}' from game '{game.Name}'");
+                _logger.Info($"Removed tag '{tag.Name}' from game '{game.Name}'");
                 return true;
             }
 
@@ -63,6 +66,13 @@ namespace PlayniteSounds.Services.Play
             _databaseApi.Games.Update(games);
             _logger.Info($"Updated the tags of {games.Count} games: {games.Select(g => g.Name)}");
         }
+
+        public void AddTag(IEnumerable<Game> games, string tagName) => UpdateTag(games, tagName, AddTag);
+
+        public void RemoveTag(IEnumerable<Game> games, string tagName) => UpdateTag(games, tagName, RemoveTag);
+
+        private void UpdateTag(IEnumerable<Game> games, string tagName, Func<Game, Tag, bool> tagFunc)
+            => _databaseApi.Games.Update(games.Where(g => tagFunc(g, _databaseApi.Tags.Add(tagName))));
 
         #endregion
     }

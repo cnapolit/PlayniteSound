@@ -6,11 +6,13 @@ using System.IO;
 using PlayniteSounds.Models;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using PlayniteSounds.Services.Audio;
 using Playnite.SDK.Models;
 using PlayniteSounds.Common.Extensions;
 using PlayniteSounds.Services.Play;
 using PlayniteSounds.Common.Utilities;
+using System.Threading.Tasks;
 
 namespace PlayniteSounds.Services.Files
 {
@@ -109,6 +111,55 @@ namespace PlayniteSounds.Services.Files
 
         public bool NormalizeAudioFile(string filePath)
         {
+            var stdOut = new StringBuilder();
+            var stdErr = new StringBuilder();
+            using (var proc = CreateProcess(filePath, stdOut, stdErr))
+            {
+                proc.Start();
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
+                proc.WaitForExit();
+
+                if (stdErr.Length > 0)
+                {
+                    _logger.Error($"FFmpeg-Normalize failed for file '{filePath}' with error: {stdErr} and output: {stdOut}");
+                    return false;
+                }
+
+                _logger.Info($"FFmpeg-Normalize succeeded for file '{filePath}.");
+                return true;
+            }
+        }
+
+        public async Task<bool> NormalizeAudioFileAsync(string filePath)
+        {
+            var stdOut = new StringBuilder();
+            var stdErr = new StringBuilder();
+            using (var proc = CreateProcess(filePath, stdOut, stdErr))
+            {
+                var tcs = new TaskCompletionSource<int>();
+
+                proc.Exited += (s, ea) => tcs.SetResult(proc.ExitCode);
+
+                proc.Start();
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
+                await tcs.Task;
+                proc.WaitForExit();
+
+                if (stdErr.Length > 0)
+                {
+                    _logger.Error($"FFmpeg-Normalize failed for file '{filePath}' with error: {stdErr} and output: {stdOut}");
+                    return false;
+                }
+
+                _logger.Info($"FFmpeg-Normalize succeeded for file '{filePath}.");
+                return true;
+            }
+        }
+
+        private Process CreateProcess(string filePath, StringBuilder stdOut, StringBuilder stdErr)
+        {
             if (string.IsNullOrWhiteSpace(_settings.FFmpegNormalizePath))
             {
                 throw new ArgumentException("FFmpeg-Normalize path is undefined");
@@ -139,41 +190,24 @@ namespace PlayniteSounds.Services.Files
 
             info.EnvironmentVariables["FFMPEG_PATH"] = _settings.FFmpegPath;
 
-            var stdout = string.Empty;
-            var stderr = string.Empty;
-            using (var proc = new Process())
+            var proc = new Process() { StartInfo = info, };
+            proc.StartInfo = info;
+            proc.OutputDataReceived += (_, e) =>
             {
-                proc.StartInfo = info;
-                proc.OutputDataReceived += (_, e) =>
+                if (e.Data != null)
                 {
-                    if (e.Data != null)
-                    {
-                        stdout += e.Data + Environment.NewLine;
-                    }
-                };
-
-                proc.ErrorDataReceived += (_, e) =>
-                {
-                    if (e.Data != null)
-                    {
-                        stderr += e.Data + Environment.NewLine;
-                    }
-                };
-
-                proc.Start();
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-                proc.WaitForExit();
-
-                if (!string.IsNullOrWhiteSpace(stderr))
-                {
-                    _logger.Error($"FFmpeg-Normalize failed for file '{filePath}' with error: {stderr} and output: {stdout}");
-                    return false;
+                    stdOut.Append(e.Data);
                 }
+            };
 
-                _logger.Info($"FFmpeg-Normalize succeeded for file '{filePath}.");
-                return true;
-            }
+            proc.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data != null)
+                {
+                    stdErr.Append(e.Data);
+                }
+            };
+            return proc;
         }
 
         #endregion

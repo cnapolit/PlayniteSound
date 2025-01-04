@@ -16,7 +16,8 @@
     </Style>
     <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
         <Setter Property="HorizontalAlignment" Value="Left"/>
-        <Setter Property="Margin" Value="2"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="2"/>
     </Style>
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
 </ResourceDictionary>

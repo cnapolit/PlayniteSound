@@ -86,7 +86,15 @@ namespace PlayniteSounds.Views.Models
         // Implicitly use Copy extension method for shallow copy
         public void CancelEdit() => Settings = EditingClone;
 
-        public void EndEdit() => _plugin.SavePluginSettings(Settings);
+        public void EndEdit()
+        {
+            _plugin.SavePluginSettings(Settings);
+
+            _settings.CurrentUIStateSettings = _settings.DesktopSettings.UIStatesToSettings[UIState.Main];
+            _musicPlayer.SetVolume(_settings.CurrentUIStateSettings.MusicVolume);
+            _musicPlayer.Pause(false);
+            _musicPlayer.Resume(false);
+        }
 
         public bool VerifySettings(out List<string> errors)
         {
@@ -125,6 +133,7 @@ namespace PlayniteSounds.Views.Models
 
         public RelayCommand<object> ButOpenSoundManagerFolder_Click
             => new RelayCommand<object>(_ => SoundManager.OpenSoundManagerFolder());
+
         public void Dispose()
         {
             if (_disposed) return;

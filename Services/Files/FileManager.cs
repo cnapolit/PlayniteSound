@@ -8,9 +8,10 @@ using System.IO;
 using System.Linq;
 using PlayniteSounds.Models;
 using PlayniteSounds.Services.Play;
-using PlayniteSounds.Common.Extensions;
 using PlayniteSounds.Services.Audio;
 using System.Runtime.InteropServices;
+using System.Text;
+using TagLib.Id3v2;
 
 namespace PlayniteSounds.Services.Files
 {
@@ -18,14 +19,14 @@ namespace PlayniteSounds.Services.Files
     {
         #region Infrastructure
 
-        private static readonly ILogger         Logger           = LogManager.GetLogger();
-        private        readonly IErrorHandler   _errorHandler;
-        private        readonly IPathingService _pathingService;
-        private readonly IPromptFactory _promptFactory;
-        private readonly IMainViewAPI _mainViewAPI;
-        private readonly ITagger _tagger;
-        private readonly IMusicPlayer _musicPlayer;
-        private readonly PlayniteSoundsSettings _settings;
+        private static readonly ILogger                Logger = LogManager.GetLogger();
+        private        readonly IErrorHandler          _errorHandler;
+        private        readonly IPathingService        _pathingService;
+        private        readonly IPromptFactory         _promptFactory;
+        private        readonly IMainViewAPI           _mainViewAPI;
+        private        readonly ITagger                _tagger;
+        private        readonly IMusicPlayer           _musicPlayer;
+        private        readonly PlayniteSoundsSettings _settings;
 
         public FileManager(
             IMainViewAPI mainViewAPI,
@@ -87,8 +88,14 @@ namespace PlayniteSounds.Services.Files
         public void DeleteMusicDirectories(IEnumerable<Game> games)
             => PerformDeleteAction(Resource.DialogDeleteMusicDirectory, () => DeleteDirectories(games));
 
-        private void DeleteDirectories(IEnumerable<Game> games) 
-            => _tagger.UpdateGames(games.Where(g => _errorHandler.TryWithPrompt(() => DeleteMusicDirectory(g))));
+        private void DeleteDirectories(IEnumerable<Game> games)
+        {
+            games = games.Where(g => _errorHandler.TryWithPrompt(() => DeleteMusicDirectory(g)));
+            if (_settings.TagMissingEntries)
+            {
+                _tagger.AddTag(games, Resource.MissingTag);
+            }
+        }
 
         #endregion
 
@@ -238,7 +245,7 @@ namespace PlayniteSounds.Services.Files
         #endregion
 
         [DllImport("kernel32.dll")]
-        static extern bool CreateSymbolicLinkA(string lpSymlinkFileName, string lpTargetFileName, SymbolicLink dwFlags);
+        private static extern bool CreateSymbolicLinkA(string lpSymlinkFileName, string lpTargetFileName, SymbolicLink dwFlags);
 
         enum SymbolicLink
         {
@@ -300,8 +307,30 @@ namespace PlayniteSounds.Services.Files
 
         private void PerformDeleteAction(string message, Action deleteAction)
         {
-            if (!_promptFactory.PromptForApproval(message)) return;
+            if (!_promptFactory.PromptForApproval(message)) /* Then */ return;
             deleteAction();
+        }
+
+        public void ApplyTags(Game game, Song song, string filePath)
+        {
+            using (var fileTags = TagLib.File.Create(filePath))
+            {
+                fileTags.Mode = TagLib.File.AccessMode.Write;
+
+                var tag = (TagLib.Id3v2.Tag)fileTags.GetTag(TagLib.TagTypes.Id3v2);
+                PrivateFrame.Get(tag, "Source", true).PrivateData = Encoding.Unicode.GetBytes(song.Source.ToString());
+                PrivateFrame.Get(tag, "Id", true).PrivateData = Encoding.Unicode.GetBytes(song.Id);
+
+                if (fileTags.Tag.Performers is null)  /* Then */ fileTags.Tag.Performers = song.Artists?.ToArray();
+                if (fileTags.Tag.Title is null)       /* Then */ fileTags.Tag.Title = song.ParentAlbum.Name;
+                if (fileTags.Tag.Year is 0)           /* Then */ fileTags.Tag.Year = (uint)(game.ReleaseYear ?? 0);
+                if (fileTags.Tag.Description is null) /* Then */ fileTags.Tag.Description = song.Description;
+
+                if (song.ParentAlbum is null) /* Then */ return;
+
+                if (fileTags.Tag.Album is null)        /* Then */ fileTags.Tag.Album = song.ParentAlbum.Name;
+                if (fileTags.Tag.AlbumArtists is null) /* Then */ fileTags.Tag.AlbumArtists = song.ParentAlbum.Artists?.ToArray();
+            }
         }
 
         #endregion

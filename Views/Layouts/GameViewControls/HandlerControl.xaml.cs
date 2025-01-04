@@ -4,6 +4,7 @@ using PlayniteSounds.Views.Models.GameViewControls;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 
 namespace PlayniteSounds.Views.Layouts.GameViewControls
 {
@@ -85,6 +86,78 @@ namespace PlayniteSounds.Views.Layouts.GameViewControls
                     }
 
                     _paused = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        //private bool _gameDetailsIsVisible;
+        public bool GameDetailsIsVisible
+        {
+            get => (bool)GetValue(GameDetailsIsVisibleProperty);//_gameDetailsIsVisible;
+            set
+            {
+                if (GameDetailsIsVisible != value)
+                {
+                    if (value)
+                    {
+                        Model.PlayniteEventHandler.OnGameDetailsEntered();
+                    }
+                    else
+                    {
+                        Model.PlayniteEventHandler.TriggerRevertUIStateChanged();
+                    }
+                    SetValue(GameDetailsIsVisibleProperty, value);
+                    //_gameDetailsIsVisible = value;
+                    //OnPropertyChanged();
+                }
+            }
+        }
+        public static DependencyProperty GameDetailsIsVisibleProperty
+            = DependencyProperty.Register(nameof(GameDetailsIsVisible), typeof(bool), typeof(HandlerControl), new PropertyMetadata(false));
+
+        private bool _mainMenuIsVisible;
+
+        public bool MainMenuIsVisible
+        {
+            get => _mainMenuIsVisible;
+            set
+            {
+                if (_mainMenuIsVisible != value)
+                {
+                    if (value)
+                    {
+                        Model.PlayniteEventHandler.OnSettingsEntered();
+                    }
+                    else
+                    {
+                        Model.PlayniteEventHandler.TriggerRevertUIStateChanged();
+                    }
+
+                    _mainMenuIsVisible = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _settingsIsVisible;
+        public bool SettingsIsVisible
+        {
+            get => _settingsIsVisible;
+            set
+            {
+                if (_settingsIsVisible != value)
+                {
+                    if (value)
+                    {
+                        Model.PlayniteEventHandler.OnSettingsEntered();
+                    }
+                    else
+                    {
+                        Model.PlayniteEventHandler.TriggerRevertUIStateChanged();
+                    }
+
+                    _settingsIsVisible = value;
                     OnPropertyChanged();
                 }
             }
