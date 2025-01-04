@@ -19,6 +19,7 @@
         Achievement,
         Message,
         Loading,
-        Select
+        Select,
+        Error
     }
 }

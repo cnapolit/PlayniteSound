@@ -43,8 +43,8 @@ namespace PlayniteSounds.Services.Files
 
         #region Implementation
 
-        public string GetResourceFile(string fileName)
-            => Path.Combine(SoundDirectory.ResourceFolder, fileName);
+        public string GetImageFile(string fileName)
+            => Path.Combine(SoundDirectory.ImagesFolder, fileName);
 
         public string GetLibraryFile(string fileSubpath) 
             => Path.Combine(LibraryFileFolder, fileSubpath);

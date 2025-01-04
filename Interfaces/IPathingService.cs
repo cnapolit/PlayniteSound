@@ -33,6 +33,6 @@ namespace PlayniteSounds.Services.Files
         string                GetLibraryFile(string fileSubpath);
         IEnumerable<SongFile> GetMusicFiles(Game game);
         IEnumerable<SongFile> GetAllMusicFiles(string dir);
-        string                GetResourceFile(string fileName);
+        string                GetImageFile(string fileName);
     }
 }

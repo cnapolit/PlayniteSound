@@ -626,53 +626,51 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <None Include="icon.png">
+    <None Include="Resources\Images\icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Sound Files\D_ApplicationStarted.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\D_ApplicationStopped.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\D_GameInstalled.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\D_GameSelected.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\D_GameStarting.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\D_GameUninstalled.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\D_LibraryUpdated.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\F_ApplicationStarted.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\F_ApplicationStopped.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\F_GameInstalled.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\F_GameSelected.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\F_GameStarting.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\F_GameUninstalled.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sound Files\F_LibraryUpdated.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <Folder Include="Resources\Audio\Enter\" />
+    <Folder Include="Resources\Audio\Exit\" />
+    <Folder Include="Resources\Audio\GameStop\" />
+    <Folder Include="Resources\Audio\Loading\" />
+    <Folder Include="Resources\Audio\Scroll\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\Images\khinsider.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\khinsider.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="Resources\Images\playicon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Content Include="Resources\Images\local.ico" />
+    <Content Include="Resources\Images\local.png" />
+    <Content Include="Resources\Images\YouTube.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\youtube.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Audio\Achievement\Achievement.wav" />
+    <Content Include="Resources\Audio\Error\Error.wav" />
+    <Content Include="Resources\Audio\GameStart\GameStarting.wav" />
+    <Content Include="Resources\Audio\Installed\GameInstalled.wav" />
+    <Content Include="Resources\Audio\Message\Message.wav" />
+    <Content Include="Resources\Audio\Notification\Notification.mp3" />
+    <Content Include="Resources\Audio\Pause\Pause.ogg" />
+    <Content Include="Resources\Audio\Resume\Resume.ogg" />
+    <Content Include="Resources\Audio\Select\GameSelected.wav" />
+    <Content Include="Resources\Audio\SoundCredits.txt" />
+    <Content Include="Resources\Audio\Start\ApplicationStarted.wav" />
+    <Content Include="Resources\Audio\Stop\ApplicationStopped.wav" />
+    <Content Include="Resources\Audio\Tick\Tick.wav" />
+    <Content Include="Resources\Audio\Uninstalled\GameUninstalled.wav" />
+    <Content Include="Resources\Audio\Updated\LibraryUpdated.wav" />
+    <Content Include="Resources\Audio\_music_.mp3" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

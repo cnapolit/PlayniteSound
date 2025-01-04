@@ -59,7 +59,7 @@ namespace PlayniteSounds.Services.Files
 
         public void CopyAudioFiles()
         {
-            var soundFilesInstallPath = Path.Combine(SoundDirectory.PluginFolder, SoundDirectory.Sound);
+            var soundFilesInstallPath = Path.Combine(SoundDirectory.PluginFolder, SoundDirectory.AudioFolder);
 
             if (Directory.Exists(soundFilesInstallPath) && !Directory.Exists(_pathingService.SoundFilesDataPath))
             {

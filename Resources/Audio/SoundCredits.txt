@@ -1,0 +1,51 @@
+Achievement:"Notifications Sound" by SoundsForYou
+https://pixabay.com/sound-effects/notifications-sound-127856/
+
+Application Started: "Corporate Logo Intro1.wav" by Original Sound
+Link: https://freesound.org/people/original_sound/sounds/493544/
+License: Attribution 3.0 License
+
+Application Stopped: "Error Wooden" by Original Sound
+Link: https://freesound.org/people/original_sound/sounds/366103/
+License: Attribution 3.0 License
+
+Error: "Beam Button" by Original Sound
+Link: https://freesound.org/people/original_sound/sounds/364657/
+License: Attribution 3.0 License
+
+Game Starting: "Atmospheric Notification 2.mp3" by Original Sound
+Link: https://freesound.org/people/original_sound/sounds/494978/
+License: Attribution 3.0 License
+
+Game Installed: "Achievement Confirmation » Confirmation Upward" by Original Sound
+Link: https://freesound.org/people/original_sound/sounds/366102/
+License: Attribution 3.0 License
+
+Game UnInstalled: "Achievement Confirmation » Confirmation Downward" by Original Sound
+Link: https://freesound.org/people/original_sound/sounds/366104/
+License: Attribution 3.0 License
+
+Library Updated: "100% synthesis » Ping!" by unfa
+Link: https://freesound.org/people/unfa/sounds/215415/
+License: CC0 1.0 Universal Public Domain Dedication
+
+Message: "Lil Pip" by adh.dreaming
+Link: https://freesound.org/people/adh.dreaming/sounds/634690/
+License: CC0 1.0 Universal Public Domain Dedication
+
+Notification: "Click Button App" by UNIVERSFIELD
+Link: https://pixabay.com/sound-effects/click-button-app-147358/
+License: Pixabay ToS
+
+Tick: "Teeny Tiny Button Press" by adh.dreaming
+https://freesound.org/people/adh.dreaming/sounds/670268/
+License: CC0 1.0 Universal Public Domain Dedication
+
+Default Music: "Ambient Sounds & Loops (Pack 3) » Ambient Wave 36" by Erokia
+Link: https://freesound.org/people/Erokia/sounds/424026/
+
+License Links:
+Attribution 3.0 License - https://creativecommons.org/licenses/by/3.0/
+License: Attribution 4.0 International - https://creativecommons.org/licenses/by/4.0/
+CC0 1.0 Universal Public Domain Dedication - https://creativecommons.org/publicdomain/zero/1.0/
+Pixabay ToS - https://pixabay.com/service/terms/

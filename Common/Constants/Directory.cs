@@ -17,7 +17,6 @@ namespace PlayniteSounds.Common.Constants
         public const string ExtraMetaData = "ExtraMetadata";
         public const string GamesFolder = "Games";
 
-
         public const string SoundsFolder = "Sounds";
 
         public const string GameStartingSoundFolder = SoundsFolder + "GameStarting";
@@ -26,8 +25,10 @@ namespace PlayniteSounds.Common.Constants
         public const string AppStartingSoundFolder = SoundsFolder + "StartingSound";
         public const string StartingSoundFolder = SoundsFolder + "StartingSound";
 
-        public static readonly string PluginFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        public static readonly string IconPath = Path.Combine(PluginFolder, "icon.png");
-        public static readonly string ResourceFolder = Path.Combine(PluginFolder, "Resources");
+        public static readonly string PluginFolder   = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        public static readonly string ResourceFolder = Path.Combine(PluginFolder,   "Resources");
+        public static readonly string ImagesFolder   = Path.Combine(ResourceFolder, "Images");
+        public static readonly string AudioFolder    = Path.Combine(ResourceFolder, "Audio");
+        public static readonly string IconPath       = Path.Combine(ImagesFolder,   "icon.png");
     }
 }
