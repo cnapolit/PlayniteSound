@@ -16,7 +16,7 @@ using PlayniteSounds.Files.Download;
 
 namespace PlayniteSounds.Services.Files.Download.Downloaders
 {
-    internal class LocalDownloader : IDownloader
+    internal class LocalDownloader : BaseDownloader, IDownloader
     {
         private readonly ILogger         _logger;
         private readonly IPathingService _pathingService;
@@ -53,8 +53,8 @@ namespace PlayniteSounds.Services.Files.Download.Downloaders
             Album album, CancellationToken token, Func<Action<Song>, Song, Task> updateCallback)
             => throw new NotSupportedException();
 
-        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(
-            Game game, string searchTerm, bool auto, CancellationToken? token = null)
+        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm,
+            CancellationToken? token = null)
         {
             if (game.InstallationStatus != InstallationStatus.Installed) /* Then */ yield break;
 

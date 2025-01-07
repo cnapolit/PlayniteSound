@@ -20,5 +20,10 @@ namespace PlayniteSounds.Files.Download
 
         IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(
             Game game, string searchTerm, Source source, bool auto = false, CancellationToken? token = null);
+
+        string GenerateSearchStr(Source source, string gameName);
+
+        IAsyncEnumerable<IEnumerable<Song>> SearchSongBatchesAsync(
+            Game game, string searchTerm, Source source, CancellationToken? token = null);
     }
 }

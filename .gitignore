@@ -370,3 +370,4 @@ FodyWeavers.xsd
 .vscode/solution-explorer/interface.ts-template
 .vscode/solution-explorer/template-list.json
 .vscode/solution-explorer/template-parameters.js
+*.DotSettings

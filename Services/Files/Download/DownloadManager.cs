@@ -60,10 +60,10 @@ namespace PlayniteSounds.Files.Download
         public IAsyncEnumerable<Album> GetAlbumsForGameAsync(
             Game game, string searchTerm, Source source, bool auto = false, CancellationToken? token = null)
         {
-            if ((source is Source.All || source is Source.Youtube) && string.IsNullOrWhiteSpace(_settings.FFmpegPath))
+            if    ((source is Source.All || source is Source.Youtube) && string.IsNullOrWhiteSpace(_settings.FFmpegPath))
             throw new Exception("Cannot download from YouTube without the FFmpeg path specified in settings.");
 
-            return SourceToDownloader(source).GetAlbumsForGameAsync(game, searchTerm, auto);
+            return SourceToDownloader(source).GetAlbumsForGameAsync(game, searchTerm);
         }
 
         public IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(
@@ -72,11 +72,7 @@ namespace PlayniteSounds.Files.Download
             if ((source is Source.All || source is Source.Youtube) && string.IsNullOrWhiteSpace(_settings.FFmpegPath))
             /* Then */ throw new Exception("Cannot download from YouTube without the FFmpeg path specified in settings.");
 
-            var downloader = SourceToDownloader(source);
-            if (downloader is not IBatchDownloader batchloader)
-            /* Then */ throw new Exception($"Downloader '{source}' does not support batching");
-
-            return batchloader.GetAlbumBatchesForGameAsync(game, searchTerm, auto);
+            return SourceToDownloader(source).GetAlbumBatchesForGameAsync(game, searchTerm);
         }
 
         public IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken? token = null)
@@ -112,8 +108,8 @@ namespace PlayniteSounds.Files.Download
             {
                 song.Stream.Seek(0, SeekOrigin.Begin);
                 using (var fileStream = File.Create(path))
-                if (progress is null) /* Then */ await song.Stream.CopyToAsync(fileStream);
-                else                  /* Then */ await DownloadCommon.DownloadStreamAsync(song.Stream, fileStream, progress, token);
+                if    (progress is null) /* Then */ await song.Stream.CopyToAsync(fileStream);
+                else                     /* Then */ await DownloadCommon.DownloadStreamAsync(song.Stream, fileStream, progress, token);
                 result = true;
             }
             catch (Exception e)
@@ -131,7 +127,6 @@ namespace PlayniteSounds.Files.Download
 
             if (result) /* Then */ _fileManager.ApplyTags(game, song, path);
             return result;
-
         }
 
         public DownloadCapabilities GetCapabilities(DownloadItem item)
@@ -142,12 +137,19 @@ namespace PlayniteSounds.Files.Download
 
         public IAsyncEnumerable<Song> SearchSongsAsync(
             Game game, string searchTerm, Source source, CancellationToken? token = null)
-            => SourceToDownloader(source).SearchSongsAsync(game, searchTerm);
+            => SourceToDownloader(source).SearchSongsAsync(game, searchTerm, token);
+
+        public IAsyncEnumerable<IEnumerable<Song>> SearchSongBatchesAsync(
+            Game game, string searchTerm, Source source, CancellationToken? token = null)
+            => SourceToDownloader(source).SearchSongBatchesAsync(game, searchTerm, token);
 
         public string GetItemUrl(DownloadItem item) => SourceToDownloader(item.Source).GetItemUrl(item);
 
         public string GetSourceIcon(Source source) => SourceToDownloader(source).SourceIcon;
         public string GetSourceLogo(Source source) => SourceToDownloader(source).SourceLogo;
+
+        public string GenerateSearchStr(Source source, string gameName)
+            => SourceToDownloader(source).GenerateSearchStr(gameName);
 
         private const int BatchCount = 5;
 
@@ -158,29 +160,38 @@ namespace PlayniteSounds.Files.Download
             foreach (var source in _settings.Downloaders)
             {
                 var downloader = SourceToDownloader(source);
-                List<Album> albums;
-                if (downloader is IBatchDownloader batchloader)
+                var capabilities = downloader.GetCapabilities();
+
+                Album selectedAlbum = null;
+                var searchStr = downloader.GenerateSearchStr(sanitizedName);
+                if (capabilities.HasFlag(DownloadCapabilities.Batching))
                 {
                     var i = 0;
-                    albums = new List<Album>();
-                    var batches = batchloader.GetAlbumBatchesForGameAsync(game, game.Name, true, token);
-                    await foreach (var albumBatch in batches)
+                    Album firstAlbum = null;
+                    var batches = downloader.GetAlbumBatchesForGameAsync(game, searchStr, token).WithCancellation(token);
+                    await foreach (var batch in batches)
                     {
-                        albums.AddRange(albumBatch);
-                        if (i++ == BatchCount) /* Then */ break;
+                        var batchList = batch.ToList();
+                        selectedAlbum = SelectAlbum(batchList, game.Name, sanitizedName);
+                        if (selectedAlbum != null || i++ == BatchCount) /* Then */ break;
+                        if (firstAlbum is null) /* Then */ firstAlbum = batchList.FirstOrDefault();
                     }
-                }
-                else /* Then */ albums = await downloader.GetAlbumsForGameAsync(game, game.Name, true, token)
-                                                         .ToListAsync(token);
 
-                var selectedAlbum = BestAlbumPick(albums, game.Name, sanitizedName);
+                    if (selectedAlbum is null) /* Then */ selectedAlbum = firstAlbum;
+                }
+                else 
+                {
+                    var albums = await downloader.GetAlbumsForGameAsync(game, searchStr, token).ToListAsync(token);
+                    selectedAlbum = SelectAlbum(albums, game.Name, sanitizedName) ?? albums.FirstOrDefault();
+                }
+
                 if (selectedAlbum is null) /* Then */ continue;
                 _logger.Info($"Selected album '{selectedAlbum.Name}' from source '{source}' for game '{game.Name}'");
 
                 var songs = await downloader.GetSongsFromAlbumAsync(selectedAlbum, token).ToListAsync(token);
-                var selectedSong = BestSongPick(songs, sanitizedName);
+                var selectedSong = SelectSong(songs, sanitizedName);
                 if (selectedSong is null) /* Then */ continue;
-                _logger.Info($"Selected album '{selectedSong.Name}' from source '{source}' for game '{game.Name}'");
+                _logger.Info($"Selected song '{selectedSong.Name}' from source '{source}' for game '{game.Name}'");
 
                 var dir = _fileManager.CreateMusicDirectory(game);
                 var path = Path.Combine(dir, sanitizedName + (selectedSong.Types?.FirstOrDefault() ?? ".mp3"));
@@ -197,18 +208,17 @@ namespace PlayniteSounds.Files.Download
             return DownloadStatus.Failed;
         }
 
-        public Album BestAlbumPick(IList<Album> albums, string gameName, string regexGameName)
-        {
-            if (albums.Count is 1) /* Then */ return albums.First();
+        #region Helpers
 
+        private static Album SelectAlbum(List<Album> albums, string gameName, string regexGameName)
+        {
             var ostRegex = new Regex($"{regexGameName}.*(Soundtrack|OST|Score)", RegexOptions.IgnoreCase);
             return albums.FirstOrDefault(a => ostRegex.IsMatch(a.Name))
                 ?? albums.FirstOrDefault(a => string.Equals(a.Name, gameName, StringComparison.OrdinalIgnoreCase))
-                ?? albums.FirstOrDefault(a => a.Name.StartsWith(gameName, StringComparison.OrdinalIgnoreCase))
-                ?? albums.FirstOrDefault();
+                ?? albums.FirstOrDefault(a => a.Name.StartsWith(gameName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Song BestSongPick(IEnumerable<Song> songs, string regexGameName)
+        private static Song SelectSong(IEnumerable<Song> songs, string regexGameName)
         {
             var songsList = songs.Where(s => !s.Length.HasValue || s.Length.Value < MaxTime).ToList();
             if (songsList.Count is 1) /* Then */ return songsList.First();
@@ -218,8 +228,6 @@ namespace PlayniteSounds.Files.Download
                 ?? songsList.FirstOrDefault(s => nameRegex.IsMatch(s.Name))
                 ?? songsList.FirstOrDefault();
         }
-
-        #region Helpers
 
         private IDownloader SourceToDownloader(Source source)
         {

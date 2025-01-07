@@ -20,14 +20,14 @@ namespace PlayniteSounds.Views.Layouts
             => (DataContext as DownloadPromptModel).PlayPreview();
 
         private void WatermarkSongTextBox_KeyDown(object sender, KeyEventArgs e)
-            => ActOnEnter(sender, e, (DataContext as DownloadPromptModel).Sort);
+            => ActOnEnter(e, (DataContext as DownloadPromptModel).SearchSongsOnEnter);
 
         private void WatermarkAlbumTextBox_KeyDown(object sender, KeyEventArgs e)
-            => ActOnEnter(sender, e, (DataContext as DownloadPromptModel).SearchOnEnter);
+            => ActOnEnter(e, (DataContext as DownloadPromptModel).SearchOnEnter);
 
-        private static void ActOnEnter(object sender, KeyEventArgs e, Action<string> action)
+        private static void ActOnEnter(KeyEventArgs e, Action action)
         {
-            if (e.Key is Key.Enter) /* Then */ action((sender as TextBox).Text);
+            if (e.Key is Key.Enter) /* Then */ action();
         }
 
         private void SearchAlbums_ScrollChanged(object sender, ScrollChangedEventArgs e)

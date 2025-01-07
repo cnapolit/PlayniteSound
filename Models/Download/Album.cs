@@ -22,12 +22,13 @@ namespace PlayniteSounds.Models
             HasSongsToEnumerate = _enumerableFunc != null;
         }
 
-        public bool HasExtraInfo { get; set; } = true;
-        public uint? Count { get; set; }
-        public IList<string> Platforms { get; set; }
-        public ObservableCollection<Song> Songs { get; set; } = [];
-        public bool HasSongsToEnumerate { get; set; }
-        public Song Current => _enumerator?.Current;
+        public bool                       HasExtraInfo        { get; set; } = true;
+        public bool                       IsUnbound           { get; set; }
+        public uint?                      Count               { get; set; }
+        public IList<string>              Platforms           { get; set; }
+        public ObservableCollection<Song> Songs               { get; set; } = [];
+        public bool                       HasSongsToEnumerate { get; set; }
+        public Song                       Current             => _enumerator?.Current;
 
         public bool Initialize(CancellationToken token)
         {

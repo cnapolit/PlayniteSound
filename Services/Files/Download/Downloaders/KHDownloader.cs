@@ -14,10 +14,11 @@ using PlayniteSounds.Common.Extensions;
 using System.Threading.Tasks;
 using Playnite.SDK.Models;
 using PlayniteSounds.Models.Download;
+using PlayniteSounds.Services.Files.Download.Downloaders;
 
 namespace PlayniteSounds.Files.Download.Downloaders
 {
-    internal class KhDownloader : IDownloader
+    internal class KhDownloader : BaseDownloader, IDownloader
     {
         #region Infrastructure
 
@@ -48,8 +49,8 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         public string GetItemUrl(DownloadItem item) => item is Album ? BaseUrl + item.Id : item.Id;
 
-        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(
-            Game game, string searchTerm, bool auto, CancellationToken? token = null)
+        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm,
+            CancellationToken? token = null)
         {
             var htmlDoc = await _web.LoadFromWebAsync($"{BaseUrl}/search?search={searchTerm}");
             var tableRows = htmlDoc.DocumentNode.Descendants("tr").Skip(1);

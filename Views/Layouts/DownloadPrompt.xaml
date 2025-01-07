@@ -65,7 +65,7 @@
                     <Separator DockPanel.Dock="Top" Margin="1" VerticalAlignment="Top"/>
                     <Button Name="PlayButton" Margin="20,5,20,5" DockPanel.Dock="Left"
                             Command="{Binding TogglePlayPreviewCommand}">
-                        <Image MaxWidth="15" MaxHeight="15" Source="/PlayniteSounds;component/Resources/playicon.png"/>
+                        <Image MaxWidth="15" MaxHeight="15" Source="/Resources/Images/playicon.png"/>
                     </Button>
                     <TextBlock x:Name="MusicPositionDisplay" DockPanel.Dock="Left" VerticalAlignment="Center"
                                  Text="{Binding PlayingMusicPositionDisplay}">
@@ -130,7 +130,11 @@
                 </Grid.RowDefinitions>
                 
                 <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
-                    <w:HtmlPanel Text="{Binding CurrentGame.Description}" Margin="3"/>
+                    <w:HtmlPanel Text="{Binding CurrentGame.Description}" Margin="3" >
+                        <w:HtmlPanel.Style>
+                            <Style TargetType="Control" BasedOn="{StaticResource BaseStyle}"/>
+                        </w:HtmlPanel.Style>
+                    </w:HtmlPanel>
                 </ScrollViewer>
                 <Image Margin="3" VerticalAlignment="Top">
                     <Image.Source>
@@ -144,7 +148,7 @@
 
                 <GridSplitter Grid.Row="1" Grid.Column="1" Width="3" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
 
-                <ListBox x:Name="Files" Margin="3" Grid.Column="2" Grid.RowSpan="2" MinWidth="120" SelectionMode="Single"
+                <ListBox x:Name="Files" Margin="3" Grid.Column="2" Grid.RowSpan="2" SelectionMode="Single"
                          ItemsSource="{Binding Files}"
                          SelectedItem="{Binding SelectedItem, Mode=OneWayToSource}">
                     <ListBox.ItemTemplate>

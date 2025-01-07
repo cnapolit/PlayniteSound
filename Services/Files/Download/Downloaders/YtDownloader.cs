@@ -20,36 +20,7 @@ using YoutubeExplode.Playlists;
 
 namespace PlayniteSounds.Files.Download.Downloaders
 {
-    internal interface IBatchDownloader : IDownloader
-    {
-        IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(Game game, string searchTerm, bool auto, CancellationToken? token = null);
-    }
-
-    internal class BaseDownloader
-    {
-        private static Random Jitter = new();
-
-        private const int Attempts = 5;
-        private const int delay   = 200;
-        private const int factor = 2;
-
-        protected async Task<TResult> ExecuteWithBackoffAsync<TResult>(Task<TResult> task)
-        {
-            var attempts = 0;
-            while (true) /* Then */ try
-            {
-                return await task;
-            }
-            catch (Exception e) when (attempts++ < Attempts && ShouldRetry(e))
-            {
-                await Task.Delay(attempts * delay * factor);
-            }
-        }
-
-        public virtual bool ShouldRetry(Exception exception) => true;
-    }
-
-    internal class YtDownloader : BaseDownloader, IBatchDownloader
+    internal class YtDownloader : IDownloader
     {
         #region Infrastructure
 
@@ -84,24 +55,26 @@ namespace PlayniteSounds.Files.Download.Downloaders
         public DownloadCapabilities GetCapabilities()
             => DownloadCapabilities.Batching | DownloadCapabilities.Bulk | DownloadCapabilities.FlatSearch;
 
+        public string GenerateSearchStr(string gameName) => gameName + " Soundtrack";
+
         #region GetAlbums
 
-        public IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm, bool auto, CancellationToken? token = null)
-            => GetAlbumBatchesForGameAsync(game, searchTerm, auto).SelectMany(e => e.ToAsyncEnumerable());
-
-        private IAsyncEnumerable<IEnumerable<Album>> GetAlbumsFromExplodeApiAsync(string gameName, bool auto, CancellationToken? token = null)
-            => _youtubeClient.Search.GetResultBatchesAsync(auto ? gameName : gameName + " Soundtrack", SearchFilter.Playlist, token ?? CancellationToken.None)
-                                    .Select(b => b.Items.OfType<PlaylistSearchResult>().Select(PlaylistToAlbum));
+        public IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm, CancellationToken? token = null)
+            => GetAlbumBatchesForGameAsync(game, searchTerm).SelectMany(e => e.ToAsyncEnumerable());
 
         public IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(
-            Game game, string searchTerm, bool auto, CancellationToken? token = null)
+            Game game, string searchTerm, CancellationToken? token = null)
         {
             using (_assemblyResolver.HandleAssemblies(
                     typeof(System.Text.Json.JsonSerializer).Assembly,
                     typeof(IAsyncDisposable).Assembly, 
                     typeof(Memory<>).Assembly))
-            /* Then */ return GetAlbumsFromExplodeApiAsync(searchTerm, auto, token);
+            /* Then */ return GetAlbumsFromExplodeApiAsync(searchTerm, token);
         }
+
+        private IAsyncEnumerable<IEnumerable<Album>> GetAlbumsFromExplodeApiAsync(string gameName, CancellationToken? token = null)
+            => _youtubeClient.Search.GetResultBatchesAsync(gameName, SearchFilter.Playlist, token ?? CancellationToken.None)
+                             .Select(b => b.Items.OfType<PlaylistSearchResult>().Select(PlaylistToAlbum));
 
         private Album PlaylistToAlbum(PlaylistSearchResult playlist)
         {
@@ -128,12 +101,11 @@ namespace PlayniteSounds.Files.Download.Downloaders
         #endregion
 
         public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken? token = null)
-            => _youtubeClient.Search
-                             .GetResultBatchesAsync(searchTerm, SearchFilter.Video, token ?? CancellationToken.None)
-                             .SelectMany(SearchBatchToSongs);
+            => SearchSongBatchesAsync(game, searchTerm, token).SelectMany(e => e.ToAsyncEnumerable());
 
-        private IAsyncEnumerable<Song> SearchBatchToSongs(Batch<ISearchResult> batch)
-            => batch.Items.OfType<VideoSearchResult>().Select(VideoToSong).ToAsyncEnumerable();
+        public IAsyncEnumerable<IEnumerable<Song>> SearchSongBatchesAsync(Game game, string searchTerm, CancellationToken? token = null)
+            => _youtubeClient.Search.GetResultBatchesAsync(searchTerm, SearchFilter.Video, token ?? CancellationToken.None)
+                                    .Select(b => b.Items.OfType<VideoSearchResult>().Select(VideoToSong));
 
         public async Task GetAlbumInfoAsync(
             Album album, CancellationToken token, Func<Action<Song>, Song, Task> updateCallback)
