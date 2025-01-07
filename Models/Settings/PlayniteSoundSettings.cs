@@ -34,6 +34,7 @@ namespace PlayniteSounds.Models
         public string      FFmpegNormalizeArgs     { get; set; }
         public string      FFmpegNormalizePath     { get; set; }
         public string      FFmpegPath              { get; set; }
+        public string      YoutubeSearchFormat     { get; set; }
 
         public ISet<Source> Downloaders { get; set; } = new HashSet<Source>
         {

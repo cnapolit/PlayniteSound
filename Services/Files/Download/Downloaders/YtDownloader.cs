@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Playnite.SDK.Models;
+using PlayniteSounds.Common.Extensions;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 using YoutubeExplode.Converter;
@@ -55,7 +56,11 @@ namespace PlayniteSounds.Files.Download.Downloaders
         public DownloadCapabilities GetCapabilities()
             => DownloadCapabilities.Batching | DownloadCapabilities.Bulk | DownloadCapabilities.FlatSearch;
 
-        public string GenerateSearchStr(string gameName) => gameName + " Soundtrack";
+        public string GenerateSearchStr(string gameName)
+        {
+            var format = _settings.YoutubeSearchFormat.HasText() ? _settings.YoutubeSearchFormat : "{0} Soundtrack";
+            return string.Format(format, gameName);
+        }
 
         #region GetAlbums
 

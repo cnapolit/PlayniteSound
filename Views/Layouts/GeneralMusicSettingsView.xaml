@@ -80,6 +80,12 @@
                           Content="{DynamicResource LOC_PLAYNITESOUNDS_Normalize}"/>
                 <CheckBox IsChecked="{Binding Settings.YtPlaylists}" 
                           Content="{DynamicResource LOC_PLAYNITESOUNDS_YtPlaylists}"/>
+                <DockPanel Margin="0,0,0,10">
+                    <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" 
+                               Text="YouTube Search Format"
+                               ToolTip="'{0}' dictates where the game name is inserted when auto-searching"/>
+                    <TextBox Margin="10,0,0,0" Text="{Binding Settings.YoutubeSearchFormat}" />
+                </DockPanel>
                 <ListBox x:Name="Downloaders"/>
             </StackPanel>
         </GroupBox>

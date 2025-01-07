@@ -107,8 +107,15 @@ namespace PlayniteSounds.Views.Models
                 outcome = false;
             }
 
+            if (!string.IsNullOrEmpty(Settings.YoutubeSearchFormat) && !Settings.YoutubeSearchFormat.Contains("{0}"))
+            {
+                errors.Add("The YouTube search format string does not contain the game insertion sub-string '{0}'");
+                outcome = false;
+            }
+
             return outcome;
         }
+
         private ISoundManager SoundManager { get; set; }
         public RelayCommand<object> ButOpenSoundsFolder_Click
             => new RelayCommand<object> (_ => SoundManager.OpenSoundsFolder());
