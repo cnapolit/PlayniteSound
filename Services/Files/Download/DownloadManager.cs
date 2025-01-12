@@ -166,19 +166,24 @@ namespace PlayniteSounds.Files.Download
         public async Task<DownloadStatus> DownloadAsync(Game game, CancellationToken token)
         {
             var sanitizedName = StringUtilities.Sanitize(game.Name);
+            IDownloader downloader = null;
             
-            foreach (var source in _settings.Downloaders)
+            Album selectedAlbum = null;
+            if (_settings.AutoParallelDownload)
             {
-                var downloader = SourceToDownloader(source);
-                var capabilities = downloader.GetCapabilities();
+                selectedAlbum = await GetAlbumAsync(game, sanitizedName, token);
+                downloader = SourceToDownloader(selectedAlbum.Source);
+            }
+            else /* Then */ foreach (var source in _settings.Downloaders)
+            {
+                downloader = SourceToDownloader(source);
 
-                Album selectedAlbum = null;
                 var searchStr = downloader.GenerateSearchStr(sanitizedName);
-                if (capabilities.HasFlag(DownloadCapabilities.Batching))
+                if (downloader.GetCapabilities().HasFlag(DownloadCapabilities.Batching))
                 {
                     var i = 0;
                     Album firstAlbum = null;
-                    var batches = downloader.GetAlbumBatchesForGameAsync(game, searchStr, token).WithCancellation(token);
+                    var batches = downloader.GetAlbumBatchesForGameAsync(game, searchStr, token);
                     await foreach (var batch in batches)
                     {
                         var batchList = batch.ToList();
@@ -195,18 +200,39 @@ namespace PlayniteSounds.Files.Download
                     selectedAlbum = SelectAlbum(albums, game.Name, sanitizedName) ?? albums.FirstOrDefault();
                 }
 
-                if (selectedAlbum is null) /* Then */ continue;
-                _logger.Info($"Selected album '{selectedAlbum.Name}' from source '{source}' for game '{game.Name}'");
+                if (selectedAlbum != null) /* Then */ break;
+            }
 
+            if (selectedAlbum is null) /* Then */ return DownloadStatus.Failed;
+            _logger.Info($"Selected album '{selectedAlbum.Name}' from source '{selectedAlbum.Source}' for game '{game.Name}'");
+
+            Song selectedSong = null;
+            if (downloader.GetCapabilities().HasFlag(DownloadCapabilities.Batching))
+            {
+                var i = 0;
+                Song firstSong = null;
+                var batches = downloader.GetSongBatchesFromAlbumAsync(selectedAlbum, token);
+                await foreach (var batch in batches)
+                {
+                    var batchList = batch.ToList();
+                    selectedSong = SelectSong(batchList, sanitizedName);
+                    if (selectedSong != null || i++ == BatchCount) /* Then */ break;
+                    if (firstSong is null) /* Then */ firstSong = batchList.FirstOrDefault();
+                }
+            }
+            else
+            {
                 var songs = await downloader.GetSongsFromAlbumAsync(selectedAlbum, token).ToListAsync(token);
-                var selectedSong = SelectSong(songs, sanitizedName);
-                if (selectedSong is null) /* Then */ continue;
-                _logger.Info($"Selected song '{selectedSong.Name}' from source '{source}' for game '{game.Name}'");
+                selectedSong = SelectSong(songs, sanitizedName) ?? songs.FirstOrDefault();
+            }
+
+            if (selectedSong is null) /* Then */ return DownloadStatus.Failed;
+            _logger.Info($"Selected song '{selectedSong.Name}' from album '{selectedAlbum.Name}' for game '{game.Name}'");
 
                 var dir = _fileManager.CreateMusicDirectory(game);
                 var path = Path.Combine(dir, sanitizedName + (selectedSong.Types?.FirstOrDefault() ?? ".mp3"));
-                if (!await downloader.DownloadAsync(selectedSong, path, null, token)) /* Then */ continue;
-                _logger.Info($"Downloaded from source '{source}' for game '{game.Name}'");
+            if (!await downloader.DownloadAsync(selectedSong, path, null, token)) /* Then */ return DownloadStatus.Failed;
+            _logger.Info($"Downloaded from source '{selectedAlbum.Source}' for game '{game.Name}'");
 
                 _fileManager.ApplyTags(game, selectedSong, path);
 
@@ -215,12 +241,65 @@ namespace PlayniteSounds.Files.Download
                     : DownloadStatus.Downloaded;
             }
 
-            return DownloadStatus.Failed;
+        private async Task<Album> GetAlbumAsync(Game game, string sanitizedGameName, CancellationToken token)
+        {
+            Album album = null;
+            var downloaders = new List<IDownloader>();
+            List<IAsyncEnumerator<IEnumerable<Album>>> enumerators = null;
+            try
+            {
+                var albums = new List<Album>();
+                foreach (var source in _settings.Downloaders)
+                {
+                    var downloader = SourceToDownloader(source);
+                    if (downloader.GetCapabilities().HasFlag(DownloadCapabilities.Batching))
+                    {
+                        downloaders.Add(downloader);
+                        break;
+                    }
+                    var searchStr = downloader.GenerateSearchStr(sanitizedGameName);
+                    albums.AddRange(await downloader.GetAlbumsForGameAsync(game, searchStr, token).ToListAsync(token));
+                }
+
+                IAsyncEnumerator<IEnumerable<Album>> GetEnumerators(IDownloader downloader)
+                {
+                    var searchTerm = downloader.GenerateSearchStr(sanitizedGameName);
+                    var enumerator = GetAlbumBatchesForGameAsync(downloader, game, searchTerm, token)
+                                    .GetAsyncEnumerator(token);
+                    return new TimedAsyncEnumerator<IEnumerable<Album>>(_logger, enumerator, TimeSpan.FromSeconds(10));
+                }
+
+                enumerators = downloaders.Select(GetEnumerators).ToList();
+
+                for (var i = 0; i < BatchCount; i++)
+                {
+                    var results = await Task.WhenAll(enumerators.Select(async d => await d.MoveNextAsync(token)));
+                    var moreBatches = false;
+                    for  (var j = 0; j < results.Length; j++)
+                    if   (results[j]) moreBatches = true;
+                    else              await enumerators.Pop(j).DisposeAsync();
+
+                    albums.AddRange(enumerators.SelectMany(d => d.Current).ToList());
+                    var selectedAlbum = SelectAlbum(albums, game.Name, sanitizedGameName);
+
+                    if (selectedAlbum != null) /* Then */ break;
+                    if (album is null)         /* Then */ album = albums.FirstOrDefault();
+
+                    if (!moreBatches) /* Then */ break;
+                    albums.Clear();
+                }
+            }
+            finally
+            {
+                if (enumerators != null) /* Then */ await Task.WhenAll(enumerators.Select(async d => await d.DisposeAsync()));
+            }
+
+            return album;
         }
 
         #region Helpers
 
-        private static Album SelectAlbum(List<Album> albums, string gameName, string regexGameName)
+        private static Album SelectAlbum(IList<Album> albums, string gameName, string regexGameName)
         {
             var ostRegex = new Regex($"{regexGameName}.*(Soundtrack|OST|Score)", RegexOptions.IgnoreCase);
             return albums.FirstOrDefault(a => ostRegex.IsMatch(a.Name))
