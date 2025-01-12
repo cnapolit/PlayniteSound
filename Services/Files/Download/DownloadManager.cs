@@ -167,7 +167,7 @@ namespace PlayniteSounds.Files.Download
 
         private const int BatchCount = 5;
 
-        public async Task<DownloadStatus> DownloadAsync(Game game, CancellationToken token)
+        public async Task<DownloadStatus> DownloadAsync(Game game, CancellationToken token, Source? downloadSource)
         {
             var sanitizedName = StringUtilities.Sanitize(game.Name);
             IDownloader downloader = null;
@@ -234,7 +234,8 @@ namespace PlayniteSounds.Files.Download
             _logger.Info($"Selected song '{selectedSong.Name}' from album '{selectedAlbum.Name}' for game '{game.Name}'");
 
             var dir = _fileManager.CreateMusicDirectory(game);
-            var path = Path.Combine(dir, sanitizedName + (selectedSong.Types?.FirstOrDefault() ?? ".mp3"));
+            var fileName = sanitizedName + ($".{selectedSong.Types?.FirstOrDefault() ?? "mp3"}");
+            var path = Path.Combine(dir, fileName);
             if (!await downloader.DownloadAsync(selectedSong, path, null, token)) /* Then */ return DownloadStatus.Failed;
             _logger.Info($"Downloaded from source '{selectedAlbum.Source}' for game '{game.Name}'");
 

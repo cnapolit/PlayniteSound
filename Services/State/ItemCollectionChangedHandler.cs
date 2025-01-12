@@ -137,12 +137,26 @@ namespace PlayniteSounds.Services.State
             }
         }
 
+        public void AddGames(IList<Game> games, Source? source)
+        {
+            lock (_taskLock)
+            {
+                games = games.Where(g => _downloadTasks.FirstOrDefault(t => t.Game.Id == g.Id).Game is null).ToList();
+                AddGameTasks(games, source);
+            }
+        }
+
+        private void AddGameTasks(IEnumerable<Game> games, Source? source)
+        {
+            using (_assemblyResolver.HandleAssemblies(typeof(IAsyncDisposable)))
+            /* Then */ _downloadTasks.AddRange(games.Select(g => CreateDownloadTask(g, source)));
+        }
+
         private async void UpdateGames(object sender, ItemCollectionChangedEventArgs<Game> args)
         {
-            if    (_settings.AutoDownload && args.AddedItems.Any())
-            lock  (_taskLock)
-            using (_assemblyResolver.HandleAssemblies(typeof(IAsyncDisposable).Assembly))
-            /* Then */ _downloadTasks.AddRange(args.AddedItems.Where(g => g.Source != null).Select(CreateDownloadTask));
+            if   (_settings.AutoDownload && args.AddedItems.Any())
+            lock (_taskLock)
+            /* Then */ AddGameTasks(args.AddedItems.Where(g => g.Source != null), null);
 
             // Manually added games don't yet have info
             if (args.AddedItems.Count is 1 && args.AddedItems[0].Source is null)
@@ -167,10 +181,10 @@ namespace PlayniteSounds.Services.State
             }
         }
 
-        private (Game, CancellationTokenSource, Task<DownloadStatus>) CreateDownloadTask(Game game)
+        private (Game, CancellationTokenSource, Task<DownloadStatus>) CreateDownloadTask(Game game, Source? source = null)
         {
             var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(_downloadTokenSource.Token);
-            return (game, tokenSource, _downloadManager.DownloadAsync(game, tokenSource.Token));
+            return (game, tokenSource, _downloadManager.DownloadAsync(game, tokenSource.Token, source));
         }
 
         private void UpdatePlatforms(object _, ItemCollectionChangedEventArgs<Platform> args)

@@ -13,49 +13,48 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows;
+using PlayniteSounds.Services.State;
 
 namespace PlayniteSounds.Services.UI
 {
     public class GameMenuFactory : BaseMenuFactory, IGameMenuFactory
     {
         #region Infrastructure
-        
-        private readonly IDownloadManager         _downloadManager;
-        private readonly INormalizer              _normalizer;
-        private readonly IDialogsFactory          _dialogsFactory;
+
+        private readonly IDialogsFactory                       _dialogsFactory;
+        private readonly IItemCollectionChangedHandler         _itemCollectionChangedHandler;
         private readonly IFactoryExecutor<DownloadPromptModel> _factoryExecutor;
-        private readonly Lazy<List<GameMenuItem>> _gameMenuItems;
-        private readonly PlayniteSoundsSettings   _settings;
+        private readonly Lazy<List<GameMenuItem>>              _gameMenuItems;
 
         public GameMenuFactory(
-            IMainViewAPI mainViewApi,
             IMusicPlayer musicPlayer,
             IFileManager fileManager,
-            IDownloadManager downloadManager,
             INormalizer normalizer,
             IDialogsFactory dialogsFactory,
             IFactoryExecutor<DownloadPromptModel> factoryExecutor,
-            PlayniteSoundsSettings settings) : base(mainViewApi, fileManager, musicPlayer)
+            IItemCollectionChangedHandler itemCollectionChangedHandler) : base(fileManager, musicPlayer)
         {
-            _downloadManager = downloadManager;
-            _normalizer = normalizer;
             _dialogsFactory = dialogsFactory;
             _factoryExecutor = factoryExecutor;
-            _settings = settings;
+            _itemCollectionChangedHandler = itemCollectionChangedHandler;
 
             _gameMenuItems = new Lazy<List<GameMenuItem>>(() => new List<GameMenuItem>
             {
-                ConstructGameMenuItem("All",                               _ => DownloadMusicForSelectedGames(Source.All), "|" + Resource.Actions_Download),
-                ConstructGameMenuItem("KHInsider",                         _ => DownloadMusicForSelectedGames(Source.KHInsider), "|" + Resource.Actions_Download),
-                ConstructGameMenuItem(Resource.Youtube,                    SelectedAction(DownloadMusicFromYouTube), "|" + Resource.Actions_Download),
-                ConstructGameMenuItem("Test Download",                     CreateDialog,                             "|" + Resource.Actions_Download),
-                ConstructGameMenuItem("Test Start Audio Selection",        CreateStartTest),
-                ConstructGameMenuItem("Test End Audio Selection",          CreateEndTest),
+                ConstructGameMenuDownloadItem("Browse...",                 CreateDialog),
+                ConstructGameMenuDownloadItem("Default",                   a => DownloadMusicForSelectedGames(a, null)),
+                ConstructGameMenuDownloadItem("All",                       a => DownloadMusicForSelectedGames(a, Source.All)),
+                ConstructGameMenuDownloadItem("KHInsider",                 a => DownloadMusicForSelectedGames(a, Source.KHInsider)),
+                ConstructGameMenuDownloadItem("Sound Cloud",               a => DownloadMusicForSelectedGames(a, Source.SoundCloud)),
+                ConstructGameMenuDownloadItem(Resource.Youtube,            a => DownloadMusicForSelectedGames(a, Source.Youtube)),
+                ConstructGameMenuDownloadItem("Spotify",                   a => DownloadMusicForSelectedGames(a, Source.Spotify)),
                 ConstructGameMenuItem(Resource.ActionsCopySelectMusicFile, SelectedAction(_fileManager.SelectMusicForGames)),
                 ConstructGameMenuItem(Resource.ActionsOpenSelected,        SelectedAction(_fileManager.OpenGameDirectories)),
                 ConstructGameMenuItem(Resource.ActionsDeleteSelected,      SelectedAction(_fileManager.DeleteMusicDirectories)),
-                ConstructGameMenuItem(Resource.Actions_Normalize,          _normalizer.CreateNormalizationDialogue)
+                ConstructGameMenuItem(Resource.Actions_Normalize,          normalizer.CreateNormalizationDialogue),
+                //ConstructGameMenuItem("Test Start Audio Selection",        CreateStartTest),
+                //ConstructGameMenuItem("Test End Audio Selection",          CreateEndTest),
             });
         }
 
@@ -65,13 +64,13 @@ namespace PlayniteSounds.Services.UI
 
         #region GetGameMenuItems
 
-        public IEnumerable<GameMenuItem> GetGameMenuItems(GetGameMenuItemsArgs __)
+        public IEnumerable<GameMenuItem> GetGameMenuItems(GetGameMenuItemsArgs args)
         {
             foreach (var item in _gameMenuItems.Value) yield return item;
 
-            if (_mainViewApi.SingleGame())
+            if (args.Games.Count is 1)
             {
-                var game = _mainViewApi.SelectedGames.First();
+                var game = args.Games[0];
 
                 //yield return ConstructGameMenuItem(
                 //    "Select 'GameStarting' sound", _ => _fileManager.SelectStartSoundForGame(game));
@@ -80,7 +79,7 @@ namespace PlayniteSounds.Services.UI
                 if (files.Any())
                 {
                     yield return new GameMenuItem { Description = "-", MenuSection = App.AppName };
-                    foreach (var item in ConstructItems(ConstructGameMenuItem, files, "|", game)) yield return item;
+                    foreach (var item in ConstructItems<GameMenuItemActionArgs, GameMenuItem>(ConstructGameMenuItem, files, "|", game)) yield return item;
                 }
             }
         }
@@ -89,11 +88,18 @@ namespace PlayniteSounds.Services.UI
 
         #region Helpers
 
-        private Action SelectedAction(Action<IEnumerable<Game>> action)
-            => () => action(_mainViewApi.SelectedGames);
+        private static Action<GameMenuItemActionArgs> SelectedAction(Action<IEnumerable<Game>> action)
+            => a => action(a.Games);
+
+        private static GameMenuItem ConstructGameMenuDownloadItem(string resource, Action action)
+            => ConstructGameMenuItem(resource, action, "|" + Resource.Actions_Download);
 
         private static GameMenuItem ConstructGameMenuItem(string resource, Action action, string subMenu = "")
             => ConstructGameMenuItem(resource, _ => action(), subMenu);
+
+        private static GameMenuItem ConstructGameMenuDownloadItem(string resource, Action<GameMenuItemActionArgs> action)
+            => ConstructGameMenuItem(resource, action, "|" + Resource.Actions_Download);
+
         private static GameMenuItem ConstructGameMenuItem(
             string resource, Action<GameMenuItemActionArgs> action, string subMenu = "") => new GameMenuItem
         {
@@ -103,13 +109,8 @@ namespace PlayniteSounds.Services.UI
             Action = action
         };
 
-        private void DownloadMusicFromYouTube(IEnumerable<Game> games)
-        { }
-        //=> _downloadManager.DownloadMusicForGamesAsync(Source.Youtube, games.ToList());
-
-        private void DownloadMusicForSelectedGames(Source source)
-        { }
-        //=> _downloadManager.DownloadMusicForGamesAsync(source, _mainViewApi.SelectedGames.ToList());
+        private void DownloadMusicForSelectedGames(GameMenuItemActionArgs args, Source? source)
+            => _itemCollectionChangedHandler.AddGames(args.Games, source);
 
         private void CreateStartTest()
         {

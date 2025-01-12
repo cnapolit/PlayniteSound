@@ -14,10 +14,10 @@ namespace PlayniteSounds.Files.Download
         string                  GetSourceLogo(Source source);
         IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm, Source source,
             CancellationToken token);
-        IAsyncEnumerable<Song>  SearchSongsAsync(Game game, string searchTerm, Source source, CancellationToken token);
-        DownloadCapabilities    GetCapabilities(Source source);
-        Task<bool>              DownloadAsync(Game game, DownloadItem item, string path, IProgress<double> progress, CancellationToken token);
-        Task<DownloadStatus>    DownloadAsync(Game game, CancellationToken token);
+        IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, Source source, CancellationToken token);
+        DownloadCapabilities   GetCapabilities(Source source);
+        Task<bool>             DownloadAsync(Game game, DownloadItem item, string path, IProgress<double> progress, CancellationToken token);
+        Task<DownloadStatus> DownloadAsync(Game game, CancellationToken token, Source? downloadSource);
 
         IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(Game game, string searchTerm, Source source,
             CancellationToken token);

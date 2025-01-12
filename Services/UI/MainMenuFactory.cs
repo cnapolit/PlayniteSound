@@ -17,30 +17,24 @@ namespace PlayniteSounds.Services.UI
 
         private readonly IGameDatabaseAPI         _gameDatabaseApi;
         private readonly IPathingService          _pathingService;
-        private readonly ISoundPlayer             _soundPlayer;
-        private readonly ISoundManager            _soundManager;
         private readonly Lazy<List<MainMenuItem>> _mainMenuItems;
 
         public MainMenuFactory(
-            IMainViewAPI mainViewApi,
             IGameDatabaseAPI gameDatabaseApi,
             IPathingService pathingService,
             IFileManager fileManager,
             IMusicPlayer musicPlayer,
-            ISoundPlayer audioPlayer,
-            ISoundManager soundManager) : base(mainViewApi, fileManager, musicPlayer)
+            ISoundManager soundManager) : base(fileManager, musicPlayer)
         {
             _gameDatabaseApi = gameDatabaseApi;
             _pathingService = pathingService;
-            _soundPlayer = audioPlayer;
-            _soundManager = soundManager;
 
             _mainMenuItems = new Lazy<List<MainMenuItem>>(() => new List<MainMenuItem>
             {
-                ConstructMainMenuItem(Resource.ActionsOpenMusicFolder,     _soundManager.OpenMusicFolder),
-                ConstructMainMenuItem(Resource.ActionsOpenSoundsFolder,    _soundManager.OpenSoundsFolder),
-                ConstructMainMenuItem(Resource.ActionsHelp,                _soundManager.HelpMenu),
-                ConstructMainMenuItem("Create Symbolic Links", _fileManager.CreateSymLinks),
+                ConstructMainMenuItem(Resource.ActionsOpenMusicFolder,  soundManager.OpenMusicFolder),
+                ConstructMainMenuItem(Resource.ActionsOpenSoundsFolder, soundManager.OpenSoundsFolder),
+                ConstructMainMenuItem(Resource.ActionsHelp,             soundManager.HelpMenu),
+                ConstructMainMenuItem("Create Symbolic Links",          _fileManager.CreateSymLinks),
                 new MainMenuItem { Description = "-", MenuSection = App.MainMenuName },
                 ConstructMainMenuItem(Resource.ActionsCopySelectMusicFile, _fileManager.SelectMusicForDefault, "|" + Resource.ActionsDefault),
             });
@@ -77,7 +71,7 @@ namespace PlayniteSounds.Services.UI
                     Description = "-",
                     MenuSection = App.MainMenuName + defaultSubMenu
                 });
-                mainMenuItems.AddRange(ConstructItems(ConstructMainMenuItem, defaultFiles, defaultSubMenu + "|"));
+                mainMenuItems.AddRange(ConstructItems<MainMenuItemActionArgs, MainMenuItem>(ConstructMainMenuItem, defaultFiles, defaultSubMenu + "|"));
             }
 
             return mainMenuItems;
@@ -111,7 +105,7 @@ namespace PlayniteSounds.Services.UI
                         MenuSection = App.MainMenuName + directorySelect
                     };
 
-                    foreach (var item in ConstructItems(ConstructMainMenuItem, files, directorySelect + "|"))
+                    foreach (var item in ConstructItems<MainMenuItemActionArgs, MainMenuItem>(ConstructMainMenuItem, files, directorySelect + "|"))
                     {
                         yield return item;
                     }
@@ -121,6 +115,7 @@ namespace PlayniteSounds.Services.UI
 
         private static MainMenuItem ConstructMainMenuItem(string resource, Action action, string subMenu = "")
             => ConstructMainMenuItem(resource, _ => action(), subMenu);
+
         private static MainMenuItem ConstructMainMenuItem(
             string resource, Action<MainMenuItemActionArgs> action, string subMenu = "") => new MainMenuItem
         {

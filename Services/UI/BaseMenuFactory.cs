@@ -13,16 +13,11 @@ namespace PlayniteSounds.Services.UI
     {
         #region Infrastructure
 
-        protected readonly IMainViewAPI _mainViewApi;
         protected readonly IFileManager _fileManager;
         private   readonly IMusicPlayer _musicPlayer;
 
-        public BaseMenuFactory(
-            IMainViewAPI mainViewApi,
-            IFileManager fileManager,
-            IMusicPlayer musicPlayer)
+        public BaseMenuFactory(IFileManager fileManager, IMusicPlayer musicPlayer)
         {
-            _mainViewApi = mainViewApi;
             _fileManager = fileManager;
             _musicPlayer = musicPlayer;
         }
@@ -31,8 +26,8 @@ namespace PlayniteSounds.Services.UI
 
         #region Implementation
 
-        protected IEnumerable<TMenuItem> ConstructItems<TMenuItem>(
-            Func<string, Action, string, TMenuItem> menuItemConstructor,
+        protected IEnumerable<TMenuItem> ConstructItems<TArgs, TMenuItem>(
+            Func<string, Action<TArgs>, string, TMenuItem> menuItemConstructor,
             string[] files,
             string subMenu,
             Game game = null)
@@ -44,11 +39,11 @@ namespace PlayniteSounds.Services.UI
 
                 yield return menuItemConstructor(
                     Resource.ActionsCopyPlayMusicFile,
-                    () => _musicPlayer.Play(file),
+                    _ => _musicPlayer.Play(file),
                     songSubMenu);
                 yield return menuItemConstructor(
                     Resource.ActionsCopyDeleteMusicFile,
-                    () => _fileManager.DeleteMusicFile(file, songName, game), 
+                    _ => _fileManager.DeleteMusicFile(file, songName, game), 
                     songSubMenu);
             }
         }
