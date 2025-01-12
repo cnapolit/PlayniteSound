@@ -65,7 +65,7 @@
                     <Separator DockPanel.Dock="Top" Margin="1" VerticalAlignment="Top"/>
                     <Button Name="PlayButton" Margin="20,5,20,5" DockPanel.Dock="Left"
                             Command="{Binding TogglePlayPreviewCommand}">
-                        <Image MaxWidth="15" MaxHeight="15" Source="/Resources/Images/playicon.png"/>
+                        <Image MaxWidth="15" MaxHeight="15" Source="pack://application:,,,/PlayniteSounds;component/Resources/Images/playicon.png"/>
                     </Button>
                     <TextBlock x:Name="MusicPositionDisplay" DockPanel.Dock="Left" VerticalAlignment="Center"
                                  Text="{Binding PlayingMusicPositionDisplay}">
@@ -228,7 +228,7 @@
                     </ComboBox.ItemTemplate>
                 </ComboBox>
                 <TextBox x:Name="AlbumSearchText" MaxLines="1" Margin="150 0 0 0"
-                         Text="{Binding AlbumSearchTerm}"
+                         Text="{Binding AlbumSearchTerm, UpdateSourceTrigger=PropertyChanged}"
                          ToolTip="Album Search"
                          KeyDown="WatermarkAlbumTextBox_KeyDown"/>
             </DockPanel>

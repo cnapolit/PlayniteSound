@@ -10,6 +10,7 @@ namespace PlayniteSounds.Models
     public abstract class BaseItem
     {
         public string                      Id           { get; set; }
+        public object                      SourceObject { get; set; }
         public string                      Name         { get; set; }
         public ICollection<string>         Artists      { get; set; }
         public ICollection<string>         Types        { get; set; }

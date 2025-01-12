@@ -1,13 +1,16 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace PlayniteSounds.Services.Audio
 {
     public interface IMusicPlayer
     {
-        long Position { get; set; }
-        long Length { get; }
-        long LengthInSeconds { get; }
-        long PositionInSeconds { get; }
+        long     Position          { get; set; }
+        long     Length            { get; }
+        long     LengthInSeconds   { get; }
+        long     PositionInSeconds { get; }
+        TimeSpan CurrentTime       { get; }
+        TimeSpan TotalTime         { get; }
 
         void Initialize();
         void Pause(bool gameStarted);

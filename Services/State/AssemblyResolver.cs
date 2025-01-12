@@ -15,6 +15,9 @@ namespace PlayniteSounds.Services.State
 
         public AssemblyResolver(ILogger logger) => _logger = logger;
 
+        public IDisposable HandleAssemblies(params Type[] types)
+            => HandleAssemblies(types.Select(t => t.Assembly).ToArray());
+
         public IDisposable HandleAssemblies(params Assembly[] assemblies)
             => HandleAssemblies((ICollection <Assembly>)assemblies);
 

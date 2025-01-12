@@ -13,6 +13,7 @@ public static class DownloadCommon
         using (var fileStream = File.Create(filePath))
         /* Then */ await DownloadStreamAsync(sourceStream, fileStream, progress, token);
     }
+
     public static async Task DownloadStreamAsync(
         Stream sourceStream, Stream targetStream, IProgress<double> progress, CancellationToken token)
     {

@@ -81,6 +81,9 @@ namespace PlayniteSounds.Services.Audio
         public long LengthInSeconds => _currentSampleProvider is null
             ? 0 : _currentSampleProvider.Length / _currentSampleProvider.WaveFormat.AverageBytesPerSecond;
 
+        public TimeSpan CurrentTime => _currentSampleProvider?.CurrentTime ?? TimeSpan.Zero;
+        public TimeSpan TotalTime   => _currentSampleProvider?.TotalTime ?? TimeSpan.Zero;
+
         public void Toggle()
         {
             if (_playing) /* Then */ Pause(false);

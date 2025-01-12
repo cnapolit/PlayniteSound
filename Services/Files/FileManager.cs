@@ -320,16 +320,14 @@ namespace PlayniteSounds.Services.Files
                 var tag = (TagLib.Id3v2.Tag)fileTags.GetTag(TagLib.TagTypes.Id3v2);
                 PrivateFrame.Get(tag, "Source", true).PrivateData = Encoding.Unicode.GetBytes(song.Source.ToString());
                 PrivateFrame.Get(tag, "Id", true).PrivateData = Encoding.Unicode.GetBytes(song.Id);
+                
+                if (fileTags.Tag.Year         is 0)    fileTags.Tag.Year         = (uint)(game.ReleaseYear ?? 0);
+                if (fileTags.Tag.Performers   is null) fileTags.Tag.Performers   = song.Artists?.ToArray();
+                if (fileTags.Tag.Description  is null) fileTags.Tag.Description  = song.Description;
+                if (fileTags.Tag.Album        is null) fileTags.Tag.Album        = song.Album ?? song.ParentAlbum?.Name;
+                if (fileTags.Tag.AlbumArtists is null) fileTags.Tag.AlbumArtists = song.ParentAlbum?.Artists?.ToArray();
 
-                if (fileTags.Tag.Performers is null)  /* Then */ fileTags.Tag.Performers = song.Artists?.ToArray();
-                if (fileTags.Tag.Title is null)       /* Then */ fileTags.Tag.Title = song.ParentAlbum.Name;
-                if (fileTags.Tag.Year is 0)           /* Then */ fileTags.Tag.Year = (uint)(game.ReleaseYear ?? 0);
-                if (fileTags.Tag.Description is null) /* Then */ fileTags.Tag.Description = song.Description;
-
-                if (song.ParentAlbum is null) /* Then */ return;
-
-                if (fileTags.Tag.Album is null)        /* Then */ fileTags.Tag.Album = song.ParentAlbum.Name;
-                if (fileTags.Tag.AlbumArtists is null) /* Then */ fileTags.Tag.AlbumArtists = song.ParentAlbum.Artists?.ToArray();
+                fileTags.Save();
             }
         }
 

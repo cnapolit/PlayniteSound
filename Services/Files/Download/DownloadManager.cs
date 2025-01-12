@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using PlayniteSounds.Models.Download;
 using PlayniteSounds.Services.Files.Download.Downloaders;
 using PlayniteSounds.Common;
+using System.Runtime.CompilerServices;
 
 namespace PlayniteSounds.Files.Download
 {
@@ -57,27 +58,33 @@ namespace PlayniteSounds.Files.Download
 
         #region Implementation
 
-        public IAsyncEnumerable<Album> GetAlbumsForGameAsync(
-            Game game, string searchTerm, Source source, bool auto = false, CancellationToken? token = null)
-        {
-            if    ((source is Source.All || source is Source.Youtube) && string.IsNullOrWhiteSpace(_settings.FFmpegPath))
-            throw new Exception("Cannot download from YouTube without the FFmpeg path specified in settings.");
-
-            return SourceToDownloader(source).GetAlbumsForGameAsync(game, searchTerm);
-        }
+        public IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm, Source source, CancellationToken token)
+            => SourceToDownloader(source).GetAlbumsForGameAsync(game, searchTerm, token);
 
         public IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(
-            Game game, string searchTerm, Source source, bool auto = false, CancellationToken? token = null)
-        {
-            if ((source is Source.All || source is Source.Youtube) && string.IsNullOrWhiteSpace(_settings.FFmpegPath))
-            /* Then */ throw new Exception("Cannot download from YouTube without the FFmpeg path specified in settings.");
+            Game game, string searchTerm, Source source, CancellationToken token) 
+            => GetAlbumBatchesForGameAsync(SourceToDownloader(source), game, searchTerm, token);
 
-            return SourceToDownloader(source).GetAlbumBatchesForGameAsync(game, searchTerm);
+        private static IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(
+            IDownloader downloader, Game game, string searchTerm, CancellationToken token)
+        {
+            return downloader.GetCapabilities().HasFlag(DownloadCapabilities.Batching)
+                ? downloader.GetAlbumBatchesForGameAsync(game, searchTerm, token)
+                : CreateBatchEnumerableAsync(downloader.GetAlbumsForGameAsync(game, searchTerm, token), token);
         }
 
-        public IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken? token = null)
-            => SourceToDownloader(album.Source).GetSongsFromAlbumAsync(album)
+        public IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken token)
+            => SourceToDownloader(album.Source).GetSongsFromAlbumAsync(album, token)
                                                .Select(s => { s.ParentAlbum = album; return s; }); 
+
+        public IAsyncEnumerable<IEnumerable<Song>> GetSongBatchesFromAlbumAsync(Album album, CancellationToken token)
+        {
+            var downloader = SourceToDownloader(album.Source);
+            var songs = downloader.GetCapabilities().HasFlag(DownloadCapabilities.Batching) 
+                ? downloader.GetSongBatchesFromAlbumAsync(album, token)
+                : CreateBatchEnumerableAsync(downloader.GetSongsFromAlbumAsync(album, token), token);
+            return songs.Select(b => b.Select(s => { s.ParentAlbum = album; return s; }));
+        }
 
         public Task GetAlbumInfoAsync(
             Album album, CancellationToken token, Func<Action<Song>, Song, Task> updateCallback)
@@ -89,11 +96,12 @@ namespace PlayniteSounds.Files.Download
             var downloader = SourceToDownloader(downloadItem.Source);
             if (downloadItem is Album album)
             {
-                if (!downloader.SupportsBulkDownload) /* Then */ return false;
+                var capabilities = downloader.GetCapabilities();
+                if (!capabilities.HasFlag(DownloadCapabilities.Bulk)) /* Then */ return false;
 
                 if (album.Songs is null || album.Songs.Count < album.Count)
                 {
-                    album.Songs = await GetSongsFromAlbumAsync(album).ToObservableCollectionAsync(token);
+                    album.Songs = await GetSongsFromAlbumAsync(album, token).ToObservableCollectionAsync(token);
                     if (token.IsCancellationRequested) /* Then */ return false;
                 }
 
@@ -129,24 +137,26 @@ namespace PlayniteSounds.Files.Download
             return result;
         }
 
-        public DownloadCapabilities GetCapabilities(DownloadItem item)
-            => SourceToDownloader(item.Source).GetCapabilities(item);
-
         public DownloadCapabilities GetCapabilities(Source source)
             => SourceToDownloader(source).GetCapabilities();
 
         public IAsyncEnumerable<Song> SearchSongsAsync(
-            Game game, string searchTerm, Source source, CancellationToken? token = null)
+            Game game, string searchTerm, Source source, CancellationToken token)
             => SourceToDownloader(source).SearchSongsAsync(game, searchTerm, token);
 
         public IAsyncEnumerable<IEnumerable<Song>> SearchSongBatchesAsync(
-            Game game, string searchTerm, Source source, CancellationToken? token = null)
-            => SourceToDownloader(source).SearchSongBatchesAsync(game, searchTerm, token);
+            Game game, string searchTerm, Source source, CancellationToken token)
+        {
+            var downloader = SourceToDownloader(source);
+
+            return downloader.GetCapabilities().HasFlag(DownloadCapabilities.Batching)
+                ? downloader.SearchSongBatchesAsync(game, searchTerm, token)
+                : CreateBatchEnumerableAsync(downloader.SearchSongsAsync(game, searchTerm, token), token);
+        }
 
         public string GetItemUrl(DownloadItem item) => SourceToDownloader(item.Source).GetItemUrl(item);
-
-        public string GetSourceIcon(Source source) => SourceToDownloader(source).SourceIcon;
-        public string GetSourceLogo(Source source) => SourceToDownloader(source).SourceLogo;
+        public string GetSourceIcon(Source source)  => SourceToDownloader(source).SourceIcon;
+        public string GetSourceLogo(Source source)  => SourceToDownloader(source).SourceLogo;
 
         public string GenerateSearchStr(Source source, string gameName)
             => SourceToDownloader(source).GenerateSearchStr(gameName);
@@ -238,6 +248,24 @@ namespace PlayniteSounds.Files.Download
                 case Source.Local:     return _localDownloader;
                 default: throw new ArgumentException($"Unrecognized download source: {source}");
             }
+        }
+
+        private static async IAsyncEnumerable<IEnumerable<T>> CreateBatchEnumerableAsync<T>(
+            IAsyncEnumerable<T> items, [EnumeratorCancellation] CancellationToken token)
+        {
+            var enumerator = items.GetAsyncEnumerator(token);
+            var hasItems = true;
+            do
+            {
+                var batch = new List<T>();
+                for (var i = 0; i < 10; i++)
+                {
+                    hasItems = await enumerator.MoveNextAsync(token);
+                    if (!hasItems) /* Then */ break;
+                    batch.Add(enumerator.Current);
+                }
+                yield return batch;
+            } while (hasItems);
         }
 
         #endregion

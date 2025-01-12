@@ -44,30 +44,31 @@ namespace PlayniteSounds.Views.Models
             DownloadSong = Download | Song
         }
 
-        private readonly PlayniteSoundsSettings  _settings;
-        private readonly IWebViewFactory         _webViewFactory;
-        private readonly IDownloadManager        _downloadManager;
-        private readonly IFileManager            _fileManager;
-        private readonly IPathingService         _pathingService;
-        private readonly ITagger                 _tagger;
-        private readonly IMusicPlayer            _musicPlayer;
-        private readonly IList<Game>             _games;
-        private readonly ISet<Game>              _downloadedGames                       = new HashSet<Game>();
-        private readonly ISet<Game>              _removedGames                          = new HashSet<Game>();
-        private readonly object                  _songLock                              = new object();
-        private readonly object                  _albumLock                             = new object();
-        private readonly object                  _songSearchLock                        = new object();
-        private readonly object                  _downloadLock                          = new object();
-        private readonly object                  _selectLock                            = new object();
-        private readonly CancellationTokenSource _songSearchCancellationTokenSource = new CancellationTokenSource();
-        private          int                     _gameIndex                             = -1;
-        private          uint                    _downloadCount;
-        private          string                  _currentSongSearchTerm;
-        private volatile IAsyncEnumerator<IEnumerable<Song>>  _songSearchEnumerator;
+        private readonly PlayniteSoundsSettings               _settings;
+        private readonly IWebViewFactory                      _webViewFactory;
+        private readonly IDownloadManager                     _downloadManager;
+        private readonly IFileManager                         _fileManager;
+        private readonly IPathingService                      _pathingService;
+        private readonly ITagger                              _tagger;
+        private readonly IMusicPlayer                         _musicPlayer;
+        private readonly IList<Game>                          _games;
+        private readonly ISet<Game>                           _downloadedGames = new HashSet<Game>();
+        private readonly ISet<Game>                           _removedGames    = new HashSet<Game>();
+        private readonly object                               _songLock        = new object();
+        private readonly object                               _albumLock       = new object();
+        private readonly object                               _downloadLock    = new object();
+        private readonly object                               _selectLock      = new object();
+        private          CancellationTokenSource              _downloadTokenSource;
+        private volatile bool                                 _albumFlag;
         private volatile IAsyncEnumerator<IEnumerable<Album>> _albumEnumerator;
-        private volatile bool                    _albumFlag;
-        private volatile bool                    _songSearchFlag;
+        private          int                                  _gameIndex                             = -1;
+        private          uint                                 _downloadCount;
+        private          string                               _currentSongSearchTerm;
+        private          CancellationTokenSource              _songSearchCancellationTokenSource;
 
+
+        private readonly Dictionary<string, IAsyncEnumerator<IEnumerable<Song>>> _albumsToEnumerators 
+            = new Dictionary<string, IAsyncEnumerator<IEnumerable<Song>>>();
         private readonly Dictionary<TaskType, CancellationTokenSource> _taskTypesToTokens
             = new Dictionary<TaskType, CancellationTokenSource>();
         private readonly Dictionary<string, CancellationTokenSource> _songTasks =
@@ -87,6 +88,8 @@ namespace PlayniteSounds.Views.Models
             IMusicPlayer musicPlayer,
             PlayniteSoundsSettings settings)
         {
+            _downloadTokenSource = new CancellationTokenSource();
+            _songSearchCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_downloadTokenSource.Token);
             _games = mainViewApi.SelectedGames.ToList();
             _webViewFactory = webViewFactory;
             _downloadManager = downloadManager;
@@ -97,6 +100,8 @@ namespace PlayniteSounds.Views.Models
             _musicPlayer.Stop();
             _settings = settings;
             _songSearchItems = [];
+            Sources = ArrayExtensions.Where<Source>(s => s != Source.Youtube || _settings.FFmpegPath.HasText()).Skip(1).Select(
+                s => new Tuple<Source, string>(s, _pathingService.GetImageFile(_downloadManager.GetSourceIcon(s))));
             GetNextGame();
         }
 
@@ -108,10 +113,10 @@ namespace PlayniteSounds.Views.Models
             if (_disposed) /* Then */ return;
             _disposed = true;
 
+            _downloadTokenSource.Cancel();
             var enumeratorTask = _albumEnumerator?.DisposeAsync().ConfigureAwait(false);
 
             AlbumSearchItems = null;
-            CancelTasks();
             await Task.WhenAll(_downloadTasks.Select(async t =>
             {
                 t.Value.Item2.Cancel();
@@ -127,6 +132,8 @@ namespace PlayniteSounds.Views.Models
             _musicPlayer.Stop();
 
             if (enumeratorTask.HasValue) /* Then */ await enumeratorTask.Value;
+            _downloadTokenSource.Dispose();
+            _songSearchCancellationTokenSource.Dispose();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -204,11 +211,8 @@ namespace PlayniteSounds.Views.Models
             }
         }
 
-        public IEnumerable<Tuple<Source, string>> Sources
-            => ArrayExtensions.Where<Source>(s => s != Source.All).Select(
-                s => new Tuple<Source, string>(
-                    s,
-                    _downloadManager.GetSourceIcon(s) is string str  ? _pathingService.GetImageFile(str) : null));
+        public IEnumerable<Tuple<Source, string>> Sources { get; }
+            
 
 
         public class SongFileItem
@@ -246,13 +250,13 @@ namespace PlayniteSounds.Views.Models
             set
             {
                 _playingMusicLength = value;
-                PlayingMusicLengthDisplay = PositionToString(_musicPlayer.LengthInSeconds);
+                PlayingMusicLengthDisplay = PositionToString(_musicPlayer.TotalTime);
                 OnPropertyChanged();
             }
         }
 
         private string _playingMusicLengthDisplay;
-        public string PlayingMusicLengthDisplay
+        public  string PlayingMusicLengthDisplay
         {
             get => _playingMusicLengthDisplay;
             set
@@ -272,7 +276,7 @@ namespace PlayniteSounds.Views.Models
             }
         }
 
-        public string PlayingMusicPositionDisplay => PositionToString(_musicPlayer.PositionInSeconds);
+        public string PlayingMusicPositionDisplay => PositionToString(_musicPlayer.CurrentTime);
 
         private string _albumSearchTerm;
         public string AlbumSearchTerm
@@ -314,6 +318,23 @@ namespace PlayniteSounds.Views.Models
             set
             {
                 _selectedAlbum = value;
+                _selectedAlbum.Dispatcher = Dispatcher;
+                if   (!_selectedAlbum.IsUnbound)
+                lock (_songLock)
+                if   (_selectedAlbum.HasExtraInfo)
+                {
+                    if (!_songTasks.ContainsKey(_selectedAlbum.Id))
+                    {
+                        var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(_downloadTokenSource.Token);
+                        _songTasks[_selectedAlbum.Id] = tokenSource;
+                        GetAlbumInfoAsync(_selectedAlbum, tokenSource.Token).ConfigureAwait(false);
+                    }
+                }
+                else if (_selectedAlbum.Songs.Count < _selectedAlbum.Count && !_albumsToEnumerators.ContainsKey(_selectedAlbum.Id))
+                {
+                    _albumsToEnumerators.Add(_selectedAlbum.Id, null);
+                    GetSongBatchAsync(_selectedAlbum).ConfigureAwait(false);
+                }
                 OnPropertyChanged();
             }
         }
@@ -331,14 +352,6 @@ namespace PlayniteSounds.Views.Models
                     {
                         SongSearchItems = album.Songs;
                         SelectedAlbum = album;
-                        if   (album.HasExtraInfo)
-                        lock (_songLock)
-                        if   (!_songTasks.ContainsKey(album.Id))
-                        {
-                            var tokenSource = new CancellationTokenSource();
-                            _songTasks[album.Id] = tokenSource;
-                            GetAlbumInfoAsync(album, tokenSource.Token).ConfigureAwait(false);
-                        }
                     }
                     else /* Then */ ItemCanBeStreamed = true;
 
@@ -428,7 +441,7 @@ namespace PlayniteSounds.Views.Models
                 NextGameStr     = HasNextGame     ? _games[_gameIndex + 1].Name : string.Empty;
 
                 var gameName = StringUtilities.StripStrings(value.Name);
-                AlbumSearchTerm = _downloadManager.GenerateSearchStr(SearchSource, gameName);
+                AlbumSearchTerm = _downloadManager.GenerateSearchStr(_searchSource, gameName);
 
                 if (value.CoverImage != null)
                 {
@@ -440,7 +453,10 @@ namespace PlayniteSounds.Views.Models
                 DownloadStatus = $"{App.AppName} - {Resource.DialogMessageDownloadingFiles}\n\n{_gameIndex}/{_games.Count}\n{value.Name}";
 
                 StopMusic();
-                CancelTasks();
+                _downloadTokenSource.Cancel();
+                _downloadTokenSource.Dispose();
+                _downloadTokenSource = new CancellationTokenSource();
+                _songSearchCancellationTokenSource = new CancellationTokenSource();
                 SearchOnEnter();
 
                 OnPropertyChanged();
@@ -500,7 +516,7 @@ namespace PlayniteSounds.Views.Models
             lock (_songLock)
             {
                 if (_songTasks.ContainsKey(album.Id) || !album.HasExtraInfo) /* Then */ return;
-                tokenSource = new CancellationTokenSource();
+                tokenSource = CancellationTokenSource.CreateLinkedTokenSource(_downloadTokenSource.Token);
                 _songTasks[album.Id] = tokenSource;
             }
             await GetAlbumInfoAsync(album, tokenSource.Token);
@@ -539,9 +555,8 @@ namespace PlayniteSounds.Views.Models
             }
             else
             {
-                path = Path.Combine(path, StringUtilities.Sanitize(item.Name) + (item.Types?.FirstOrDefault() ?? ".mp3"));
+                path = Path.Combine(path, StringUtilities.Sanitize(item.Name) + ($".{item.Types?.FirstOrDefault() ?? "mp3"}"));
                 Files.Add(songFileItem);
-                //OnPropertyChanged(nameof(Files));
             }
 
             var success = await _downloadManager.DownloadAsync(
@@ -582,7 +597,11 @@ namespace PlayniteSounds.Views.Models
             {
                 if (!NoCancelingInProgress) /* Then */ return;
                 NoCancelingInProgress = false;
-                foreach (var (_, tokenSource) in _downloadTasks.Values) /* Then */ tokenSource.Cancel();
+                foreach (var (_, tokenSource) in _downloadTasks.Values)
+                {
+                    tokenSource.Cancel();
+                    tokenSource.Dispose();
+                }
                 DownloadText = "Canceling Downloads...";
                 WaitForTasksToCancelAsync().ConfigureAwait(false);
             }
@@ -602,7 +621,6 @@ namespace PlayniteSounds.Views.Models
                 }
             });
         }
-
 
         public RelayCommand ReturnCommand => new RelayCommand(Return);
         private void Return() => CurrentGame = _games[--_gameIndex];
@@ -646,6 +664,7 @@ namespace PlayniteSounds.Views.Models
                 {
                     _taskTypesToTokens.Remove(TaskType.GetAlbum);
                     tokenSource.Cancel();
+                    tokenSource.Dispose();
                 }
 
                 AlbumSearchItems = new ObservableCollection<Album>();
@@ -654,18 +673,20 @@ namespace PlayniteSounds.Views.Models
                 if (_downloadManager.GetCapabilities(_searchSource).HasFlag(DownloadCapabilities.FlatSearch))
                 {
                     var sourceStr = _searchSource.ToString();
+                    var cover = _pathingService.GetImageFile(_downloadManager.GetSourceLogo(_searchSource));
                     var flatAlbum = new Album
                     {
                         Id = sourceStr,
                         Name = sourceStr,
-                        CoverUri = _downloadManager.GetSourceLogo(_searchSource),
+                        CoverUri = cover,
+                        IconUri = cover,
                         HasExtraInfo = false,
                         IsUnbound = true
                     };
                     AlbumSearchItems.Add(flatAlbum);
                 }
 
-                tokenSource = new CancellationTokenSource();
+                tokenSource = CancellationTokenSource.CreateLinkedTokenSource(_downloadTokenSource.Token);
                 _taskTypesToTokens[TaskType.GetAlbum] = tokenSource;
                 GetAlbumBatchAsync(tokenSource.Token).ConfigureAwait(false);
             }
@@ -683,70 +704,67 @@ namespace PlayniteSounds.Views.Models
                           nameof(AlbumSearchItems),
                           _albumLock,
                           () => _albumFlag = false,
-                          CancellationToken.None)
+                          _downloadTokenSource.Token)
                .ConfigureAwait(false);
         }
 
         public void AddSongs()
         {
             if (!SelectedAlbum.IsUnbound) /* Then */ return;
-
-            lock (_songSearchLock)
-            {
-                if (_songSearchFlag) /* Then */ return;
-                _songSearchFlag = true;
-            }
-
-            GetBatchAsync(_songSearchEnumerator,
-                          SongSearchItems,
-                          nameof(SongSearchItems),
-                          _songSearchLock,
-                          () => _songSearchFlag = false,
-                          _songSearchCancellationTokenSource.Token)
-               .ConfigureAwait(false);
+            SelectedAlbum.MoveNextAsync().ConfigureAwait(false);
         }
 
         private async Task GetAlbumBatchAsync(CancellationToken token)
         {
-            if (_albumEnumerator != null) /* Then */ await _albumEnumerator.DisposeAsync();
-            
-            var albums = _downloadManager.GetAlbumsForGameAsync(CurrentGame, AlbumSearchTerm, _searchSource);
-            _albumEnumerator = CreateBatchEnumerableAsync(albums, token).GetAsyncEnumerator(token);
-            await GetBatchAsync(_albumEnumerator, AlbumSearchItems, nameof(AlbumSearchItems), _albumLock, () => _albumFlag = false, token);
+            try
+            {
+                if (_albumEnumerator != null) /* Then */ await _albumEnumerator.DisposeAsync();
+
+                _albumEnumerator = _downloadManager.GetAlbumBatchesForGameAsync(CurrentGame, AlbumSearchTerm, _searchSource, token)
+                                                   .GetAsyncEnumerator(token);
+
+                _albumFlag = true;
+                await GetBatchAsync(_albumEnumerator, AlbumSearchItems, nameof(AlbumSearchItems), _albumLock, () => _albumFlag = false, token);
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
         }
 
-        private async Task GetSongBatchAsync()
+        private async Task GetSongSearchBatchAsync(Album album)
         {
-            SongSearchItems = new ObservableCollection<Song>();
+            SongSearchItems = album.Songs = new ObservableCollection<Song>();
             if (_currentSongSearchTerm.HasText())
             {
                 _songSearchCancellationTokenSource.Cancel();
+                _songSearchCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_downloadTokenSource.Token);
                 _currentSongSearchTerm = SongSearchTerm;
-                await _songSearchEnumerator.DisposeAsync();
             }
 
             var token = _songSearchCancellationTokenSource.Token;
 
-            var enumerable = _downloadManager.GetCapabilities(_searchSource).HasFlag(DownloadCapabilities.Batching)
-                ? _downloadManager.SearchSongBatchesAsync(CurrentGame, SongSearchTerm, _searchSource, token)
-                : CreateBatchEnumerableAsync(_downloadManager.SearchSongsAsync(CurrentGame, SongSearchTerm, _searchSource, token), token);
-            _songSearchEnumerator = enumerable.GetAsyncEnumerator(token);
+            var enumerable = _downloadManager.SearchSongBatchesAsync(CurrentGame, SongSearchTerm, _searchSource, token);
+            album.Initialize(enumerable.GetAsyncEnumerator(token), token);
 
-            await GetBatchAsync(_songSearchEnumerator,
-                                SongSearchItems,
-                                nameof(SongSearchItems),
-                                _songSearchLock,
-                                () => _songSearchFlag = false,
-                                token);
+            if   (!await album.MoveNextAsync())
+            lock (_songLock) /* Then */ _albumsToEnumerators.Remove(album.Id);
+        }
+
+        private async Task GetSongBatchAsync(Album album)
+        {
+            var enumerable = _downloadManager.GetSongBatchesFromAlbumAsync(album, _downloadTokenSource.Token);
+            album.Initialize(enumerable.GetAsyncEnumerator(_downloadTokenSource.Token), _downloadTokenSource.Token);
+            await album.MoveNextAsync();
         }
 
         public void SearchSongsOnEnter()
         {
             if (!SongSearchTerm.HasText() || _currentSongSearchTerm == SongSearchTerm) /* Then */ return;
 
-            if (SelectedAlbum.IsUnbound) /* Then */ lock (_songLock)
+            lock (_songLock) /* Then */ if (SelectedAlbum?.IsUnbound is true)
             {
-                GetSongBatchAsync().ConfigureAwait(false);
+                GetSongSearchBatchAsync(SelectedAlbum).ConfigureAwait(false);
                 return;
             }
 
@@ -822,7 +840,7 @@ namespace PlayniteSounds.Views.Models
                     _taskTypesToTokens.Remove(TaskType.StreamSong);
                 }
 
-                tokenSource = new CancellationTokenSource();
+                tokenSource = CancellationTokenSource.CreateLinkedTokenSource(_downloadTokenSource.Token);
                 _taskTypesToTokens[TaskType.StreamSong] = tokenSource;
                 StreamMusicAsync(song, tokenSource.Token).ConfigureAwait(false);
             }
@@ -840,11 +858,7 @@ namespace PlayniteSounds.Views.Models
 
         #region Helpers
 
-        private void GetNextGame()
-        {
-            CurrentGame = _games[++_gameIndex];
-            SearchOnEnter();
-        }
+        private void GetNextGame() => CurrentGame = _games[++_gameIndex];
 
         private void StopMusic()
         {
@@ -854,57 +868,46 @@ namespace PlayniteSounds.Views.Models
             PlayingMusicLength = 0;
         }
 
-        private void CancelTasks()
+        private async Task<bool> GetBatchAsync<T>(
+            IAsyncEnumerator<IEnumerable<T>> itemsEnumerator,
+            IList<T> list,
+            string propertyName,
+            object lockObj,
+            Action flagAction,
+            CancellationToken token)
         {
-            _songTasks.ForEach(t => t.Value.Cancel());
-            _taskTypesToTokens.ForEach(t => t.Value.Cancel());
-            _songSearchCancellationTokenSource.Cancel();
-        }
-
-        private async IAsyncEnumerable<IEnumerable<T>> CreateBatchEnumerableAsync<T>(
-            IAsyncEnumerable<T> items, [EnumeratorCancellation] CancellationToken token)
-        {
-            var enumerator = items.GetAsyncEnumerator(token);
-            var hasItems = true;
-            do
+            try
             {
-                var batch = new List<T>();
-                for (var i = 0; i < 10; i++)
+                var result = await itemsEnumerator.MoveNextAsync(token);
+                if (result) /* Then */ await Dispatcher.InvokeAsync(() =>
                 {
-                    hasItems = await enumerator.MoveNextAsync(token);
-                    if (!hasItems) /* Then */ break;
-                    batch.Add(enumerator.Current);
-                }
-                yield return batch;
-            } while (hasItems);
-        }
+                    lock (lockObj)
+                    {
+                        foreach (var item in itemsEnumerator.Current) /* Then */ list.Add(item);
+                        OnPropertyChanged(propertyName);
+                    }
+                });
 
-        private async Task GetBatchAsync<T>(
-            IAsyncEnumerator<IEnumerable<T>> itemsEnumerator, IList<T> list, string propertyName, object lockObj, Action flagAction, CancellationToken token)
-        {
-            if (await _albumEnumerator.MoveNextAsync(token)) /* Then */ await Dispatcher.InvokeAsync(() =>
+                lock (lockObj) /* Then */ flagAction();
+                return result;
+            }
+            catch (Exception e)
             {
-                lock (lockObj)
-                {
-                    foreach (var item in itemsEnumerator.Current) /* Then */ list.Add(item);
-                    OnPropertyChanged(propertyName);
-                }
-            });
-
-            lock (lockObj) /* Then */ flagAction();
+                throw;
+            }
         }
 
-        private string PositionToString(long position)
+        private string PositionToString(TimeSpan position)
         {
             const int hour = 3600;
             const int tenMinutes = 600;
 
-            if (_musicPlayer.LengthInSeconds is 0) /* Then */ return null;
+            if (_musicPlayer.TotalTime.Ticks is 0) /* Then */ return null;
 
-            var format = _musicPlayer.LengthInSeconds > hour       ? @"h\:mm\:ss" :
-                         _musicPlayer.LengthInSeconds > tenMinutes ? @"mm\:ss"
-                                                                   : @"m\:ss";
-            return TimeSpan.FromSeconds(position).ToString(format);
+            var format = _musicPlayer.TotalTime.TotalSeconds > hour       ? @"h\:mm\:ss"
+                       : _musicPlayer.TotalTime.TotalSeconds > tenMinutes ? @"mm\:ss"
+                                                                          : @"m\:ss";
+            return position.ToString(format);
         }
 
         #endregion

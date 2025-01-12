@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Playnite.SDK.Models;
@@ -18,6 +19,7 @@ using YoutubeExplode.Search;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using YoutubeExplode.Playlists;
+using PlayniteSounds.Common.Constants;
 
 namespace PlayniteSounds.Files.Download.Downloaders
 {
@@ -46,13 +48,11 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         #region Implementation
 
-        public bool   SupportsBulkDownload => true;
-        public string SourceLogo           => "YouTube.png";
-        public string SourceIcon           => "YouTube.ico";
+        public string SourceLogo => "YouTube.png";
+        public string SourceIcon => "YouTube.ico";
 
         public string GetItemUrl(DownloadItem item) => (item is Album ? PlaylistUrl : BaseUrl) + item.Id;
 
-        public DownloadCapabilities GetCapabilities(DownloadItem item) => GetCapabilities();
         public DownloadCapabilities GetCapabilities()
             => DownloadCapabilities.Batching | DownloadCapabilities.Bulk | DownloadCapabilities.FlatSearch;
 
@@ -64,27 +64,27 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         #region GetAlbums
 
-        public IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm, CancellationToken? token = null)
-            => GetAlbumBatchesForGameAsync(game, searchTerm).SelectMany(e => e.ToAsyncEnumerable());
+        public IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm, CancellationToken token)
+            => GetAlbumBatchesForGameAsync(game, searchTerm, token).SelectMany(e => e.ToAsyncEnumerable());
 
-        public IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(
-            Game game, string searchTerm, CancellationToken? token = null)
+        public IAsyncEnumerable<IEnumerable<Album>> GetAlbumBatchesForGameAsync(Game game, string searchTerm,
+            CancellationToken token)
         {
             using (_assemblyResolver.HandleAssemblies(
-                    typeof(System.Text.Json.JsonSerializer).Assembly,
-                    typeof(IAsyncDisposable).Assembly, 
-                    typeof(Memory<>).Assembly))
+                typeof(System.Text.Json.JsonSerializer), typeof(IAsyncDisposable), typeof(Memory<>), typeof(Unsafe)))
             /* Then */ return GetAlbumsFromExplodeApiAsync(searchTerm, token);
         }
 
-        private IAsyncEnumerable<IEnumerable<Album>> GetAlbumsFromExplodeApiAsync(string gameName, CancellationToken? token = null)
-            => _youtubeClient.Search.GetResultBatchesAsync(gameName, SearchFilter.Playlist, token ?? CancellationToken.None)
-                             .Select(b => b.Items.OfType<PlaylistSearchResult>().Select(PlaylistToAlbum));
+        private IAsyncEnumerable<IEnumerable<Album>> GetAlbumsFromExplodeApiAsync(string gameName, CancellationToken token)
+            => ValidateSettings()
+                ? AsyncEnumerable.Empty<IEnumerable<Album>>() 
+                :_youtubeClient.Search.GetResultBatchesAsync(gameName, SearchFilter.Playlist, token)
+                               .Select(b => b.Items.OfType<PlaylistSearchResult>().Select(PlaylistToAlbum));
 
-        private Album PlaylistToAlbum(PlaylistSearchResult playlist)
+        private static Album PlaylistToAlbum(PlaylistSearchResult playlist)
         {
             var (icon, cover) = GetAlbumImages(playlist.Thumbnails);
-            return new Album(GetSongsFromAlbumAsync)
+            return new Album
             {
                 Name = playlist.Title,
                 Id = playlist.Id,
@@ -105,12 +105,16 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         #endregion
 
-        public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken? token = null)
+        public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken token)
             => SearchSongBatchesAsync(game, searchTerm, token).SelectMany(e => e.ToAsyncEnumerable());
 
-        public IAsyncEnumerable<IEnumerable<Song>> SearchSongBatchesAsync(Game game, string searchTerm, CancellationToken? token = null)
-            => _youtubeClient.Search.GetResultBatchesAsync(searchTerm, SearchFilter.Video, token ?? CancellationToken.None)
-                                    .Select(b => b.Items.OfType<VideoSearchResult>().Select(VideoToSong));
+        public IAsyncEnumerable<IEnumerable<Song>> SearchSongBatchesAsync(
+            Game game, string searchTerm, CancellationToken token)
+        {
+            if (ValidateSettings()) /* Then */ return AsyncEnumerable.Empty<IEnumerable<Song>>();
+            return _youtubeClient.Search.GetResultBatchesAsync(searchTerm, SearchFilter.Video, token)
+                                 .Select(b => b.Items.OfType<VideoSearchResult>().Select(VideoToSong));
+        }
 
         public async Task GetAlbumInfoAsync(
             Album album, CancellationToken token, Func<Action<Song>, Song, Task> updateCallback)
@@ -126,7 +130,7 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
             if (album.Songs.Count is 0 || album.Songs.Count < album.Count)
             {
-                var length = new TimeSpan();
+                var length = TimeSpan.Zero;
 
                 var tasks = new List<Task<double>>();
                 await foreach (var videoBatch in _youtubeClient.Playlists.GetVideoBatchesAsync(album.Id, token))
@@ -173,14 +177,14 @@ namespace PlayniteSounds.Files.Download.Downloaders
         {
             var manifestTask = _youtubeClient.Videos.Streams.GetManifestAsync(playlistVideo.Url, token);
             Video video;
-            using (_assemblyResolver.HandleAssemblies(typeof(System.Text.CodePagesEncodingProvider).Assembly))
+            using (_assemblyResolver.HandleAssemblies(typeof(System.Text.CodePagesEncodingProvider)))
             /* Then */ video = await _youtubeClient.Videos.GetAsync(playlistVideo.Url, token);
             song.CreationDate = video.UploadDate.ToLocalTime().ToString();
             song.Description = video.Description;
 
             var streamManifest = await manifestTask;
             var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-            song.StreamFunc = t => CreateAudioStreamAsync(streamInfo, t);
+            song.StreamFunc = (_, t) => CreateAudioStreamAsync(streamInfo, t);
 
             song.Sizes = new Dictionary<string, string>
             {
@@ -191,8 +195,8 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         #region GetSongsFromAlbumAsync
 
-        public IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken? token = null) 
-            => _youtubeClient.Playlists.GetVideosAsync(album.Id).Select(VideoToSong);
+        public IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken token) 
+            => _youtubeClient.Playlists.GetVideosAsync(album.Id, token).Select(VideoToSong);
 
         private async Task<Stream> CreateAudioStreamAsync(string url, CancellationToken token)
         {
@@ -203,12 +207,15 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         #endregion
 
+        public IAsyncEnumerable<IEnumerable<Song>> GetSongBatchesFromAlbumAsync(Album album, CancellationToken token)
+            => _youtubeClient.Playlists.GetVideoBatchesAsync(album.Id, token).Select(b => b.Items.Select(VideoToSong));
+
         #region DownloadStreamAsync
 
         public async Task<bool> DownloadAsync(
             DownloadItem item, string path, IProgress<double> progress, CancellationToken token)
         {
-            using  (_assemblyResolver.HandleAssemblies(typeof(CliWrap.Cli).Assembly))
+            using  (_assemblyResolver.HandleAssemblies(typeof(CliWrap.Cli)))
             return await DownloadSongExplodeAsync(item as Song, path, progress, token);
         }
 
@@ -240,7 +247,8 @@ namespace PlayniteSounds.Files.Download.Downloaders
             Source = DlSource,
             CoverUri = video.Thumbnails.FirstOrDefault()?.Url,
             Uploader = video.Author.ChannelTitle,
-            StreamFunc = t => CreateAudioStreamAsync(video.Url, t)
+            StreamUri = video.Url,
+            StreamFunc = (s, t) => CreateAudioStreamAsync(s.StreamUri, t)
         };
 
         private async Task<Stream> CreateAudioStreamAsync(IStreamInfo streamInfo, CancellationToken token)
@@ -253,6 +261,8 @@ namespace PlayniteSounds.Files.Download.Downloaders
             memoryStream.Dispose();
             return null;
         }
+
+        private bool ValidateSettings() => !string.IsNullOrWhiteSpace(_settings.FFmpegPath);
 
         #endregion
 

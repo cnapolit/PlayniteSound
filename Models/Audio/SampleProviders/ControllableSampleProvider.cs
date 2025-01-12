@@ -37,6 +37,9 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         public long Length => _source.Length;
         public string FileName => _source.FileName;
 
+        public TimeSpan CurrentTime => _source.CurrentTime;
+        public TimeSpan TotalTime   => _source.TotalTime;
+
         public ControllableSampleProvider(
             ISampleProvider provider,
             IStreamReader source,

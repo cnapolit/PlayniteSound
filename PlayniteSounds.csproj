@@ -242,6 +242,7 @@
     <Compile Include="Models\State\UIState.cs" />
     <Compile Include="Models\Settings\UIStateSettings.cs" />
     <Compile Include="Models\State\UIStateChangedArgs.cs" />
+    <Compile Include="Models\TimedAsyncEnumerator.cs" />
     <Compile Include="PlayniteSoundsPlugin.cs" />
     <Compile Include="Interfaces\IFactoryExecutor.cs" />
     <Compile Include="Interfaces\IWavePlayerManager.cs" />
@@ -648,9 +649,9 @@
     <Content Include="Resources\Images\khinsider.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Images\playicon.png">
+    <Resource Include="Resources\Images\playicon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </Resource>
     <Content Include="Resources\Images\local.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

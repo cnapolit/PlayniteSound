@@ -5,6 +5,8 @@
         All,
         KHInsider,
         Youtube,
-        Local
+        Local,
+        SoundCloud,
+        Spotify
     }
 }

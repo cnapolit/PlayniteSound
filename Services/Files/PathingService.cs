@@ -115,7 +115,7 @@ namespace PlayniteSounds.Services.Files
                             : fileTags.Tag.Title,
                         FileName = fileTags.Name,
                         Album = fileTags.Tag.Album,
-                        StreamFunc = t => Task.FromResult<Stream>(File.Create(file)),
+                        StreamFunc = (s, _) => Task.FromResult<Stream>(new FileStream(s.Id, FileMode.Open)),
                         StreamUri = file,
                         Artists = artists,
                         CreationDate = fileTags.Tag.Year is 0 ? null : fileTags.Tag.Year.ToString(),

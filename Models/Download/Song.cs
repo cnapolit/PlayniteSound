@@ -14,9 +14,9 @@ namespace PlayniteSounds.Models
         public Album  ParentAlbum { get; set; }
         public string StreamUri   { get; set; }
 
-        public Func<CancellationToken, Task<Stream>> StreamFunc { private get; set; }
+        public Func<Song, CancellationToken, Task<Stream>> StreamFunc { private get; set; }
 
-        public async Task GetStreamAsync(CancellationToken token) => Stream = await StreamFunc(token);
+        public async Task GetStreamAsync(CancellationToken token) => Stream = await StreamFunc(this, token);
 
         private static readonly IEnumerable<string> Properties = new[]
         {

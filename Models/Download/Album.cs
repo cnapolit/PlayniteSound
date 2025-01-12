@@ -4,40 +4,31 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace PlayniteSounds.Models
 {
-    public class Album : DownloadItem, IAsyncDisposable, IDisposable
+    public class Album : DownloadItem, IDisposable, IAsyncEnumerator<IEnumerable<Song>>
     {
-
-        private volatile bool                   _flag;
-        private readonly object                 _lock = new object();
-        private          IAsyncEnumerator<Song> _enumerator;
-
-        private readonly Func<Album, CancellationToken?, IAsyncEnumerable<Song>> _enumerableFunc;
-
-        public Album(Func<Album, CancellationToken?, IAsyncEnumerable<Song>> enumerableFunc = null)
-        {
-            _enumerableFunc = enumerableFunc;
-            HasSongsToEnumerate = _enumerableFunc != null;
-        }
-
         public bool                       HasExtraInfo        { get; set; } = true;
         public bool                       IsUnbound           { get; set; }
         public uint?                      Count               { get; set; }
         public IList<string>              Platforms           { get; set; }
         public ObservableCollection<Song> Songs               { get; set; } = [];
         public bool                       HasSongsToEnumerate { get; set; }
-        public Song                       Current             => _enumerator?.Current;
+        public Dispatcher Dispatcher                          { private get; set; }
 
-        public bool Initialize(CancellationToken token)
+        public           IEnumerable<Song>                   Current => _enumerator.Current;
+        private volatile bool                                _flag;
+        private readonly object                              _lock = new object();
+        private          IAsyncEnumerator<IEnumerable<Song>> _enumerator;
+        private          CancellationToken                   _token;
+
+        public bool Initialize(IAsyncEnumerator<IEnumerable<Song>> enumerator, CancellationToken token)
         {
-            if (!HasSongsToEnumerate)
-            {
-                return false;
-            }
-
-            _enumerator = _enumerator ?? _enumerableFunc(this, token).GetAsyncEnumerator(token);
+            _enumerator = enumerator;
+            _token = token;
+            HasSongsToEnumerate = true;
             return true;
         }
 
@@ -45,25 +36,19 @@ namespace PlayniteSounds.Models
         {
             lock (_lock)
             {
-                if (_flag) /* Then */ return false;
+                if (_flag || _enumerator is null) /* Then */ return false;
                 _flag = true;
             }
 
-            if (HasSongsToEnumerate && (HasSongsToEnumerate &= await _enumerator.MoveNextAsync()))
-            {
-                Songs.Add(_enumerator.Current);
-            }
+            if      (HasSongsToEnumerate &= await _enumerator.MoveNextAsync(_token))
+            foreach (var song in _enumerator.Current) /* Then */ await Dispatcher.InvokeAsync(() => Songs.Add(song));
             else
             {
                 if (Count is null || (Count is 0 && Songs.Count != 0)) /* Then */ Count = (uint)Songs.Count;
-
-                if (_enumerator != null) /* Then */ await _enumerator.DisposeAsync();
+                if (!Length.HasValue) /* Then */ Length = TimeSpan.FromTicks(Songs.Where(s => s.Length.HasValue).Sum(s => s.Length.Value.Ticks));
             }
 
-            lock (_lock)
-            {
-                _flag = false;
-            }
+            lock (_lock) /* Then */ _flag = false;
 
             return HasSongsToEnumerate;
         }
@@ -88,7 +73,7 @@ namespace PlayniteSounds.Models
         private bool _disposed;
         public async ValueTask DisposeAsync()
         {
-            if (_disposed ) /* Then */ return;
+            if (_disposed) /* Then */ return;
             _disposed = true;
 
             var enumeratorTask = _enumerator?.DisposeAsync();

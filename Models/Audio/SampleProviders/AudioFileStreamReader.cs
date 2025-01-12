@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using System;
+using NAudio.Wave;
 
 namespace PlayniteSounds.Models.Audio.SampleProviders
 {
@@ -13,6 +14,9 @@ namespace PlayniteSounds.Models.Audio.SampleProviders
         public long Length => _reader.Length;
 
         public string FileName => _reader.FileName;
+
+        public TimeSpan CurrentTime => _reader.CurrentTime;
+        public TimeSpan TotalTime   => _reader.TotalTime;
 
         public void Dispose() => _reader.Dispose();
     }

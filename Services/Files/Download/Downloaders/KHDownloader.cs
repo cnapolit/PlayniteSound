@@ -23,12 +23,10 @@ namespace PlayniteSounds.Files.Download.Downloaders
         #region Infrastructure
 
         private const           string     BaseUrl = "https://downloads.khinsider.com";
-        private        readonly ILogger    _logger;
-        private        readonly HttpClient _httpClient;
         private        readonly HtmlWeb    _web;
 
 
-        public KhDownloader(ILogger logger, HttpClient httpClient, HtmlWeb web)
+        public KhDownloader(ILogger logger, HttpClient httpClient, HtmlWeb web) : base(logger, httpClient)
         {
             _logger = logger;
             _httpClient = httpClient;
@@ -39,20 +37,19 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
         #region Implementation
 
-        public bool   SupportsBulkDownload => false;
         public string SourceLogo           => "KHInsider.jpg";
         public string SourceIcon           => "KHInsider.ico";
 
-        public DownloadCapabilities GetCapabilities(DownloadItem item) => DownloadCapabilities.None;
-
-        public DownloadCapabilities GetCapabilities() => DownloadCapabilities.None;
+        public DownloadCapabilities GetCapabilities() => DownloadCapabilities.Album;
 
         public string GetItemUrl(DownloadItem item) => item is Album ? BaseUrl + item.Id : item.Id;
 
-        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm,
-            CancellationToken? token = null)
+        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(
+            Game game, string searchTerm, [EnumeratorCancellation] CancellationToken token)
         {
-            var htmlDoc = await _web.LoadFromWebAsync($"{BaseUrl}/search?search={searchTerm}");
+            var htmlDoc = await _web.LoadFromWebAsync($"{BaseUrl}/search?search={searchTerm}", token);
+            if (token.IsCancellationRequested) /* Then */ yield break;
+
             var tableRows = htmlDoc.DocumentNode.Descendants("tr").Skip(1);
             foreach (var row in tableRows)
             {
@@ -93,7 +90,7 @@ namespace PlayniteSounds.Files.Download.Downloaders
 
                 var type = columnEntries.ElementAtOrDefault(3)?.Descendants("a").FirstOrDefault()?.InnerHtml;
 
-                yield return new Album(GetSongsFromAlbumAsync)
+                yield return new Album
                 {
                     Name = StringUtilities.StripStrings(albumName),
                     Id = albumPartialLink,
@@ -105,7 +102,7 @@ namespace PlayniteSounds.Files.Download.Downloaders
             }
         }
 
-        public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken? token = null)
+        public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken token)
             => throw new NotImplementedException();
 
         public async Task GetAlbumInfoAsync(
@@ -201,49 +198,31 @@ namespace PlayniteSounds.Files.Download.Downloaders
             album.HasExtraInfo = false;
         }
 
-        private async Task<Stream> GetStreamAsync(string url)
+        public async IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken token)
         {
-            var stream = await _httpClient.GetStreamAsync(url);
-            var memoryStream = new MemoryStream();
-            await stream.CopyToAsync(memoryStream);
-            return memoryStream;
-        }
-
-        public async IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken? token = null)
-        {
-            var cancellationToken = token ?? CancellationToken.None;
-            var tableRows = GetSongTable(await GetAlbumHtmlAsync(album.Id, cancellationToken));
+            var tableRows = GetSongTable(await GetAlbumHtmlAsync(album.Id, token));
 
             // Remove footer
             tableRows.Pop();
 
-            await foreach(var song in GetSongsFromTable(album, tableRows, cancellationToken))
+            await foreach(var song in GetSongsFromTable(album, tableRows, token))
             /* Then */ yield return song;
         }
 
-        public async Task<bool> DownloadAsync(
+        public Task<bool> DownloadAsync(
             DownloadItem item, string path, IProgress<double> progress, CancellationToken token)
         {
             if (!(item is Song song))
             {
                 _logger.Error("KH does not support bulk downloads");
-                return false;
-            }
-            try
-            {
-                using (var httpMessage = await _httpClient.GetAsync(song.StreamUri, token))
-                using (var fileStream = File.Create(path))
-                if    (progress != null) /* Then */ await DownloadCommon.DownloadStreamAsync(await httpMessage.Content.ReadAsStreamAsync(), fileStream, progress, token);
-                else                     /* Then */ await httpMessage.Content.CopyToAsync(fileStream);
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e, $"Unable to download file from URL '{song.StreamUri}' for song '{song.Name}'");
-                return false;
+                return Task.FromResult(false);
             }
 
-            return true;
+            return DownloadAsync(song.StreamUri, path, progress, token);
         }
+
+        public IAsyncEnumerable<IEnumerable<Song>> GetSongBatchesFromAlbumAsync(Album album, CancellationToken token)
+            => throw new NotImplementedException();
 
         #region Helpers
 
@@ -326,7 +305,7 @@ namespace PlayniteSounds.Files.Download.Downloaders
                         ["MP3"] = rowEntries.ElementAtOrDefault(2)?.InnerHtml
                     },
                     StreamUri = fileUri,
-                    StreamFunc = _ => GetStreamAsync(fileUri),
+                    StreamFunc = (s, t) => GetStreamAsync(s.StreamUri, t),
                     TrackNumber = trackNumber
                 };
             }

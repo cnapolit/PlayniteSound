@@ -8,5 +8,6 @@ namespace PlayniteSounds.Services.State
     {
         IDisposable HandleAssemblies(params Assembly[] assemblies);
         IDisposable HandleAssemblies(ICollection<Assembly> assemblies);
+        IDisposable HandleAssemblies(params Type[] types);
     }
 }

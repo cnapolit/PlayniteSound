@@ -18,18 +18,16 @@ namespace PlayniteSounds.Services.Files.Download.Downloaders
 {
     internal class LocalDownloader : BaseDownloader, IDownloader
     {
-        private readonly ILogger         _logger;
         private readonly IPathingService _pathingService;
 
-        public LocalDownloader(ILogger logger, IPathingService pathingService)
+        public LocalDownloader(ILogger logger, IPathingService pathingService) : base(logger, null)
         {
             _logger = logger;
             _pathingService = pathingService;
         }
 
-        public bool   SupportsBulkDownload => true;
-        public string SourceLogo           => "local.png";
-        public string SourceIcon           => "local.ico";
+        public string SourceLogo => "local.png";
+        public string SourceIcon => "local.ico";
 
         public async Task<bool> DownloadAsync(
             DownloadItem item, string path, IProgress<double> progress, CancellationToken token)
@@ -53,8 +51,8 @@ namespace PlayniteSounds.Services.Files.Download.Downloaders
             Album album, CancellationToken token, Func<Action<Song>, Song, Task> updateCallback)
             => throw new NotSupportedException();
 
-        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(Game game, string searchTerm,
-            CancellationToken? token = null)
+        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(
+            Game game, string searchTerm, CancellationToken token)
         {
             if (game.InstallationStatus != InstallationStatus.Installed) /* Then */ yield break;
 
@@ -103,14 +101,15 @@ namespace PlayniteSounds.Services.Files.Download.Downloaders
         public DownloadCapabilities GetCapabilities()
             => DownloadCapabilities.Album | DownloadCapabilities.Bulk | DownloadCapabilities.FlatSearch;
 
-        public DownloadCapabilities GetCapabilities(DownloadItem item) => GetCapabilities();
-
         public string GetItemUrl(DownloadItem item) => item.Id;
 
-        public IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken? token = null)
+        public IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken token)
             => album.Songs.ToAsyncEnumerable();
 
-        public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken? token = null)
+        public IAsyncEnumerable<IEnumerable<Song>> GetSongBatchesFromAlbumAsync(Album album, CancellationToken token)
+            => throw new NotImplementedException();
+
+        public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken token)
         {
             if (game.InstallationStatus != InstallationStatus.Installed) /* Then */ return AsyncEnumerable.Empty<Song>();
 
