@@ -35,6 +35,7 @@ namespace PlayniteSounds.Files.Download
         private        readonly IDownloader            _khDownloader;
         private        readonly IDownloader            _ytDownloader;
         private        readonly IDownloader            _localDownloader;
+        private        readonly IDownloader            _scDownloader;
         private        readonly PlayniteSoundsSettings _settings;
 
         public DownloadManager(
@@ -322,9 +323,10 @@ namespace PlayniteSounds.Files.Download
         {
             switch (source)
             {
-                case Source.KHInsider: return _khDownloader;
-                case Source.Youtube:   return _ytDownloader;
-                case Source.Local:     return _localDownloader;
+                case Source.KHInsider:  return _khDownloader;
+                case Source.Youtube:    return _ytDownloader;
+                case Source.Local:      return _localDownloader;
+                case Source.SoundCloud: return _scDownloader;
                 default: throw new ArgumentException($"Unrecognized download source: {source}");
             }
         }

@@ -38,7 +38,7 @@ namespace PlayniteSounds.Models
 
         public ISet<Source> Downloaders { get; set; } = new HashSet<Source>
         {
-            Source.KHInsider, Source.Youtube
+            Source.KHInsider, Source.SoundCloud, Source.Youtube
         };
 
         public ModeSettings DesktopSettings { get; set; } = new ModeSettings 
