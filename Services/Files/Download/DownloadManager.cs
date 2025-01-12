@@ -36,6 +36,7 @@ namespace PlayniteSounds.Files.Download
         private        readonly IDownloader            _ytDownloader;
         private        readonly IDownloader            _localDownloader;
         private        readonly IDownloader            _scDownloader;
+        private readonly        IDownloader            _spDownloader;
         private        readonly PlayniteSoundsSettings _settings;
 
         public DownloadManager(
@@ -53,6 +54,8 @@ namespace PlayniteSounds.Files.Download
             _khDownloader = new KhDownloader(logger, HttpClient, Web);
             _ytDownloader = new YtDownloader(logger, assemblyResolver, HttpClient, _settings);
             _localDownloader = new LocalDownloader(logger, pathingService);
+            _scDownloader = new SCDownloader(logger, assemblyResolver, HttpClient);
+            _spDownloader = new SpDownloader(logger, assemblyResolver, HttpClient);
         }
 
         #endregion
@@ -76,7 +79,7 @@ namespace PlayniteSounds.Files.Download
 
         public IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken token)
             => SourceToDownloader(album.Source).GetSongsFromAlbumAsync(album, token)
-                                               .Select(s => { s.ParentAlbum = album; return s; }); 
+                                               .Select(s => { s.ParentAlbum = album; return s; });
 
         public IAsyncEnumerable<IEnumerable<Song>> GetSongBatchesFromAlbumAsync(Album album, CancellationToken token)
         {
@@ -168,7 +171,7 @@ namespace PlayniteSounds.Files.Download
         {
             var sanitizedName = StringUtilities.Sanitize(game.Name);
             IDownloader downloader = null;
-            
+
             Album selectedAlbum = null;
             if (_settings.AutoParallelDownload)
             {
@@ -230,17 +233,17 @@ namespace PlayniteSounds.Files.Download
             if (selectedSong is null) /* Then */ return DownloadStatus.Failed;
             _logger.Info($"Selected song '{selectedSong.Name}' from album '{selectedAlbum.Name}' for game '{game.Name}'");
 
-                var dir = _fileManager.CreateMusicDirectory(game);
-                var path = Path.Combine(dir, sanitizedName + (selectedSong.Types?.FirstOrDefault() ?? ".mp3"));
+            var dir = _fileManager.CreateMusicDirectory(game);
+            var path = Path.Combine(dir, sanitizedName + (selectedSong.Types?.FirstOrDefault() ?? ".mp3"));
             if (!await downloader.DownloadAsync(selectedSong, path, null, token)) /* Then */ return DownloadStatus.Failed;
             _logger.Info($"Downloaded from source '{selectedAlbum.Source}' for game '{game.Name}'");
 
-                _fileManager.ApplyTags(game, selectedSong, path);
+            _fileManager.ApplyTags(game, selectedSong, path);
 
-                return await _normalizer.NormalizeAudioFileAsync(path) 
-                    ? DownloadStatus.Downloaded | DownloadStatus.Normalized 
-                    : DownloadStatus.Downloaded;
-            }
+            return await _normalizer.NormalizeAudioFileAsync(path)
+                ? DownloadStatus.Downloaded | DownloadStatus.Normalized
+                : DownloadStatus.Downloaded;
+        }
 
         private async Task<Album> GetAlbumAsync(Game game, string sanitizedGameName, CancellationToken token)
         {
@@ -327,6 +330,7 @@ namespace PlayniteSounds.Files.Download
                 case Source.Youtube:    return _ytDownloader;
                 case Source.Local:      return _localDownloader;
                 case Source.SoundCloud: return _scDownloader;
+                case Source.Spotify:    return _spDownloader;
                 default: throw new ArgumentException($"Unrecognized download source: {source}");
             }
         }

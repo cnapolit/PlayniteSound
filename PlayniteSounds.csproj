@@ -92,6 +92,9 @@
     <Reference Include="SoundCloudExplode, Version=1.6.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\SoundCloudExplode.1.6.5\lib\net461\SoundCloudExplode.dll</HintPath>
     </Reference>
+    <Reference Include="SpotifyExplode, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SpotifyExplode.1.1.2\lib\net461\SpotifyExplode.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Buffers.4.6.0\lib\net462\System.Buffers.dll</HintPath>
@@ -255,6 +258,7 @@
     <Compile Include="Services\Files\Download\Downloaders\BaseDownloader.cs" />
     <Compile Include="Services\Files\Download\Downloaders\LocalDownloader.cs" />
     <Compile Include="Services\Files\Download\Downloaders\SCDownloader.cs" />
+    <Compile Include="Services\Files\Download\Downloaders\SpDownloader.cs" />
     <Compile Include="Services\Installers\FactoryInstaller.cs" />
     <Compile Include="Services\Installers\Installation.cs" />
     <Compile Include="Services\Installers\PlayniteInstaller.cs" />
@@ -666,6 +670,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Images\SoundCloud.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\Spotify.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\Spotify.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Images\YouTube.ico">
