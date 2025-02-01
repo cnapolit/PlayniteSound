@@ -5,14 +5,13 @@ using Castle.Windsor;
 using PlayniteSounds.GeneratedFactories;
 using PlayniteSounds.Views.Models;
 
-namespace PlayniteSounds.Services.Installers
+namespace PlayniteSounds.Services.Installers;
+
+public class FactoryInstaller : IWindsorInstaller
 {
-    public class FactoryInstaller : IWindsorInstaller
+    public void Install(IWindsorContainer container, IConfigurationStore store)
     {
-        public void Install(IWindsorContainer container, IConfigurationStore store)
-        {
-            container.AddFacility<TypedFactoryFacility>();
-            container.Register(Component.For<DownloadPromptModel>().LifestyleTransient(), Component.For(typeof(IFactory<>)).AsFactory());
-        }
+        container.AddFacility<TypedFactoryFacility>();
+        container.Register(Component.For<DownloadPromptModel>().LifestyleTransient(), Component.For(typeof(IFactory<>)).AsFactory());
     }
 }

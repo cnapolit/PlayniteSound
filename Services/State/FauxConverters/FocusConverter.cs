@@ -2,23 +2,20 @@
 using System.Windows;
 using Playnite.SDK;
 
-namespace PlayniteSounds.Services.State.FauxConverters
-{
-    public class FocusConverter : BaseUIStateFauxConverter<UIElement>, IFocusConverter
-    {
-        public FocusConverter(ILogger logger, IPlayniteEventHandler playniteEventHandler) 
-            : base(logger, playniteEventHandler) { }
+namespace PlayniteSounds.Services.State.FauxConverters;
 
-        protected override void Link(UIElement ui, UIState uiState)
+public class FocusConverter(ILogger logger, IPlayniteEventHandler playniteEventHandler)
+    : BaseUIStateFauxConverter<UIElement>(logger, playniteEventHandler), IFocusConverter
+{
+    protected override void Link(UIElement ui, UIState uiState)
+    {
+        ui.GotFocus += (_, _) =>
         {
-            ui.GotFocus += (_, __) =>
-            {
-                _playniteEventHandler.TriggerUIStateChanged(uiState);
-            };
-            //ui.LostFocus += (_, __) =>
-            //{
-            //    _playniteEventHandler.TriggerRevertUIStateChanged();
-            //};
-        }
+            _playniteEventHandler.TriggerUIStateChanged(uiState);
+        };
+        //ui.LostFocus += (_, __) =>
+        //{
+        //    _playniteEventHandler.TriggerRevertUIStateChanged();
+        //};
     }
 }

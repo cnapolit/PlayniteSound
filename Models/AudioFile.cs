@@ -1,8 +1,7 @@
-﻿namespace PlayniteSounds.Models
+﻿namespace PlayniteSounds.Models;
+
+public class AudioFile
 {
-    public class AudioFile
-    {
-        public string Path { get; set; }
-        public AudioSource MusicType { get; set; }
-    }
+    public string Path { get; set; }
+    public AudioSource MusicType { get; set; }
 }

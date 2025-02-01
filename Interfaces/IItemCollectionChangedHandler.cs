@@ -2,11 +2,10 @@
 using Playnite.SDK.Models;
 using PlayniteSounds.Models;
 
-namespace PlayniteSounds.Services.State
+namespace PlayniteSounds.Services.State;
+
+public interface IItemCollectionChangedHandler
 {
-    public interface IItemCollectionChangedHandler
-    {
-        bool ExtraMetaDataPluginIsLoaded { get; set; }
-        void AddGames(IList<Game> games, Source? source);
-    }
+    bool ExtraMetaDataPluginIsLoaded { get; set; }
+    void AddGames(IList<Game> games, Source? source);
 }

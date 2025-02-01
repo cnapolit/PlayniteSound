@@ -1,14 +1,13 @@
-﻿namespace PlayniteSounds.Services.UI
+﻿namespace PlayniteSounds.Services.UI;
+
+public interface ISoundManager
 {
-    public interface ISoundManager
-    {
-        void HelpMenu();
-        void ImportSounds();
-        void LoadSounds();
-        void OpenMusicFolder();
-        void OpenSoundManagerFolder();
-        void OpenSoundsFolder();
-        void RemoveSounds();
-        void SaveSounds();
-    }
+    void HelpMenu();
+    void ImportSounds();
+    void LoadSounds();
+    void OpenMusicFolder();
+    void OpenSoundManagerFolder();
+    void OpenSoundsFolder();
+    void RemoveSounds();
+    void SaveSounds();
 }

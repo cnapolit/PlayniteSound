@@ -2,25 +2,24 @@
 using PlayniteSounds.Models;
 using System.Collections.Generic;
 
-namespace PlayniteSounds.Services.Files
-{
-    public interface IFileMutationService
-    {
-        void CreateDownloadDialogue(
-            IEnumerable<Game> games,
-            Source source,
-            bool albumSelect = false,
-            bool songSelect = false,
-            bool overwriteSelect = false);
+namespace PlayniteSounds.Services.Files;
 
-        void CreateNormalizationDialogue();
-        void DeleteMusicDirectories(IEnumerable<Game> games);
-        void DeleteMusicFile(string musicFile, string musicFileName, Game game);
-        void DownloadMusicForGames(Source source, IList<Game> games);
-        void SelectMusicForDefault();
-        void SelectMusicForFilter(FilterPreset filter);
-        void SelectMusicForGames(IEnumerable<Game> games);
-        void SelectMusicForPlatform(Platform platform);
-        void SelectStartSoundForGame(Game game);
-    }
+public interface IFileMutationService
+{
+    void CreateDownloadDialogue(
+        IEnumerable<Game> games,
+        Source source,
+        bool albumSelect = false,
+        bool songSelect = false,
+        bool overwriteSelect = false);
+
+    void CreateNormalizationDialogue();
+    void DeleteMusicDirectories(IEnumerable<Game> games);
+    void DeleteMusicFile(string musicFile, string musicFileName, Game game);
+    void DownloadMusicForGames(Source source, IList<Game> games);
+    void SelectMusicForDefault();
+    void SelectMusicForFilter(FilterPreset filter);
+    void SelectMusicForGames(IEnumerable<Game> games);
+    void SelectMusicForPlatform(Platform platform);
+    void SelectStartSoundForGame(Game game);
 }

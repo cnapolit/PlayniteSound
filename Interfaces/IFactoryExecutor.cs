@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace PlayniteSounds.Services
+namespace PlayniteSounds.Services;
+
+public interface IFactoryExecutor<out T>
 {
-    public interface IFactoryExecutor<T>
-    {
-        void Execute(Action<T> action);
-    }
+    void Execute(Action<T> action);
 }

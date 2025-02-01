@@ -1,6 +1,5 @@
 ﻿using Playnite.SDK;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using HtmlAgilityPack;
@@ -16,303 +15,302 @@ using Playnite.SDK.Models;
 using PlayniteSounds.Models.Download;
 using PlayniteSounds.Services.Files.Download.Downloaders;
 
-namespace PlayniteSounds.Files.Download.Downloaders
+namespace PlayniteSounds.Files.Download.Downloaders;
+
+internal class KhDownloader : BaseDownloader, IDownloader
 {
-    internal class KhDownloader : BaseDownloader, IDownloader
+    #region Infrastructure
+
+    private const           string     BaseUrl = "https://downloads.khinsider.com";
+    private        readonly HtmlWeb    _web;
+
+
+    public KhDownloader(ILogger logger, HttpClient httpClient, HtmlWeb web) : base(logger, httpClient)
     {
-        #region Infrastructure
+        _logger = logger;
+        _httpClient = httpClient;
+        _web = web;
+    }
 
-        private const           string     BaseUrl = "https://downloads.khinsider.com";
-        private        readonly HtmlWeb    _web;
+    #endregion
 
+    #region Implementation
 
-        public KhDownloader(ILogger logger, HttpClient httpClient, HtmlWeb web) : base(logger, httpClient)
+    public string SourceLogo           => "KHInsider.jpg";
+    public string SourceIcon           => "KHInsider.ico";
+
+    public DownloadCapabilities GetCapabilities() => DownloadCapabilities.Album;
+
+    public string GetItemUrl(DownloadItem item) => item is Album ? BaseUrl + item.Id : item.Id;
+
+    public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(
+        Game game, string searchTerm, [EnumeratorCancellation] CancellationToken token)
+    {
+        var htmlDoc = await _web.LoadFromWebAsync($"{BaseUrl}/search?search={searchTerm}", token);
+        if (token.IsCancellationRequested) /* Then */ yield break;
+
+        var tableRows = htmlDoc.DocumentNode.Descendants("tr").Skip(1);
+        foreach (var row in tableRows)
         {
-            _logger = logger;
-            _httpClient = httpClient;
-            _web = web;
+            var columnEntries = row.Descendants("td").ToList();
+
+            var titleField = columnEntries.ElementAtOrDefault(1);
+            if (titleField == null)
+            {
+                _logger.Info($"Found album entry of game '{searchTerm}' without title field");
+                continue;
+            }
+
+            var htmlLink = titleField.Descendants("a").FirstOrDefault();
+            if (htmlLink == null)
+            {
+                _logger.Info($"Found entry for album entry of game '{searchTerm}' without title");
+                continue;
+            }
+
+            var albumName = htmlLink.InnerHtml;
+            var albumPartialLink = htmlLink.GetAttributeValue("href", null);
+            if (albumPartialLink == null)
+            {
+                _logger.Info($"Found entry for album '{albumName}' of game '{searchTerm}' without link in title");
+                continue;
+            }
+
+            var iconUrl = columnEntries.FirstOrDefault()
+                ?.Descendants("img")
+                .FirstOrDefault()
+                ?.GetAttributeValue("src", null);
+
+            var platforms = columnEntries.ElementAtOrDefault(2)
+                ?.Descendants("a")
+                .Select(d => d.InnerHtml)
+                .Where(StringExtensions.HasText)
+                .ToList();
+
+            var type = columnEntries.ElementAtOrDefault(3)?.Descendants("a").FirstOrDefault()?.InnerHtml;
+
+            yield return new Album
+            {
+                Name = StringUtilities.StripStrings(albumName),
+                Id = albumPartialLink,
+                Source = Source.KHInsider,
+                IconUri = iconUrl,
+                Platforms = platforms,
+                Types = type is null ? new List<string>() : new List<string> { type }
+            };
+        }
+    }
+
+    public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken token)
+        => throw new NotImplementedException();
+
+    public async Task GetAlbumInfoAsync(
+        Album album, CancellationToken token, Func<Action<Song>, Song, Task> updateCallback)
+    {
+        var htmlDoc = await GetAlbumHtmlAsync(album.Id, token);
+        if (token.IsCancellationRequested) /* Then */ return;
+
+        var content = htmlDoc.GetElementbyId("pageContent");
+        album.CoverUri = content.Descendants("div")
+            .FirstOrDefault(d => d.HasClass("albumImage"))
+            ?.Descendants("a")
+            .FirstOrDefault()
+            ?.GetAttributeValue("href", string.Empty);
+
+        Task coverUriTask = null;
+        if (album.CoverUri.HasText())
+        {
+            coverUriTask = updateCallback(null, null);
         }
 
-        #endregion
-
-        #region Implementation
-
-        public string SourceLogo           => "KHInsider.jpg";
-        public string SourceIcon           => "KHInsider.ico";
-
-        public DownloadCapabilities GetCapabilities() => DownloadCapabilities.Album;
-
-        public string GetItemUrl(DownloadItem item) => item is Album ? BaseUrl + item.Id : item.Id;
-
-        public async IAsyncEnumerable<Album> GetAlbumsForGameAsync(
-            Game game, string searchTerm, [EnumeratorCancellation] CancellationToken token)
+        // Get Info; some albums have an alternative title in the way
+        var infoPara = content
+            .Descendants("p")
+            .FirstOrDefault(p => !p.HasClass("albuminfoAlternativeTitles"));
+        if (infoPara != null)
         {
-            var htmlDoc = await _web.LoadFromWebAsync($"{BaseUrl}/search?search={searchTerm}", token);
-            if (token.IsCancellationRequested) /* Then */ yield break;
+            var hyperLinks = infoPara.Descendants("a").ToList();
 
-            var tableRows = htmlDoc.DocumentNode.Descendants("tr").Skip(1);
-            foreach (var row in tableRows)
+            var developersFound = false;
+            var publishersFound = false;
+            var uploaderFound = false;
+            foreach (var link in hyperLinks)
             {
-                var columnEntries = row.Descendants("td").ToList();
+                var linkValue = link.GetAttributeValue("href", string.Empty);
 
-                var titleField = columnEntries.ElementAtOrDefault(1);
-                if (titleField == null)
+                if (!developersFound && linkValue.Contains("/developer/"))
                 {
-                    _logger.Info($"Found album entry of game '{searchTerm}' without title field");
-                    continue;
+                    album.Developers = (List<string>) [link.InnerHtml];
+                    developersFound = true;
+                }
+                else if (!publishersFound && linkValue.Contains("/publisher/"))
+                {
+                    album.Publishers = (List<string>) [link.InnerHtml];
+                    publishersFound = true;
+                }
+                else if (!uploaderFound && linkValue.Contains("members/"))
+                {
+                    album.Uploader = link.InnerHtml;
+                    uploaderFound = true;
                 }
 
-                var htmlLink = titleField.Descendants("a").FirstOrDefault();
-                if (htmlLink == null)
-                {
-                    _logger.Info($"Found entry for album entry of game '{searchTerm}' without title");
-                    continue;
-                }
-
-                var albumName = htmlLink.InnerHtml;
-                var albumPartialLink = htmlLink.GetAttributeValue("href", null);
-                if (albumPartialLink == null)
-                {
-                    _logger.Info($"Found entry for album '{albumName}' of game '{searchTerm}' without link in title");
-                    continue;
-                }
-
-                var iconUrl = columnEntries.FirstOrDefault()
-                                          ?.Descendants("img")
-                                           .FirstOrDefault()
-                                          ?.GetAttributeValue("src", null);
-
-                var platforms = columnEntries.ElementAtOrDefault(2)
-                                            ?.Descendants("a")
-                                             .Select(d => d.InnerHtml)
-                                             .Where(StringExtensions.HasText)
-                                             .ToList();
-
-                var type = columnEntries.ElementAtOrDefault(3)?.Descendants("a").FirstOrDefault()?.InnerHtml;
-
-                yield return new Album
-                {
-                    Name = StringUtilities.StripStrings(albumName),
-                    Id = albumPartialLink,
-                    Source = Source.KHInsider,
-                    IconUri = iconUrl,
-                    Platforms = platforms,
-                    Types = type is null ? new List<string>() : new List<string> { type }
-                };
+                if (developersFound && publishersFound && uploaderFound) /* Then */ break;
             }
+
+            var dateAddedRegex = new Regex(@"Date Added:\s*<b>([^<]*)<\/b>");
+            var dateAddedMatch = dateAddedRegex.Match(infoPara.InnerHtml);
+            if (dateAddedMatch.Success) /* Then */ album.CreationDate = dateAddedMatch.Groups[1].Value;
         }
 
-        public IAsyncEnumerable<Song> SearchSongsAsync(Game game, string searchTerm, CancellationToken token)
-            => throw new NotImplementedException();
-
-        public async Task GetAlbumInfoAsync(
-            Album album, CancellationToken token, Func<Action<Song>, Song, Task> updateCallback)
+        var tableRows = GetSongTable(htmlDoc);
+        if (tableRows is null)
         {
-            var htmlDoc = await GetAlbumHtmlAsync(album.Id, token);
-            if (token.IsCancellationRequested) /* Then */ return;
-
-            var content = htmlDoc.GetElementbyId("pageContent");
-            album.CoverUri = content.Descendants("div")
-                                    .FirstOrDefault(d => d.HasClass("albumImage"))
-                                   ?.Descendants("a")
-                                    .FirstOrDefault()
-                                   ?.GetAttributeValue("href", string.Empty);
-
-            Task coverUriTask = null;
-            if (album.CoverUri.HasText())
-            {
-                coverUriTask = updateCallback(null, null);
-            }
-
-            // Get Info; some albums have an alternative title in the way
-            var infoPara = content
-                          .Descendants("p")
-                          .FirstOrDefault(p => !p.HasClass("albuminfoAlternativeTitles"));
-            if (infoPara != null)
-            {
-                var hyperLinks = infoPara.Descendants("a").ToList();
-
-                var developersFound = false;
-                var publishersFound = false;
-                var uploaderFound = false;
-                foreach (var link in hyperLinks)
-                {
-                    var linkValue = link.GetAttributeValue("href", string.Empty);
-
-                    if (!developersFound && linkValue.Contains("/developer/"))
-                    {
-                        album.Developers = new List<string> { link.InnerHtml };
-                        developersFound = true;
-                    }
-                    else if (!publishersFound && linkValue.Contains("/publisher/"))
-                    {
-                        album.Publishers = new List<string> { link.InnerHtml };
-                        publishersFound = true;
-                    }
-                    else if (!uploaderFound && linkValue.Contains("members/"))
-                    {
-                        album.Uploader = link.InnerHtml;
-                        uploaderFound = true;
-                    }
-
-                    if (developersFound && publishersFound && uploaderFound) /* Then */ break;
-                }
-
-                var dateAddedRegex = new Regex(@"Date Added:\s*<b>([^<]*)<\/b>");
-                var dateAddedMatch = dateAddedRegex.Match(infoPara.InnerHtml);
-                if (dateAddedMatch.Success) /* Then */ album.CreationDate = dateAddedMatch.Groups[1].Value;
-            }
-
-            var tableRows = GetSongTable(htmlDoc);
-            if (tableRows is null)
-            {
-                _logger.Info($"Unable to find table for album '{album.Name}'");
-                return;
-            }
-
-            var footer = tableRows.Pop();
-
-            var items = footer.Descendants("b").Skip(1).ToList();
-
-            var length = items.FirstOrDefault()?.InnerHtml;
-            if (TimeSpan.TryParseExact(length, "h\\h m\\m", null, out var result))
-            {
-                album.Length = result;
-            }
-
-            var mp3Size = items.LastOrDefault()?.InnerHtml;
-            if (mp3Size != null) /* Then */ album.Sizes = new Dictionary<string, string> { ["MP3"] = mp3Size };
-
-            if (coverUriTask != null) /* Then */ await coverUriTask;
-            await updateCallback(null, null);
-
-            await foreach(var song in GetSongsFromTable(album, tableRows, token))
-            {
-                await updateCallback(album.Songs.Add, song);
-            }
-
-            if (token.IsCancellationRequested) /* Then */ return;
-
-            album.Count = (uint)album.Songs.Count;
-            await updateCallback(null, null);
-            album.HasExtraInfo = false;
+            _logger.Info($"Unable to find table for album '{album.Name}'");
+            return;
         }
 
-        public async IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken token)
+        var footer = tableRows.Pop();
+
+        var items = footer.Descendants("b").Skip(1).ToList();
+
+        var length = items.FirstOrDefault()?.InnerHtml;
+        if (TimeSpan.TryParseExact(length, "h\\h m\\m", null, out var result))
         {
-            var tableRows = GetSongTable(await GetAlbumHtmlAsync(album.Id, token));
-
-            // Remove footer
-            tableRows.Pop();
-
-            await foreach(var song in GetSongsFromTable(album, tableRows, token))
-            /* Then */ yield return song;
+            album.Length = result;
         }
 
-        public Task<bool> DownloadAsync(
-            DownloadItem item, string path, IProgress<double> progress, CancellationToken token)
+        var mp3Size = items.LastOrDefault()?.InnerHtml;
+        if (mp3Size != null) /* Then */ album.Sizes = new Dictionary<string, string> { ["MP3"] = mp3Size };
+
+        if (coverUriTask != null) /* Then */ await coverUriTask;
+        await updateCallback(null, null);
+
+        await foreach(var song in GetSongsFromTable(album, tableRows, token))
         {
-            if (!(item is Song song))
-            {
-                _logger.Error("KH does not support bulk downloads");
-                return Task.FromResult(false);
-            }
-
-            return DownloadAsync(song.StreamUri, path, progress, token);
+            await updateCallback(album.Songs.Add, song);
         }
 
-        public IAsyncEnumerable<IEnumerable<Song>> GetSongBatchesFromAlbumAsync(Album album, CancellationToken token)
-            => throw new NotImplementedException();
+        if (token.IsCancellationRequested) /* Then */ return;
 
-        #region Helpers
+        album.Count = (uint)album.Songs.Count;
+        await updateCallback(null, null);
+        album.HasExtraInfo = false;
+    }
 
-        private Task<HtmlDocument> GetAlbumHtmlAsync(string id, CancellationToken token) 
-            => _web.LoadFromWebAsync($"{BaseUrl}/{id}", token);
+    public async IAsyncEnumerable<Song> GetSongsFromAlbumAsync(Album album, CancellationToken token)
+    {
+        var tableRows = GetSongTable(await GetAlbumHtmlAsync(album.Id, token));
 
-        private IList<HtmlNode> GetSongTable(HtmlDocument htmlDoc)
+        // Remove footer
+        tableRows.Pop();
+
+        await foreach(var song in GetSongsFromTable(album, tableRows, token))
+        /* Then */ yield return song;
+    }
+
+    public Task<bool> DownloadAsync(
+        DownloadItem item, string path, IProgress<double> progress, CancellationToken token)
+    {
+        if (item is not Song song)
         {
-            var headers = htmlDoc.GetElementbyId("songlist_header").Descendants("th").Select(n => n.InnerHtml);
-            if (headers.All(h => !h.Contains("MP3")))
-            {
-                _logger.Info("No mp3 in album");
-                return null;
-            }
-
-            var table = htmlDoc.GetElementbyId("songlist");
-
-            // Get table and skip header
-            var tableRows = table.Descendants("tr").Skip(1).ToList();
-            if (tableRows.Count < 2)
-            {
-                _logger.Info("No songs in album");
-                return null;
-            }
-
-            return tableRows;
+            _logger.Error("KH does not support bulk downloads");
+            return Task.FromResult(false);
         }
+
+        return DownloadAsync(song.StreamUri, path, progress, token);
+    }
+
+    public IAsyncEnumerable<IEnumerable<Song>> GetSongBatchesFromAlbumAsync(Album album, CancellationToken token)
+        => throw new NotImplementedException();
+
+    #region Helpers
+
+    private Task<HtmlDocument> GetAlbumHtmlAsync(string id, CancellationToken token) 
+        => _web.LoadFromWebAsync($"{BaseUrl}/{id}", token);
+
+    private IList<HtmlNode> GetSongTable(HtmlDocument htmlDoc)
+    {
+        var headers = htmlDoc.GetElementbyId("songlist_header").Descendants("th").Select(n => n.InnerHtml);
+        if (headers.All(h => !h.Contains("MP3")))
+        {
+            _logger.Info("No mp3 in album");
+            return null;
+        }
+
+        var table = htmlDoc.GetElementbyId("songlist");
+
+        // Get table and skip header
+        var tableRows = table.Descendants("tr").Skip(1).ToList();
+        if (tableRows.Count < 2)
+        {
+            _logger.Info("No songs in album");
+            return null;
+        }
+
+        return tableRows;
+    }
 
         
-        private async IAsyncEnumerable<Song> GetSongsFromTable(
-            Album album, IList<HtmlNode> tableRows, [EnumeratorCancellation] CancellationToken token)
+    private async IAsyncEnumerable<Song> GetSongsFromTable(
+        Album album, IList<HtmlNode> tableRows, [EnumeratorCancellation] CancellationToken token)
+    {
+        foreach (var row in tableRows)
         {
-            foreach (var row in tableRows)
+            var rowEntries = row.Descendants("a").ToList();
+
+            var songNameEntry = rowEntries.FirstOrDefault();
+            if (songNameEntry is null)
             {
-                var rowEntries = row.Descendants("a").ToList();
+                _logger.Info("Found entry without columns");
+                continue;
+            }
 
-                var songNameEntry = rowEntries.FirstOrDefault();
-                if (songNameEntry is null)
-                {
-                    _logger.Info("Found entry without columns");
-                    continue;
-                }
+            var songName = StringUtilities.StripStrings(songNameEntry.InnerHtml);
 
-                var songName = StringUtilities.StripStrings(songNameEntry.InnerHtml);
+            var partialUrl = songNameEntry.GetAttributeValue("href", null);
+            if (string.IsNullOrWhiteSpace(partialUrl))
+            {
+                _logger.Info($"Found entry without link in title for song '{songName}'");
+                continue;
+            }
 
-                var partialUrl = songNameEntry.GetAttributeValue("href", null);
-                if (string.IsNullOrWhiteSpace(partialUrl))
-                {
-                    _logger.Info($"Found entry without link in title for song '{songName}'");
-                    continue;
-                }
+            // Get Url for file from Song html page
+            var fileHtmlDoc = await _web.LoadFromWebAsync($"{BaseUrl}/{partialUrl}", token);
+            if (token.IsCancellationRequested) /* Then */ yield break;
 
-                // Get Url for file from Song html page
-                var fileHtmlDoc = await _web.LoadFromWebAsync($"{BaseUrl}/{partialUrl}", token);
-                if (token.IsCancellationRequested) /* Then */ yield break;
+            var fileUri = fileHtmlDoc.GetElementbyId("audio").GetAttributeValue("src", null);
+            if (fileUri is null)
+            {
+                _logger.Info($"Did not find file url for song '{songName}'");
+                continue;
+            }
 
-                var fileUri = fileHtmlDoc.GetElementbyId("audio").GetAttributeValue("src", null);
-                if (fileUri is null)
-                {
-                    _logger.Info($"Did not find file url for song '{songName}'");
-                    continue;
-                }
-
-                var trackNumberStr = row.ChildNodes[1].InnerHtml;
-                uint? trackNumber = null;
-                if (uint.TryParse(trackNumberStr.Substring(0, trackNumberStr.Length - 1), out var number))
+            var trackNumberStr = row.ChildNodes[1].InnerHtml;
+            uint? trackNumber = null;
+            if (uint.TryParse(trackNumberStr.Substring(0, trackNumberStr.Length - 1), out var number))
                 /* Then */ trackNumber = number;
 
-                var mp3Size = rowEntries.ElementAtOrDefault(2)?.InnerHtml;
-                yield return new Song
+            var mp3Size = rowEntries.ElementAtOrDefault(2)?.InnerHtml;
+            yield return new Song
+            {
+                Name = songName,
+                Album = album.Name,
+                ParentAlbum = album,
+                Id = partialUrl,
+                Source = Source.KHInsider,
+                Length = StringUtilities.GetTimeSpan(rowEntries.ElementAtOrDefault(1)?.InnerHtml),
+                Sizes = mp3Size is null ? null : new Dictionary<string, string>
                 {
-                    Name = songName,
-                    Album = album.Name,
-                    ParentAlbum = album,
-                    Id = partialUrl,
-                    Source = Source.KHInsider,
-                    Length = StringUtilities.GetTimeSpan(rowEntries.ElementAtOrDefault(1)?.InnerHtml),
-                    Sizes = mp3Size is null ? null : new Dictionary<string, string>
-                    {
-                        ["MP3"] = rowEntries.ElementAtOrDefault(2)?.InnerHtml
-                    },
-                    StreamUri = fileUri,
-                    StreamFunc = (s, t) => GetStreamAsync(s.StreamUri, t),
-                    TrackNumber = trackNumber
-                };
-            }
+                    ["MP3"] = rowEntries.ElementAtOrDefault(2)?.InnerHtml
+                },
+                StreamUri = fileUri,
+                StreamFunc = (s, t) => GetStreamAsync(s.StreamUri, t),
+                TrackNumber = trackNumber
+            };
         }
-
-        #endregion
-
-        #endregion
     }
+
+    #endregion
+
+    #endregion
 }

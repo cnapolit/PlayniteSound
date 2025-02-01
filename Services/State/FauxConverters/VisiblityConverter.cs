@@ -2,26 +2,23 @@
 using PlayniteSounds.Models;
 using System.Windows.Controls;
 
-namespace PlayniteSounds.Services.State.FauxConverters
-{
-    public class VisibilityConverter : BaseUIStateFauxConverter<Control>, IVisibilityConverter
-    {
-        public VisibilityConverter(ILogger logger, IPlayniteEventHandler playniteEventHandler)
-            : base(logger, playniteEventHandler) { }
+namespace PlayniteSounds.Services.State.FauxConverters;
 
-        protected override void Link(Control cont, UIState state)
+public class VisibilityConverter(ILogger logger, IPlayniteEventHandler playniteEventHandler)
+    : BaseUIStateFauxConverter<Control>(logger, playniteEventHandler), IVisibilityConverter
+{
+    protected override void Link(Control cont, UIState state)
+    {
+        cont.IsVisibleChanged += (_, args) =>
         {
-            cont.IsVisibleChanged += (obj, args) =>
+            if (args.NewValue is true)
             {
-                if (args.NewValue is true)
-                {
-                    _playniteEventHandler.TriggerUIStateChanged(state);
-                }
-                else
-                {
-                    _playniteEventHandler.TriggerRevertUIStateChanged();
-                }
-            };
-        }
+                _playniteEventHandler.TriggerUIStateChanged(state);
+            }
+            else
+            {
+                _playniteEventHandler.TriggerRevertUIStateChanged();
+            }
+        };
     }
 }

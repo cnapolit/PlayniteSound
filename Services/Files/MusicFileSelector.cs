@@ -4,66 +4,58 @@ using PlayniteSounds.Models.Audio.Sound;
 using System;
 using System.Linq;
 
-namespace PlayniteSounds.Services.Files
+namespace PlayniteSounds.Services.Files;
+
+public class MusicFileSelector(
+    IPathingService pathingService,
+    IMainViewAPI mainViewApi,
+    PlayniteSoundsSettings settings)
+    : IMusicFileSelector
 {
-    public class MusicFileSelector : IMusicFileSelector
+    private static readonly Random RNG = new();
+    public string SelectFile(string[] files, string previousMusicFile, bool musicEnded)
     {
-        private readonly PlayniteSoundsSettings _settings;
-        private readonly IPathingService _pathingService;
-        private readonly IMainViewAPI _mainView;
+        var musicFile = files.FirstOrDefault() ?? previousMusicFile;
 
-        public MusicFileSelector(IPathingService pathingService, IMainViewAPI mainViewApi, PlayniteSoundsSettings settings)
-        {
-            _pathingService = pathingService;
-            _mainView = mainViewApi;
-            _settings = settings;
-        }
-
-        private static readonly Random RNG = new Random();
-        public string SelectFile(string[] files, string previousMusicFile, bool musicEnded)
-        {
-            var musicFile = files.FirstOrDefault() ?? previousMusicFile;
-
-            var shouldRandomize = _settings.RandomizeOnEverySelect || (musicEnded && _settings.RandomizeOnMusicEnd);
-            if (files.Length > 1 && shouldRandomize) do
+        var shouldRandomize = settings.RandomizeOnEverySelect || (musicEnded && settings.RandomizeOnMusicEnd);
+        if (files.Length > 1 && shouldRandomize) do
             {
                 musicFile = files[RNG.Next(files.Length)];
             }
             while (previousMusicFile == musicFile);
 
-            return musicFile;
-        }
+        return musicFile;
+    }
 
-        // Backup order is game -> filter -> default
-        public (string[], AudioSource) GetBackupFiles()
+    // Backup order is game -> filter -> default
+    public (string[], AudioSource) GetBackupFiles()
+    {
+        if (settings.CurrentUIStateSettings.MusicSource is AudioSource.Default)
+            /* Then */ return ([], AudioSource.Default);
+
+        if (settings.CurrentUIStateSettings.MusicSource is AudioSource.Game)
         {
-            if (_settings.CurrentUIStateSettings.MusicSource is AudioSource.Default)
-                /* Then */ return (Array.Empty<string>(), AudioSource.Default);
-
-            if (_settings.CurrentUIStateSettings.MusicSource is AudioSource.Game)
-            {
-                var filterFiles = _pathingService.GeFilterMusicFiles(_mainView.GetActiveFilterPreset());
-                if (filterFiles.Any()) /* Then */ return (filterFiles, AudioSource.Filter);
-            }
-
-            return (_pathingService.GetDefaultMusicFiles(), AudioSource.Default);
+            var filterFiles = pathingService.GeFilterMusicFiles(mainViewApi.GetActiveFilterPreset());
+            if (filterFiles.Any()) /* Then */ return (filterFiles, AudioSource.Filter);
         }
 
-        // Backup order is game -> filter -> default
-        public string GetBackupFiles(AudioSource source, SoundType soundType, object resource = null)
+        return (pathingService.GetDefaultMusicFiles(), AudioSource.Default);
+    }
+
+    // Backup order is game -> filter -> default
+    public string GetBackupFiles(AudioSource source, SoundType soundType, object resource = null)
+    {
+        if (source is AudioSource.Default) /* Then */ return null;
+
+        if (source is AudioSource.Game)
         {
-            if (source is AudioSource.Default) /* Then */ return null;
-
-            if (source is AudioSource.Game)
+            var file = pathingService.GetSoundTypeFile(AudioSource.Filter, soundType, resource);
+            if (file != null)
             {
-                var file = _pathingService.GetSoundTypeFile(AudioSource.Filter, soundType, resource);
-                if (file != null)
-                {
-                    return file;
-                }
+                return file;
             }
-
-            return _pathingService.GetSoundTypeFile(AudioSource.Default, soundType, resource);
         }
+
+        return pathingService.GetSoundTypeFile(AudioSource.Default, soundType, resource);
     }
 }

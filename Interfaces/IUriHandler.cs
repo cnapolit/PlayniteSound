@@ -1,6 +1,3 @@
-﻿namespace PlayniteSounds.Interfaces
-{
-    internal interface IUriHandler
-    {
-    }
-}
+﻿namespace PlayniteSounds.Interfaces;
+
+internal interface IUriHandler;

@@ -1,10 +1,9 @@
 ﻿using Playnite.SDK.Plugins;
 using System.Windows.Controls;
 
-namespace PlayniteSounds.Services.UI
+namespace PlayniteSounds.Services.UI;
+
+public interface IGameViewControlFactory
 {
-    public interface IGameViewControlFactory
-    {
-        Control GetGameViewControl(GetGameViewControlArgs args);
-    }
+    Control GetGameViewControl(GetGameViewControlArgs args);
 }

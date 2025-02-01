@@ -1,12 +1,11 @@
-﻿namespace PlayniteSounds.Models
+﻿namespace PlayniteSounds.Models;
+
+public enum Source
 {
-    public enum Source
-    {
-        All,
-        KHInsider,
-        Youtube,
-        Local,
-        SoundCloud,
-        Spotify
-    }
+    All,
+    KHInsider,
+    Youtube,
+    Local,
+    SoundCloud,
+    Spotify
 }

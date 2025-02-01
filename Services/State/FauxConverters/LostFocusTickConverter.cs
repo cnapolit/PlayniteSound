@@ -4,32 +4,23 @@ using PlayniteSounds.Models.State;
 using PlayniteSounds.Services.Audio;
 using System.Windows;
 
-namespace PlayniteSounds.Services.State.FauxConverters
-{
-    public class LostFocusTickConverter : BaseUIStateFauxConverter<UIElement>, ILostFocusTickConverter
-    {
-        private readonly ISoundPlayer _soundPlayer;
-        private readonly PlayniteState _playniteState;
-        public LostFocusTickConverter(
-            ILogger logger,
-            IPlayniteEventHandler playniteEventHandler,
-            ISoundPlayer soundPlayer,
-            PlayniteState playniteState)
-            : base(logger, playniteEventHandler)
-        {
-            _soundPlayer = soundPlayer;
-            _playniteState = playniteState;
-        }
+namespace PlayniteSounds.Services.State.FauxConverters;
 
-        protected override void Link(UIElement ui, UIState uiState)
+public class LostFocusTickConverter(
+    ILogger logger,
+    IPlayniteEventHandler playniteEventHandler,
+    ISoundPlayer soundPlayer,
+    PlayniteState playniteState)
+    : BaseUIStateFauxConverter<UIElement>(logger, playniteEventHandler), ILostFocusTickConverter
+{
+    protected override void Link(UIElement ui, UIState uiState)
+    {
+        ui.LostFocus += (_, _) =>
         {
-            ui.LostFocus += (_, __) =>
+            if (playniteState.CurrentUIState == uiState)
             {
-                if (_playniteState.CurrentUIState == uiState)
-                {
-                    _soundPlayer.Tick();
-                }
-            };
-        }
+                soundPlayer.Tick();
+            }
+        };
     }
 }

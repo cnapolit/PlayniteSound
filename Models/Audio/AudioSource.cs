@@ -1,10 +1,9 @@
-﻿namespace PlayniteSounds.Models
+﻿namespace PlayniteSounds.Models;
+
+public enum AudioSource
 {
-    public enum AudioSource
-    {
-        Default,
-        Platform,
-        Game,
-        Filter
-    }
+    Default,
+    Platform,
+    Game,
+    Filter
 }

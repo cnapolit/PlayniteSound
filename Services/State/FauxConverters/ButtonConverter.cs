@@ -2,25 +2,20 @@
 using PlayniteSounds.Models;
 using System.Windows.Controls;
 
-namespace PlayniteSounds.Services.State.FauxConverters
+namespace PlayniteSounds.Services.State.FauxConverters;
+
+public class ButtonConverter(ILogger logger, IPlayniteEventHandler playniteEventHandler)
+    : BaseUIStateFauxConverter<Button>(logger, playniteEventHandler), IButtonConverter
 {
-
-
-    public class ButtonConverter : BaseUIStateFauxConverter<Button>, IButtonConverter
+    protected override void Link(Button butt, UIState uiState)
     {
-        public ButtonConverter(ILogger logger, IPlayniteEventHandler playniteEventHandler) 
-            : base(logger, playniteEventHandler) { }
-
-        protected override void Link(Button butt, UIState uiState)
+        butt.Click += (_, _) =>
         {
-            butt.Click += (_, __) =>
-            {
-                _playniteEventHandler.TriggerUIStateChanged(uiState);
-            };
-            butt.GotFocus += (_, __) =>
-            {
+            _playniteEventHandler.TriggerUIStateChanged(uiState);
+        };
+        butt.GotFocus += (_, _) =>
+        {
 
-            };
-        }
+        };
     }
 }

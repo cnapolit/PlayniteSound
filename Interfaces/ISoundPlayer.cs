@@ -2,13 +2,12 @@
 using PlayniteSounds.Models.Audio.Sound;
 using System;
 
-namespace PlayniteSounds.Services.Audio
+namespace PlayniteSounds.Services.Audio;
+
+public interface ISoundPlayer
 {
-    public interface ISoundPlayer
-    {
-        void Play(SoundTypeSettings settings, Action callBack = null);
-        void Preview(SoundTypeSettings settings, bool isDesktop);
-        void Tick();
-        void Trigger(SoundType soundType);
-    }
+    void Play(SoundTypeSettings settings, Action callBack = null);
+    void Preview(SoundTypeSettings settings, bool isDesktop);
+    void Tick();
+    void Trigger(SoundType soundType);
 }

@@ -2,12 +2,11 @@
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace PlayniteSounds.Services.Audio
+namespace PlayniteSounds.Services.Audio;
+
+public interface IWavePlayerManager : IDisposable
 {
-    public interface IWavePlayerManager : IDisposable
-    {
-        IWavePlayer WavePlayer { get; }
-        MixingSampleProvider Mixer { get; }
-        void Init();
-    }
+    IWavePlayer WavePlayer { get; }
+    MixingSampleProvider Mixer { get; }
+    void Init();
 }

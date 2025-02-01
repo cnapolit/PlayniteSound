@@ -5,16 +5,15 @@ using PlayniteSounds.Views.Layouts;
 using PlayniteSounds.Views.Models;
 using System;
 
-namespace PlayniteSounds.Services.Installers
-{
-    public class ViewInstaller : IWindsorInstaller
-    {
-        public void Install(IWindsorContainer container, IConfigurationStore store)
-            => container.Register(RegisterComponent<PlayniteSoundsSettingsViewModel>(container),
-                                  RegisterComponent<PlayniteSoundsSettingsView>(container));
+namespace PlayniteSounds.Services.Installers;
 
-        private ComponentRegistration<T> RegisterComponent<T>(IWindsorContainer container) where T : class
-            => Component.For<T>().LifestyleTransient().DependsOn(
-                Dependency.OnValue("containerReleaseMethod", new Action<object>(container.Release)));
-    }
+public class ViewInstaller : IWindsorInstaller
+{
+    public void Install(IWindsorContainer container, IConfigurationStore store)
+        => container.Register(RegisterComponent<PlayniteSoundsSettingsViewModel>(container),
+            RegisterComponent<PlayniteSoundsSettingsView>(container));
+
+    private ComponentRegistration<T> RegisterComponent<T>(IWindsorContainer container) where T : class
+        => Component.For<T>().LifestyleTransient().DependsOn(
+            Dependency.OnValue("containerReleaseMethod", new Action<object>(container.Release)));
 }

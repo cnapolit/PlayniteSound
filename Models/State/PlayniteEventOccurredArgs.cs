@@ -2,12 +2,11 @@
 using PlayniteSounds.Models.UI;
 using System.Collections.Generic;
 
-namespace PlayniteSounds.Models.State
+namespace PlayniteSounds.Models.State;
+
+public class PlayniteEventOccurredArgs
 {
-    public class PlayniteEventOccurredArgs
-    {
-        public SoundTypeSettings SoundTypeSettings { get; set; }
-        public PlayniteEvent Event { get; set; }
-        public IList<Game> Games { get; set; }
-    }
+    public SoundTypeSettings SoundTypeSettings { get; set; }
+    public PlayniteEvent Event { get; set; }
+    public IList<Game> Games { get; set; }
 }

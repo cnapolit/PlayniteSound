@@ -1,10 +1,9 @@
 ﻿using Playnite.SDK.Plugins;
 using System.Collections.Generic;
 
-namespace PlayniteSounds.Services.UI
+namespace PlayniteSounds.Services.UI;
+
+public interface IGameMenuFactory
 {
-    public interface IGameMenuFactory
-    {
-        IEnumerable<GameMenuItem> GetGameMenuItems(GetGameMenuItemsArgs __);
-    }
+    IEnumerable<GameMenuItem> GetGameMenuItems(GetGameMenuItemsArgs __);
 }

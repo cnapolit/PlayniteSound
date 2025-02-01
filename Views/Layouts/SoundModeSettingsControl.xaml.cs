@@ -3,30 +3,29 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace PlayniteSounds.Views.Layouts
+namespace PlayniteSounds.Views.Layouts;
+
+public partial class SoundModeSettingsControl : IDisposable
 {
-    public partial class SoundModeSettingsControl : UserControl, IDisposable
+    public SoundModeSettingsControl()
     {
-        public SoundModeSettingsControl()
-        {
-            InitializeComponent();
-            DataContextChanged += SetDataContext;
-        }
+        InitializeComponent();
+        DataContextChanged += SetDataContext;
+    }
 
-        public void Dispose() => DataContextChanged -= SetDataContext;
+    public void Dispose() => DataContextChanged -= SetDataContext;
 
-        private void SetDataContext(object sender, DependencyPropertyChangedEventArgs e)
+    private void SetDataContext(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        var settingsModel = DataContext as ModeSettingsModel;
+        foreach (var stateToModel in settingsModel.UIStatesToSettingsModels)
         {
-            var settingsModel = DataContext as ModeSettingsModel;
-            foreach (var stateToModel in settingsModel.UIStatesToSettingsModels)
+            var control = new SoundUIStateSettingsControl
             {
-                var control = new SoundUIStateSettingsControl
-                {
-                    Header = stateToModel.Key,
-                    DataContext = stateToModel.Value
-                };
-                Stack.Children.Add(control);
-            }
+                Header = stateToModel.Key,
+                DataContext = stateToModel.Value
+            };
+            Stack.Children.Add(control);
         }
     }
 }

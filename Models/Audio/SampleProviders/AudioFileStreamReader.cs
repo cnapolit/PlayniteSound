@@ -1,23 +1,18 @@
 ﻿using System;
 using NAudio.Wave;
 
-namespace PlayniteSounds.Models.Audio.SampleProviders
+namespace PlayniteSounds.Models.Audio.SampleProviders;
+
+internal class AudioFileStreamReader(AudioFileReader reader) : IStreamReader
 {
-    internal class AudioFileStreamReader : IStreamReader
-    {
-        private readonly AudioFileReader _reader;
+    public long Position { get => reader.Position; set => reader.Position = value; }
 
-        public AudioFileStreamReader(AudioFileReader reader) => _reader = reader;
+    public long Length => reader.Length;
 
-        public long Position { get => _reader.Position; set => _reader.Position = value; }
+    public string FileName => reader.FileName;
 
-        public long Length => _reader.Length;
+    public TimeSpan CurrentTime => reader.CurrentTime;
+    public TimeSpan TotalTime   => reader.TotalTime;
 
-        public string FileName => _reader.FileName;
-
-        public TimeSpan CurrentTime => _reader.CurrentTime;
-        public TimeSpan TotalTime   => _reader.TotalTime;
-
-        public void Dispose() => _reader.Dispose();
-    }
+    public void Dispose() => reader.Dispose();
 }

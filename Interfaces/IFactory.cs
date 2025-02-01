@@ -1,8 +1,7 @@
-﻿namespace PlayniteSounds.GeneratedFactories
+﻿namespace PlayniteSounds.GeneratedFactories;
+
+public interface IFactory<T>
 {
-    public interface IFactory<T>
-    {
-        T Create();
-        void Release(T component);
-    }
+    T Create();
+    void Release(T component);
 }

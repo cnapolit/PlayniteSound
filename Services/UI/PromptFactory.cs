@@ -5,91 +5,76 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 
-namespace PlayniteSounds.Services.UI
+namespace PlayniteSounds.Services.UI;
+
+public class PromptFactory(IDialogsFactory dialogs, IErrorHandler errorHandler) : IPromptFactory
 {
-    public class PromptFactory : IPromptFactory
+    #region Infrastructure
+
+    #endregion
+
+    #region Implementation
+
+    #region PromptForSelect
+
+    public T PromptForSelect<T>(
+        string captionFormat,
+        string formatArg,
+        Func<string, List<GenericItemOption>> search,
+        string defaultSearch)
     {
-        #region Infrastructure
+        var option = dialogs.ChooseItemWithSearch(
+            [], search, defaultSearch, string.Format(captionFormat, formatArg));
 
-        private readonly IDialogsFactory _dialogs;
-        private readonly IErrorHandler   _errorHandler;
-
-        public PromptFactory(IDialogsFactory dialogs, IErrorHandler errorHandler)
-        {
-            _dialogs = dialogs;
-            _errorHandler = errorHandler;
-        }
-
-        #endregion
-
-        #region Implementation
-
-        #region PromptForSelect
-
-        public T PromptForSelect<T>(
-            string captionFormat,
-            string formatArg,
-            Func<string, List<GenericItemOption>> search,
-            string defaultSearch)
-        {
-            var option = _dialogs.ChooseItemWithSearch(
-                new List<GenericItemOption>(), search, defaultSearch, string.Format(captionFormat, formatArg));
-
-            if (option is GenericObjectOption idOption && idOption.Object is T obj)
-            {
-                return obj;
-            }
-
-            return default;
-        }
-
-        #endregion
-
-        #region PromptForApproval
-
-        public bool PromptForApproval(string caption)
-            => _dialogs.ShowMessage(caption, Resource.DialogCaptionSelectOption, MessageBoxButton.YesNo)
-                is MessageBoxResult.Yes;
-
-        #endregion
-
-        #region ShowError
-
-        public void ShowError(string error) => _dialogs.ShowErrorMessage(error, App.AppName);
-
-        #endregion
-
-        #region ShowMessage
-
-        public void ShowMessage(string resource) => _dialogs.ShowMessage(resource, App.AppName);
-
-        #endregion
-
-        #region PromptForMp3
-
-        public IEnumerable<string> PromptForMp3() => _dialogs.SelectFiles("Any|*.*") ?? new List<string>();
-
-        #endregion
-
-        #region PromptForAudioFile
-
-        public IEnumerable<string> PromptForAudioFile() => _dialogs.SelectFiles("ALL|*.*") ?? new List<string>();
-
-        #endregion
-
-        #region CreateGlobalProgress
-
-        public void CreateGlobalProgress(string progressSubTitle, Action<GlobalProgressActionArgs, string> action)
-        {
-            var progressTitle = $"{App.AppName} - {progressSubTitle}";
-            var progressOptions = new GlobalProgressOptions(progressTitle, true) { IsIndeterminate = false };
-
-            _dialogs.ActivateGlobalProgress(
-                a => _errorHandler.TryWithPrompt(() => action(a, progressTitle)), progressOptions);
-        }
-
-        #endregion
-
-        #endregion
+        return option is GenericObjectOption { Object: T obj } ? obj : default;
     }
+
+    #endregion
+
+    #region PromptForApproval
+
+    public bool PromptForApproval(string caption)
+        => dialogs.ShowMessage(caption, Resource.DialogCaptionSelectOption, MessageBoxButton.YesNo)
+            is MessageBoxResult.Yes;
+
+    #endregion
+
+    #region ShowError
+
+    public void ShowError(string error) => dialogs.ShowErrorMessage(error, App.AppName);
+
+    #endregion
+
+    #region ShowMessage
+
+    public void ShowMessage(string resource) => dialogs.ShowMessage(resource, App.AppName);
+
+    #endregion
+
+    #region PromptForMp3
+
+    public IEnumerable<string> PromptForMp3() => dialogs.SelectFiles("Any|*.*") ?? [];
+
+    #endregion
+
+    #region PromptForAudioFile
+
+    public IEnumerable<string> PromptForAudioFile() => dialogs.SelectFiles("ALL|*.*") ?? [];
+
+    #endregion
+
+    #region CreateGlobalProgress
+
+    public void CreateGlobalProgress(string progressSubTitle, Action<GlobalProgressActionArgs, string> action)
+    {
+        var progressTitle = $"{App.AppName} - {progressSubTitle}";
+        var progressOptions = new GlobalProgressOptions(progressTitle, true) { IsIndeterminate = false };
+
+        dialogs.ActivateGlobalProgress(
+            a => errorHandler.TryWithPrompt(() => action(a, progressTitle)), progressOptions);
+    }
+
+    #endregion
+
+    #endregion
 }

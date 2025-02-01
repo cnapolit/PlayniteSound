@@ -1,23 +1,15 @@
 ﻿using PlayniteSounds.Services.Audio;
 using PlayniteSounds.Services.State;
 
-namespace PlayniteSounds.Views.Models.GameViewControls
+namespace PlayniteSounds.Views.Models.GameViewControls;
+
+public class HandlerControlModel(IPlayniteEventHandler playniteEventHandler, IMusicPlayer musicPlayer)
 {
-    public class HandlerControlModel
-    {
-        public readonly IPlayniteEventHandler PlayniteEventHandler;
-        private readonly IMusicPlayer _musicPlayer;
+    public readonly IPlayniteEventHandler PlayniteEventHandler = playniteEventHandler;
 
-        public HandlerControlModel(IPlayniteEventHandler playniteEventHandler, IMusicPlayer musicPlayer)
-        {
-            PlayniteEventHandler = playniteEventHandler;
-            _musicPlayer = musicPlayer;
-        }
+    public void SetVolume(float volume) => musicPlayer.SetVolume(volume);
 
-        public void SetVolume(float volume) => _musicPlayer.SetVolume(volume);
+    public void Pause() => musicPlayer.Pause("Theme");
 
-        public void Pause() => _musicPlayer.Pause("Theme");
-
-        public void Play() => _musicPlayer.Resume("Theme");
-    }
+    public void Play() => musicPlayer.Resume("Theme");
 }

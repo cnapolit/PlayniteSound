@@ -1,20 +1,15 @@
 ﻿using PlayniteSounds.GeneratedFactories;
 using System;
 
-namespace PlayniteSounds.Services
+namespace PlayniteSounds.Services;
+
+public class FactoryExecutor<T>(IFactory<T> factory) : IFactoryExecutor<T>
 {
-    public class FactoryExecutor<T> : IFactoryExecutor<T>
+    public void Execute(Action<T> action)
     {
-        private readonly IFactory<T> _factory;
-
-        public FactoryExecutor(IFactory<T> factory) => _factory = factory;
-
-        public void Execute(Action<T> action)
-        {
-            var component = _factory.Create();
-            action(component);
-            _factory.Release(component);
-        }
-
+        var component = factory.Create();
+        action(component);
+        factory.Release(component);
     }
+
 }

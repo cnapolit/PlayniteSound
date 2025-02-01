@@ -4,22 +4,21 @@ using Castle.Windsor;
 using Playnite.SDK;
 using static PlayniteSounds.Services.Installers.Installation;
 
-namespace PlayniteSounds.Services.Installers
+namespace PlayniteSounds.Services.Installers;
+
+public class PlayniteInstaller : IWindsorInstaller
 {
-    public class PlayniteInstaller : IWindsorInstaller
+    public void Install(IWindsorContainer container, IConfigurationStore store)
     {
-        public void Install(IWindsorContainer container, IConfigurationStore store)
-        {
-            var api = container.Resolve<IPlayniteAPI>();
-            container.Register(
-                        RegisterInstance(api.Addons),
-                        RegisterInstance(api.Database),
-                        RegisterInstance(api.Dialogs),
-                        RegisterInstance(api.MainView),
-                        RegisterInstance(api.Paths),
-                        RegisterInstance(api.UriHandler),
-                        RegisterInstance(api.WebViews),
-                        RegisterInstance(LogManager.GetLogger()));
-        }
+        var api = container.Resolve<IPlayniteAPI>();
+        container.Register(
+            RegisterInstance(api.Addons),
+            RegisterInstance(api.Database),
+            RegisterInstance(api.Dialogs),
+            RegisterInstance(api.MainView),
+            RegisterInstance(api.Paths),
+            RegisterInstance(api.UriHandler),
+            RegisterInstance(api.WebViews),
+            RegisterInstance(LogManager.GetLogger()));
     }
 }

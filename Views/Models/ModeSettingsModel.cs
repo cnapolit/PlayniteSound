@@ -3,45 +3,37 @@ using PlayniteSounds.Models.UI;
 using PlayniteSounds.Services.UI;
 using System.Collections.Generic;
 
-namespace PlayniteSounds.Views.Models
+namespace PlayniteSounds.Views.Models;
+
+public class ModeSettingsModel(IModelFactory modelFactory, ModeSettings settings) : BaseSettingsModel
 {
-    public class ModeSettingsModel : BaseSettingsModel
+    public IDictionary<UIState, UIStateSettingsModel> UIStatesToSettingsModels { get; } = modelFactory.CreateUIStateDictionary(settings);
+    public IDictionary<PlayniteEvent, SoundTypeSettingsModel> PlayniteEventsToSettingsModel { get; } = modelFactory.CreatePlayniteEventDictionary(settings);
+
+    private ModeSettings _settings = settings;
+    public ModeSettings Settings
     {
-        public IDictionary<UIState, UIStateSettingsModel> UIStatesToSettingsModels { get; }
-        public IDictionary<PlayniteEvent, SoundTypeSettingsModel> PlayniteEventsToSettingsModel { get; }
+        get => _settings;
+        set => UpdateSettings(ref _settings, value);
+    }
 
-        private ModeSettings _settings;
-        public ModeSettings Settings
+    public int MusicMasterVolumePercent
+    {
+        get => ConvertFromVolume(_settings.MusicMasterVolume);
+        set
         {
-            get => _settings;
-            set => UpdateSettings(ref _settings, value);
+            _settings.MusicMasterVolume = ConvertToVolume(value);
+            OnPropertyChanged();
         }
+    }
 
-        public int MusicMasterVolumePercent
+    public int SoundMasterVolumePercent
+    {
+        get => ConvertFromVolume(_settings.SoundMasterVolume);
+        set
         {
-            get => ConvertFromVolume(_settings.MusicMasterVolume);
-            set
-            {
-                _settings.MusicMasterVolume = ConvertToVolume(value);
-                OnPropertyChanged();
-            }
-        }
-
-        public int SoundMasterVolumePercent
-        {
-            get => ConvertFromVolume(_settings.SoundMasterVolume);
-            set
-            {
-                _settings.SoundMasterVolume = ConvertToVolume(value);
-                OnPropertyChanged();
-            }
-        }
-
-        public ModeSettingsModel(IModelFactory modelFactory, ModeSettings settings)
-        {
-            UIStatesToSettingsModels = modelFactory.CreateUIStateDictionary(settings);
-            PlayniteEventsToSettingsModel = modelFactory.CreatePlayniteEventDictionary(settings);
-            _settings = settings;
+            _settings.SoundMasterVolume = ConvertToVolume(value);
+            OnPropertyChanged();
         }
     }
 }

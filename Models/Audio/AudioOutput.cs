@@ -1,10 +1,9 @@
-﻿namespace PlayniteSounds.Models.Audio
+﻿namespace PlayniteSounds.Models.Audio;
+
+public enum AudioOutput
 {
-    public enum AudioOutput
-    {
-        WaveOut,
-        Wasapi,
-        DirectSound,
-        Asio
-    }
+    WaveOut,
+    Wasapi,
+    DirectSound,
+    Asio
 }

@@ -5,53 +5,51 @@ using System.Windows;
 using System.Windows.Markup;
 using PlayniteSounds.Common.Constants;
 
-namespace PlayniteSounds
+namespace PlayniteSounds;
 
+//based on code from lacro59 from 
+//https://github.com/Lacro59/playnite-plugincommon/blob/master/Localization.cs
+//
+public class Localization
 {
-    //based on code from lacro59 from 
-    //https://github.com/Lacro59/playnite-plugincommon/blob/master/Localization.cs
-    //
-    public class Localization
+    private static readonly ILogger Logger = LogManager.GetLogger();
+
+    public static void SetPluginLanguage(string language = SoundFile.LocalizationSource)
     {
-        private static readonly ILogger Logger = LogManager.GetLogger();
+        var dictionaries = Application.Current.Resources.MergedDictionaries;
+        var langFile = Path.Combine(SoundDirectory.PluginFolder, SoundDirectory.Localization, language + ".xaml");
 
-        public static void SetPluginLanguage(string language = SoundFile.LocalizationSource)
+        // Load localization
+        if (File.Exists(langFile))
         {
-            var dictionaries = Application.Current.Resources.MergedDictionaries;
-            var langFile = Path.Combine(SoundDirectory.PluginFolder, SoundDirectory.Localization, language + ".xaml");
-
-            // Load localization
-            if (File.Exists(langFile))
+            ResourceDictionary res;
+            try
             {
-                ResourceDictionary res;
-                try
+                using (var stream = new StreamReader(langFile))
                 {
-                    using (var stream = new StreamReader(langFile))
-                    {
-                        res = (ResourceDictionary)XamlReader.Load(stream.BaseStream);
-                        res.Source = new Uri(langFile, UriKind.Absolute);
-                    }
+                    res = (ResourceDictionary)XamlReader.Load(stream.BaseStream);
+                    res.Source = new Uri(langFile, UriKind.Absolute);
+                }
                     
-                    foreach (var key in res.Keys)
+                foreach (var key in res.Keys)
+                {
+                    if (res[key] is string locString && string.IsNullOrEmpty(locString))
                     {
-                        if (res[key] is string locString && string.IsNullOrEmpty(locString))
-                        {
-                            res.Remove(key);
-                        }
+                        res.Remove(key);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, $"Failed to parse localization file {langFile}.");
-                    return;
-                }
-
-                dictionaries.Add(res);
             }
-            else
+            catch (Exception ex)
             {
-                Logger.Warn($"File {langFile} not found.");
+                Logger.Error(ex, $"Failed to parse localization file {langFile}.");
+                return;
             }
+
+            dictionaries.Add(res);
+        }
+        else
+        {
+            Logger.Warn($"File {langFile} not found.");
         }
     }
 }

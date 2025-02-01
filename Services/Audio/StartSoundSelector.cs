@@ -22,31 +22,29 @@ namespace PlayniteSounds.Services.Audio
             const int DefaultStart = 7;
             const int DefaultEnd = 7;
 
-            using (var reader = new AudioFileReader(filePath))
+            using var reader = new AudioFileReader(filePath);
+            FindClip(reader);
+            return (0, 0);
+            var start = 0;
+            var end = (int)reader.Length;
+            switch (selectStartAlgorithm)
             {
-                FindClip(reader);
-                return (0, 0);
-                var start = 0;
-                var end = (int)reader.Length;
-                switch (selectStartAlgorithm)
-                {
-                    case SelectStartAlgorithm.StartTrimSilence:
-                        start = TrimStartSilence(reader);
-                        goto case SelectStartAlgorithm.Start;
-                    case SelectStartAlgorithm.Start:
-                        end = start + reader.WaveFormat.AverageBytesPerSecond * DefaultEnd;
-                        break;
-                    case SelectStartAlgorithm.EndTrimSilence:
-                        end = TrimEndSilence(reader);
-                        goto case SelectStartAlgorithm.End;
-                    case SelectStartAlgorithm.End:
-                        start = end - DefaultStart * reader.WaveFormat.AverageBytesPerSecond;
-                        break;
-                    case SelectStartAlgorithm.Snip:
-                        break;
-                }
-                return (start, end);
+                case SelectStartAlgorithm.StartTrimSilence:
+                    start = TrimStartSilence(reader);
+                    goto case SelectStartAlgorithm.Start;
+                case SelectStartAlgorithm.Start:
+                    end = start + reader.WaveFormat.AverageBytesPerSecond * DefaultEnd;
+                    break;
+                case SelectStartAlgorithm.EndTrimSilence:
+                    end = TrimEndSilence(reader);
+                    goto case SelectStartAlgorithm.End;
+                case SelectStartAlgorithm.End:
+                    start = end - DefaultStart * reader.WaveFormat.AverageBytesPerSecond;
+                    break;
+                case SelectStartAlgorithm.Snip:
+                    break;
             }
+            return (start, end);
         }
 
         public static int TrimStartSilence(AudioFileReader reader)
@@ -227,21 +225,12 @@ public class SampleProviderEnumerable : IEnumerable<float>
     public IEnumerator<float> GetEnumerator() => new SampleProviderEnumerator(_sampleProvider, BufferSize);
     IEnumerator IEnumerable.GetEnumerator() => new SampleProviderEnumerator(_sampleProvider, BufferSize);
 
-    private class SampleProviderEnumerator : IEnumerator<float>
+    private class SampleProviderEnumerator(ISampleProvider sampleProvider, int bufferSize) : IEnumerator<float>
     {
-        private readonly ISampleProvider _sampleProvider;
-        private readonly float[] _buffer;
-        private readonly int _bufferSize;
-        private int _position;
+        private readonly float[] _buffer = new float[bufferSize];
+        private readonly int _bufferSize = bufferSize;
+        private int _position = bufferSize;
         private int _samplesRead;
-
-        public SampleProviderEnumerator(ISampleProvider sampleProvider, int bufferSize)
-        {
-            _sampleProvider = sampleProvider;
-            _buffer = new float[bufferSize];
-            _bufferSize = bufferSize;
-            _position = bufferSize;
-        }
 
         public float Current => _buffer[_position];
 
@@ -250,14 +239,14 @@ public class SampleProviderEnumerable : IEnumerable<float>
         public void Dispose() { }
         public bool MoveNext()
         {
-            _position += _sampleProvider.WaveFormat.Channels;
+            _position += sampleProvider.WaveFormat.Channels;
             if (_position < _samplesRead)
             {
                 return true;
             }
 
             _position = 0;
-            _samplesRead = _sampleProvider.Read(_buffer, 0, _bufferSize);
+            _samplesRead = sampleProvider.Read(_buffer, 0, _bufferSize);
             if (_samplesRead != 0)
             {
                 return true;

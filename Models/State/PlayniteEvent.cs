@@ -1,15 +1,14 @@
-﻿namespace PlayniteSounds.Models.UI
+﻿namespace PlayniteSounds.Models.UI;
+
+public enum PlayniteEvent
 {
-    public enum PlayniteEvent
-    {
-        AppStarted,
-        AppStopped,
-        GameStarting,
-        GameStarted,
-        GameStopped,
-        GameSelected,
-        GameInstalled,
-        GameUninstalled,
-        LibraryUpdated
-    }
+    AppStarted,
+    AppStopped,
+    GameStarting,
+    GameStarted,
+    GameStopped,
+    GameSelected,
+    GameInstalled,
+    GameUninstalled,
+    LibraryUpdated
 }

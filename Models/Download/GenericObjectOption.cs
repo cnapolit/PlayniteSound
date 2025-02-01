@@ -1,12 +1,9 @@
 ﻿using Playnite.SDK;
 
-namespace PlayniteSounds.Models
-{
-    public class GenericObjectOption : GenericItemOption
-    {
-        public Source Source { get; set; }
-        public object Object { get; set; }
+namespace PlayniteSounds.Models;
 
-        public GenericObjectOption(string name, string description, object obj) : base(name, description) => Object = obj;
-    }
+public class GenericObjectOption(string name, string description, object obj) : GenericItemOption(name, description)
+{
+    public Source Source { get; set; }
+    public object Object { get; set; } = obj;
 }

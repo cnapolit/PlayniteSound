@@ -1,64 +1,42 @@
 ﻿using NAudio.Wave.SampleProviders;
 using NAudio.Wave;
-using PlayniteSounds.Common.Imports;
 using PlayniteSounds.Models;
-using System.Diagnostics;
-using System.Linq;
 
-namespace PlayniteSounds.Services.Audio
+namespace PlayniteSounds.Services.Audio;
+
+public abstract class BasePlayer(IWavePlayerManager wavePlayerManager, PlayniteSoundsSettings settings)
 {
-    public abstract class BasePlayer
+    #region Infrastructure
+
+    protected readonly PlayniteSoundsSettings _settings = settings;
+    protected readonly IWavePlayerManager _wavePlayerManager = wavePlayerManager;
+
+    #endregion
+
+    #region Implementation
+
+    protected ISampleProvider ConvertProvider(ISampleProvider input)
     {
-        #region Infrastructure
+        if (input == null) /* Then */ return null;
 
-        protected readonly PlayniteSoundsSettings _settings;
-        protected readonly IWavePlayerManager _WavePlayerManager;
-
-        public BasePlayer(IWavePlayerManager wavePlayerManager, PlayniteSoundsSettings settings)
+        if (input.WaveFormat.Channels != _wavePlayerManager.Mixer.WaveFormat.Channels)
+        if (input.WaveFormat.Channels == 1)
         {
-            _WavePlayerManager = wavePlayerManager;
-            _settings = settings;
+            input = new MonoToStereoSampleProvider(input);
+        }
+        else
+        {
+            return null;
         }
 
-        #endregion
-
-        #region Implementation
-
-        protected static bool PlayniteIsInForeground()
+        if (input.WaveFormat.SampleRate != _wavePlayerManager.Mixer.WaveFormat.SampleRate)
         {
-            var foregroundHandle = User32.GetForegroundWindow();
-
-            return Process.
-                GetProcesses().
-                Where(p => p.ProcessName.Contains("Playnite")).
-                Any(p => p.MainWindowHandle == foregroundHandle);
+            using var resampler = new MediaFoundationResampler(input.ToWaveProvider(), _wavePlayerManager.Mixer.WaveFormat);
+            input = resampler.ToSampleProvider();
         }
 
-        protected ISampleProvider ConvertProvider(ISampleProvider input)
-        {
-            if (input == null) /* Then */ return null;
-
-            if (input.WaveFormat.Channels != _WavePlayerManager.Mixer.WaveFormat.Channels) /* Then */
-            if (input.WaveFormat.Channels == 1)
-            {
-                input = new MonoToStereoSampleProvider(input);
-            }
-            else
-            {
-                return null;
-            }
-
-            if (input.WaveFormat.SampleRate != _WavePlayerManager.Mixer.WaveFormat.SampleRate)
-            {
-                using (var resampler = new MediaFoundationResampler(input.ToWaveProvider(), _WavePlayerManager.Mixer.WaveFormat))
-                {
-                    input = resampler.ToSampleProvider();
-                }
-            }
-
-            return input;
-        }
-
-        #endregion
+        return input;
     }
+
+    #endregion
 }

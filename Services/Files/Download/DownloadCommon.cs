@@ -10,8 +10,8 @@ public static class DownloadCommon
     public static async Task DownloadStreamAsync(
         Stream sourceStream, string filePath, IProgress<double> progress, CancellationToken token)
     {
-        using (var fileStream = File.Create(filePath))
-        /* Then */ await DownloadStreamAsync(sourceStream, fileStream, progress, token);
+        using var fileStream = File.Create(filePath);
+        await DownloadStreamAsync(sourceStream, fileStream, progress, token);
     }
 
     public static async Task DownloadStreamAsync(
