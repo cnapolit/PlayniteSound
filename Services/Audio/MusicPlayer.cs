@@ -111,7 +111,7 @@ namespace PlayniteSounds.Services.Audio
 
         public void Resume()
         {
-            lock (_gameLock) /* Then */ if (_currentSampleProvider != null)
+            lock (_gameLock) /* Then */ if (ShouldPlayMusic() && _currentSampleProvider != null)
             {
                 _currentSampleProvider.Resume();
                 _playing = true;
@@ -241,14 +241,13 @@ namespace PlayniteSounds.Services.Audio
             lock (_gameLock) /* Then */ switch (args.Event)
             {
                 case PlayniteEvent.AppStarted:
+                    _incomingGame = args.Games.FirstOrDefault();
                     if (_startSoundFinished)
                     {
-                       _incomingGame = args.Games.FirstOrDefault();
                        PlayNextFile();
                     }
                     else
                     {
-                        _incomingGame = args.Games.FirstOrDefault();
                         _currentMusicFileName = GetMusicFilesForStateChange().FirstOrDefault();
                     }
                     break;
@@ -273,7 +272,7 @@ namespace PlayniteSounds.Services.Audio
                     break;
                 case PlayniteEvent.GameSelected:
                     _incomingGame = args.Games.FirstOrDefault();
-                    if (_currentGame == _incomingGame)
+                    if (_currentGame.Equals(_incomingGame))
                     {
                         _currentSampleProvider?.Resume();
                     }

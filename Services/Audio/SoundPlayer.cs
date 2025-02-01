@@ -209,7 +209,7 @@ namespace PlayniteSounds.Services.Audio
 
         #region Helpers
 
-        private bool ShouldPlaySound(SoundTypeSettings settings) => settings.Enabled && _playniteState.HasFocus;
+        private bool ShouldPlaySound(SoundTypeSettings settings) => settings.Enabled && (_playniteState.HasFocus || settings.SoundType is SoundType.Exit);
 
         private ISampleProvider GetSelectSoundSampleProvider(SoundTypeSettings settings)
         {
