@@ -212,28 +212,29 @@ public class MusicPlayer : BasePlayer, IMusicPlayer
         _currentUIState = args.NewState;
         _uiStateSettings = args.NewSettings;
 
-        lock (_gameLock) /* Then */ if (_uiStateSettings.MusicSource != _lastPlayedAudioSource)
-            {
-                if (args.OldState is UIState.Main)
-                { 
-                    _mainPosition = _currentSampleProvider?.Position ?? _mainPosition;
-                    _mainFileName = _currentMusicFileName;
-                }
-                PlayNextFile();
+        lock (_gameLock)
+        if   (_uiStateSettings.MusicSource != _lastPlayedAudioSource)
+        {
+            if (args.OldState is UIState.Main)
+            { 
+                _mainPosition = _currentSampleProvider?.Position ?? _mainPosition;
+                _mainFileName = _currentMusicFileName;
             }
-            else if (_currentSampleProvider != null)
+            PlayNextFile();
+        }
+        else if (_currentSampleProvider != null)
+        {
+            var volume = _uiStateSettings.MusicVolume * _settings.ActiveModeSettings.MusicMasterVolume;
+            _currentSampleProvider.Volume = volume;
+            if (_uiStateSettings.MusicMuffled)
             {
-                var volume = _uiStateSettings.MusicVolume * _settings.ActiveModeSettings.MusicMasterVolume;
-                _currentSampleProvider.Volume = volume;
-                if (_uiStateSettings.MusicMuffled)
-                {
-                    _currentSampleProvider.Muffle();
-                }
-                else
-                {
-                    _currentSampleProvider.UnMuffle();
-                }
+                _currentSampleProvider.Muffle();
             }
+            else
+            {
+                _currentSampleProvider.UnMuffle();
+            }
+        }
     }
 
     private void PlayniteEventOccurred(object sender, PlayniteEventOccurredArgs args)
@@ -272,7 +273,7 @@ public class MusicPlayer : BasePlayer, IMusicPlayer
                 break;
             case PlayniteEvent.GameSelected:
                 _incomingGame = args.Games.FirstOrDefault();
-                if (_currentGame.Equals(_incomingGame))
+                if (_currentGame?.Id == _incomingGame?.Id)
                 {
                     _currentSampleProvider?.Resume();
                 }
@@ -440,16 +441,17 @@ public class MusicPlayer : BasePlayer, IMusicPlayer
         var noMusicIsPlaying = noSampleProvider || _currentSampleProvider.Stopped;
 
         var file = _musicFileSelector.SelectFile(files, _currentMusicFileName, musicEnded);
-        if (ShouldPlayMusic()) /* Then */ if (noMusicIsPlaying)
-            {
-                if (PlayFile(file)) /* Then */ _lastPlayedAudioSource = newAudioSource;
-            }
-            else if (_currentMusicFileName != file)
-            {
-                _lastPlayedAudioSource = newAudioSource;
-                _currentMusicFileName = file;
-                _currentSampleProvider.Stop();
-            }
+        if (ShouldPlayMusic()) 
+        if (noMusicIsPlaying)
+        {
+            if (PlayFile(file)) /* Then */ _lastPlayedAudioSource = newAudioSource;
+        }
+        else if (_currentMusicFileName != file)
+        {
+            _lastPlayedAudioSource = newAudioSource;
+            _currentMusicFileName = file;
+            _currentSampleProvider.Stop();
+        }
     }
 
     private string[] GetFiles(AudioSource musicSource)
