@@ -191,20 +191,21 @@ public class SoundPlayer : BasePlayer, ISoundPlayer, IDisposable
     public void Tick()
     {
         var settings = _uiStateSettings.TickSettings;
-        if (ShouldPlaySound(settings)) /* Then */
-            PlaySound(GetSelectSoundSampleProvider(settings), null);
+        if (ShouldPlaySound(settings))
+        /* Then */ PlaySound(GetSelectSoundSampleProvider(settings), null);
     }
 
     public void Trigger(SoundType soundType)
     {
         var settings = _uiStateSettings.TickSettings;
-        if (ShouldPlaySound(settings)) /* Then */
-            PlaySound(GetSoundSampleProvider(settings.Source, soundType, settings.Volume, _playniteState.CurrentGame), null);
+        if (ShouldPlaySound(settings)) 
+        /* Then */ PlaySound(GetSoundSampleProvider(settings.Source, soundType, settings.Volume, _playniteState.CurrentGame), null);
     }
 
     public void Play(SoundTypeSettings settings, Game game)
     {
-        if (ShouldPlaySound(settings)) /* Then */ PlaySound(GetSoundSampleProvider(settings, game), null);
+        if (ShouldPlaySound(settings))
+        /* Then */ PlaySound(GetSoundSampleProvider(settings, game), null);
     }
 
     #region Helpers

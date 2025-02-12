@@ -120,7 +120,7 @@ public class PathingService : IPathingService
                 CreationDate = fileTags.Tag.Year is 0 ? null : fileTags.Tag.Year.ToString(),
                 Description = fileTags.Tag.Description,
                 Length = length,
-                Types = (List<string>) [type],
+                Types = [type],
                 FileCreationDate = fileInfo.CreationTime.ToString(),
                 Sizes = new Dictionary<string, string>
                 {

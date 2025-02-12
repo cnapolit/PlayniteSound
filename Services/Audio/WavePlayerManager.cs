@@ -37,13 +37,13 @@ public class WavePlayerManager : IWavePlayerManager, IMMNotificationClient
             WavePlayer.Dispose();
         }
 
-        switch (_settings.AudioOutput)
+        WavePlayer = _settings.AudioOutput switch
         {
-            default:                      WavePlayer = new WaveOutEvent();   break;
-            case AudioOutput.Wasapi:      WavePlayer = new WasapiOut();      break;
-            case AudioOutput.DirectSound: WavePlayer = new DirectSoundOut(); break;
-            case AudioOutput.Asio:        WavePlayer = new AsioOut();        break;
-        }
+            AudioOutput.Wasapi      => new WasapiOut(),
+            AudioOutput.DirectSound => new DirectSoundOut(),
+            AudioOutput.Asio        => new AsioOut(),
+            _                       => new WaveOutEvent()
+        };
 
         if (_settings.AudioOutput is AudioOutput.Wasapi)
         {

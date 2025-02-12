@@ -263,7 +263,8 @@ internal class ControllableSampleProvider : ISampleProvider, IDisposable
             }
         }
 
-        if (Volume != 1) /* Then */ while (sampleIndex < sourceSamplesRead)
+        if    (Volume != 1)
+        while (sampleIndex < sourceSamplesRead)
         {
             buffer[offset + sampleIndex++] *= Volume;
         }
@@ -322,16 +323,15 @@ internal class ControllableSampleProvider : ISampleProvider, IDisposable
         }
     }
 
-    private void Transform(ref float value, BiQuadFilter filter) => value = filter.Transform(value);
+    private static void Transform(ref float value, BiQuadFilter filter) => value = filter.Transform(value);
 
     private void Scaleform(ref float value, BiQuadFilter filter) => value = filter.Transform(value * Volume);
 
     public void Dispose()
     {
-        if (_disposed) /* Then */ return;
-
         lock (_lockObject)
         {
+            if (_disposed) /* Then */ return;
             _disposed = true;
 
             if (_provider is IDisposable disposable) /* Then */ disposable.Dispose();

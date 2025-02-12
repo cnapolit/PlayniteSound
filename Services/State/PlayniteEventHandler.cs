@@ -39,18 +39,18 @@ public class PlayniteEventHandler(
     public void OnGameStarting(Game game)
     {
         // Only trigger if another plugin has not already informed of starting event
-        if (playniteState.GameIsStarting(game.Id)) /* Then */
-            TriggerPlayniteEventOccurred(PlayniteEvent.GameStarting, game);
+        if (playniteState.GameIsStarting(game.Id))
+        /* Then */ TriggerPlayniteEventOccurred(PlayniteEvent.GameStarting, game);
     }
 
     public void OnGameStopped(Game game)
     {
-        if (playniteState.GameHasEnded(game.Id)) /* Then */
-            TriggerPlayniteEventOccurred(PlayniteEvent.GameStopped, game);
+        if (playniteState.GameHasEnded(game.Id))
+        /* Then */ TriggerPlayniteEventOccurred(PlayniteEvent.GameStopped, game);
     }
 
     public void OnGameSelected(IList<Game> games)
-        => TriggerPlayniteEventOccurred(PlayniteEvent.GameSelected, games ?? (List<Game>) []);
+        => TriggerPlayniteEventOccurred(PlayniteEvent.GameSelected, games ?? []);
 
     public void TriggerUIStateChanged(UIState newState)
     {

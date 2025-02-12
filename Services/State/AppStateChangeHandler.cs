@@ -15,10 +15,6 @@ public class AppStateChangeHandler(
     PlayniteSoundsSettings settings)
     : IAppStateChangeHandler
 {
-    #region Infrastructure
-
-    #endregion
-
     #region Implementation
 
     #region OnPowerModeChanged
@@ -87,16 +83,15 @@ public class AppStateChangeHandler(
     private void Resume()
     {
         wavePlayerManager.Init();
-        if (playniteState.GamesPlaying is 0)
-            /* Then */ soundPlayer.Play(MainStateSettings().EnterSettings, musicPlayer.Resume);
-        else /* Then */ musicPlayer.Resume();
+        if (playniteState.GamesPlaying is 0) 
+        /* Then */ soundPlayer.Play(MainStateSettings().EnterSettings, musicPlayer.Resume);
     }
 
     private void Pause()
     {
         musicPlayer.Pause();
-        if (playniteState.GamesPlaying is 0) /* Then */
-            soundPlayer.Play(MainStateSettings().ExitSettings, wavePlayerManager.WavePlayer.Pause);
+        if (playniteState.GamesPlaying is 0)
+        /* Then */ soundPlayer.Play(MainStateSettings().ExitSettings, wavePlayerManager.WavePlayer.Pause);
     }
 
     private UIStateSettings MainStateSettings() => settings.ActiveModeSettings.UIStatesToSettings[UIState.Main];
