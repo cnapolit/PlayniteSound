@@ -200,7 +200,7 @@ public class DownloadManager : IDownloadManager
             }
             else 
             {
-                var albums = await downloader.GetAlbumsForGameAsync(game, searchStr, token).ToListAsync(token);
+                var albums = await downloader.GetAlbumsForGameAsync(game, searchStr, token).AsListAsync(token);
                 selectedAlbum = SelectAlbum(albums, game.Name, sanitizedName) ?? albums.FirstOrDefault();
             }
 
@@ -226,7 +226,7 @@ public class DownloadManager : IDownloadManager
         }
         else
         {
-            var songs = await downloader.GetSongsFromAlbumAsync(selectedAlbum, token).ToListAsync(token);
+            var songs = await downloader.GetSongsFromAlbumAsync(selectedAlbum, token).AsListAsync(token);
             selectedSong = SelectSong(songs, sanitizedName) ?? songs.FirstOrDefault();
         }
 
@@ -263,7 +263,7 @@ public class DownloadManager : IDownloadManager
                     break;
                 }
                 var searchStr = downloader.GenerateSearchStr(sanitizedGameName);
-                albums.AddRange(await downloader.GetAlbumsForGameAsync(game, searchStr, token).ToListAsync(token));
+                albums.AddRange(await downloader.GetAlbumsForGameAsync(game, searchStr, token).AsListAsync(token));
             }
 
             IAsyncEnumerator<IEnumerable<Album>> GetEnumerators(IDownloader downloader)
