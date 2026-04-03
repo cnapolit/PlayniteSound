@@ -68,7 +68,7 @@ internal class YtDownloader(
     }
 
     private IAsyncEnumerable<IEnumerable<Album>> GetAlbumsFromExplodeApiAsync(string gameName, CancellationToken token)
-        => ValidateSettings()
+        => !ValidateSettings()
             ? AsyncEnumerable.Empty<IEnumerable<Album>>() 
             :_youtubeClient.Search.GetResultBatchesAsync(gameName, SearchFilter.Playlist, token)
                 .Select(b => b.Items.OfType<PlaylistSearchResult>().Select(PlaylistToAlbum));
@@ -103,7 +103,7 @@ internal class YtDownloader(
     public IAsyncEnumerable<IEnumerable<Song>> SearchSongBatchesAsync(
         Game game, string searchTerm, CancellationToken token)
     {
-        if (ValidateSettings()) /* Then */ return AsyncEnumerable.Empty<IEnumerable<Song>>();
+        if (!ValidateSettings()) /* Then */ return AsyncEnumerable.Empty<IEnumerable<Song>>();
         return _youtubeClient.Search.GetResultBatchesAsync(searchTerm, SearchFilter.Video, token)
             .Select(b => b.Items.OfType<VideoSearchResult>().Select(VideoToSong));
     }
